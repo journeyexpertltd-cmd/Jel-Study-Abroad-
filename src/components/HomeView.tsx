@@ -75,22 +75,26 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
 
           {/* Visual graduates showcase */}
           <div className="lg:col-span-5 relative hidden lg:block">
-            <div className="relative mx-auto max-w-[340px] h-[380px] rounded-3xl overflow-hidden shadow-lg border border-slate-100 bg-slate-900 group">
-              <img
-                src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&q=80&w=400"
-                alt="Students Graduating"
-                className="object-cover w-full h-full group-hover:scale-105 transition duration-500"
-                referrerPolicy="no-referrer"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent p-6 flex flex-col justify-end">
-                <span className="text-xs text-[#00AEEF] font-bold block">JEL Alumni Success Story</span>
-                <h3 className="font-display font-medium text-white text-sm">"Secured 100% scholarship at Greenwich with peace of mind."</h3>
-                <p className="text-[10px] text-slate-400">Nusrat Jahan, MBA Graduate</p>
+            <div className="relative mx-auto w-[340px] h-[340px]">
+              {/* Circular Avatar */}
+              <div className="w-full h-full rounded-full overflow-hidden shadow-2xl border-4 border-slate-100 bg-slate-100 group transition-all duration-300 hover:shadow-[#00AEEF]/20">
+                <img
+                  src="/src/assets/images/chief_consultant_1782115849762.jpg"
+                  alt="Mahbub Murshed - JEL Co-Founder"
+                  className="object-cover w-full h-full scale-100 group-hover:scale-105 transition-transform duration-500"
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+
+              {/* Elegant floating caption card below/overlapping slightly at the bottom */}
+              <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur-md border border-slate-100 py-2.5 px-6 rounded-2xl shadow-xl hover:scale-105 transition-transform duration-300 text-center min-w-[240px] z-20">
+                <span className="text-[10px] text-[#00AEEF] font-black uppercase tracking-widest block">Co-Founder</span>
+                <span className="font-display font-extrabold text-[#003366] text-sm block mt-0.5">Mahbub Murshed</span>
               </div>
             </div>
 
             {/* Float badge */}
-            <div className="absolute -top-4 -left-4 bg-[#003366] border border-white/10 p-3.5 rounded-2xl shadow-xl hover:scale-105 transition-transform">
+            <div className="absolute -top-2 -left-2 bg-[#003366] border border-white/10 p-3.5 rounded-2xl shadow-xl hover:scale-105 transition-transform z-10">
               <span className="text-2xl font-display font-black text-[#00AEEF] block">50+</span>
               <span className="text-[9px] text-white font-bold uppercase tracking-wider">Uni Partners</span>
             </div>
