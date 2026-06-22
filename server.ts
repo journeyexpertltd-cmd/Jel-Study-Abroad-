@@ -15,6 +15,7 @@ const app = express();
 const PORT = 3000;
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Lazy-initialized Gemini client safe engine
 let aiInstance: GoogleGenAI | null = null;
@@ -38,6 +39,7 @@ function getGeminiClient(): GoogleGenAI {
 
 // Lazy-initialized Supabase Client
 let supabaseInstance: any = null;
+let localTransactions: any[] = [];
 function getSupabaseClient() {
   if (!supabaseInstance) {
     const supabaseUrl = process.env.SUPABASE_URL || "https://fkwujxzeahauouhquhdw.supabase.co";
@@ -70,6 +72,20 @@ app.get("/api/supabase/config", (req, res) => {
   message TEXT,
   status TEXT,
   notes TEXT,
+  created_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS transactions (
+  id TEXT PRIMARY KEY,
+  name TEXT,
+  email TEXT,
+  phone TEXT,
+  fee_type TEXT,
+  amount NUMERIC,
+  currency TEXT,
+  status TEXT,
+  bank_tran_id TEXT,
+  card_type TEXT,
   created_at TEXT
 );`
   });
@@ -204,6 +220,308 @@ app.post("/api/supabase/sync", async (req, res) => {
     res.json({ success: true, synced: rows.length, data });
   } catch (error: any) {
     console.error("Supabase batch sync failed:", error);
+    res.status(500).json({ success: false, error: error.message || "Sync failed" });
+  }
+});
+
+// ==========================================
+// SSLCOMMERZ: PAYMENT GATEWAY INTEGRATIONS
+// ==========================================
+
+// 1. Fetch all payment transactions
+app.get("/api/sslcommerz/transactions", async (req, res) => {
+  try {
+    const supabase = getSupabaseClient();
+    const { data, error } = await supabase
+      .from("transactions")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      if (error.code === "42P01" || error.message?.includes("does not exist") || error.message?.includes("relation \"transactions\" does not exist")) {
+        return res.json({
+          success: true,
+          tableNotFound: true,
+          data: localTransactions
+        });
+      }
+      throw error;
+    }
+
+    const mappedData = (data || []).map((row: any) => ({
+      id: row.id,
+      name: row.name || "",
+      email: row.email || "",
+      phone: row.phone || "",
+      feeType: row.fee_type || row.feeType || "",
+      amount: Number(row.amount || 0),
+      currency: row.currency || "BDT",
+      status: row.status || "Pending",
+      bankTranId: row.bank_tran_id || row.bankTranId || "N/A",
+      cardType: row.card_type || row.cardType || "N/A",
+      createdAt: row.created_at || row.createdAt || ""
+    }));
+
+    res.json({ success: true, data: mappedData });
+  } catch (error: any) {
+    console.warn("Supabase fetch transactions failed, showing in-memory logs:", error.message);
+    res.json({ success: true, data: localTransactions });
+  }
+});
+
+// 2. Initiate Online Payment
+app.post("/api/sslcommerz/initiate", async (req, res) => {
+  try {
+    const { name, email, phone, feeType, amount, currency } = req.body;
+    if (!name || !email || !amount) {
+      return res.status(400).json({ success: false, error: "Name, email and amount are required fields" });
+    }
+
+    const numericAmount = Number(amount);
+    if (isNaN(numericAmount) || numericAmount <= 0) {
+      return res.status(400).json({ success: false, error: "Validation failed: Amount must be a positive number" });
+    }
+
+    const storeId = process.env.SSLCOMMERZ_STORE_ID || "testbox";
+    const storePasswd = process.env.SSLCOMMERZ_STORE_PASSWORD || "testbox_pay@ssl";
+    const isSandbox = (process.env.SSLCOMMERZ_IS_SANDBOX !== "false");
+
+    const tranId = `JEL-TXN-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`;
+    const curr = currency || "BDT";
+
+    const appUrl = process.env.APP_URL || `${req.protocol}://${req.get("host")}`;
+    
+    // Construct SSLCommerz form data
+    const paymentParams = new URLSearchParams();
+    paymentParams.append("store_id", storeId);
+    paymentParams.append("store_passwd", storePasswd);
+    paymentParams.append("total_amount", String(numericAmount));
+    paymentParams.append("currency", curr);
+    paymentParams.append("tran_id", tranId);
+
+    // Callbacks url mapping
+    paymentParams.append("success_url", `${appUrl}/api/sslcommerz/callback?status=success&tran_id=${tranId}`);
+    paymentParams.append("fail_url", `${appUrl}/api/sslcommerz/callback?status=fail&tran_id=${tranId}`);
+    paymentParams.append("cancel_url", `${appUrl}/api/sslcommerz/callback?status=cancel&tran_id=${tranId}`);
+    paymentParams.append("ipn_url", `${appUrl}/api/sslcommerz/callback?status=ipn&tran_id=${tranId}`);
+
+    // Customer specifications
+    paymentParams.append("cus_name", name);
+    paymentParams.append("cus_email", email);
+    paymentParams.append("cus_phone", phone || "01926400400");
+    paymentParams.append("cus_add1", "Tejgaon Nabisco Mor");
+    paymentParams.append("cus_city", "Dhaka");
+    paymentParams.append("cus_postcode", "1208");
+    paymentParams.append("cus_country", "Bangladesh");
+
+    // Operations configuration
+    paymentParams.append("shipping_method", "NO");
+    paymentParams.append("num_of_item", "1");
+    paymentParams.append("product_name", feeType || "Counselling Fee");
+    paymentParams.append("product_category", "Education");
+    paymentParams.append("product_profile", "non-physical-goods");
+
+    const sslcommerzEndpoint = isSandbox 
+      ? "https://sandbox.sslcommerz.com/gwprocess/v4/api.php"
+      : "https://gateway.sslcommerz.com/gwprocess/v4/api.php";
+
+    console.log(`[SSLCOMMERZ] Dispatching initiation request to SSLCommerz dynamic endpoint: ${sslcommerzEndpoint} for tran_id: ${tranId}`);
+
+    const response = await fetch(sslcommerzEndpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: paymentParams.toString()
+    });
+
+    if (!response.ok) {
+      throw new Error(`SSLCommerz gateway responded with status ${response.status}`);
+    }
+
+    const responseData = await response.json();
+    console.log("[SSLCOMMERZ] Initiation gateway response: ", JSON.stringify(responseData));
+
+    if (responseData.status === "SUCCESS" && responseData.GatewayPageURL) {
+      // Save Pending Transaction Log locally & remotely
+      const paymentLog = {
+        id: tranId,
+        name,
+        email,
+        phone: phone || "01926400400",
+        feeType: feeType || "Counselling Fee",
+        amount: numericAmount,
+        currency: curr,
+        status: "Pending",
+        bankTranId: "N/A",
+        cardType: "N/A",
+        createdAt: new Date().toISOString().replace("T", " ").substring(0, 16)
+      };
+
+      // 1. Add to local fallback logs
+      localTransactions.unshift(paymentLog);
+
+      // 2. Add to Supabase
+      try {
+        const supabase = getSupabaseClient();
+        await supabase.from("transactions").insert([{
+          id: paymentLog.id,
+          name: paymentLog.name,
+          email: paymentLog.email,
+          phone: paymentLog.phone,
+          fee_type: paymentLog.feeType,
+          amount: paymentLog.amount,
+          currency: paymentLog.currency,
+          status: paymentLog.status,
+          bank_tran_id: paymentLog.bankTranId,
+          card_type: paymentLog.cardType,
+          created_at: paymentLog.createdAt
+        }]);
+      } catch (dbErr: any) {
+        console.warn("[SSLCOMMERZ] Supabase db logging pending failed, but proceeding: ", dbErr.message);
+      }
+
+      return res.json({ 
+        success: true, 
+        redirectUrl: responseData.GatewayPageURL, 
+        tranId 
+      });
+    } else {
+      return res.json({ 
+        success: false, 
+        error: responseData.failedreason || "Initiation failed at gateway. Check credentials." 
+      });
+    }
+  } catch (error: any) {
+    console.error("[SSLCOMMERZ] Exception initiating payment:", error);
+    res.status(500).json({ success: false, error: error.message || "Payment initiation failed" });
+  }
+});
+
+// 3. Callback Endpoint (Unified for success, fail, cancel)
+app.all("/api/sslcommerz/callback", async (req, res) => {
+  try {
+    console.log("[SSLCOMMERZ CALLBACK] Received payment handshake request:", req.method, req.body, req.query);
+
+    // Grab properties from body (POST) or query (GET)
+    const txStatus = (req.body.status || req.query.status || "").toLowerCase();
+    const tranId = req.body.tran_id || req.query.tran_id;
+    const amount = req.body.amount || req.query.amount || "0";
+    const card_type = req.body.card_type || req.query.card_type || "N/A";
+    const bank_tran_id = req.body.bank_tran_id || req.query.bank_tran_id || "N/A";
+
+    if (!tranId) {
+      console.error("[SSLCOMMERZ CALLBACK] Missing tranId parameter.");
+      return res.status(400).send("Parameter error: Missing tran_id");
+    }
+
+    // Determine final student status view
+    let finalStatus = "Failed";
+    if (txStatus === "success" || txStatus === "valid" || txStatus === "validated") {
+      finalStatus = "Success";
+    } else if (txStatus === "cancel" || txStatus === "cancelled") {
+      finalStatus = "Cancelled";
+    }
+
+    console.log(`[SSLCOMMERZ CALLBACK] Status evaluation: ${finalStatus} for transaction: ${tranId}`);
+
+    // 1. Update in local fallback in-memory database
+    const localTx = localTransactions.find(t => t.id === tranId);
+    if (localTx) {
+      localTx.status = finalStatus;
+      localTx.bankTranId = bank_tran_id;
+      localTx.cardType = card_type;
+    } else {
+      // If payment was completed, but transaction didn't exist in memory yet
+      localTransactions.unshift({
+        id: tranId,
+        name: "Valued Candidate",
+        email: "candidate@example.com",
+        phone: "01926400400",
+        feeType: "Processing Fee",
+        amount: Number(amount),
+        currency: "BDT",
+        status: finalStatus,
+        bankTranId: bank_tran_id,
+        cardType: card_type,
+        createdAt: new Date().toISOString().replace("T", " ").substring(0, 16)
+      });
+    }
+
+    // 2. Update status in Supabase if table exists
+    try {
+      const supabase = getSupabaseClient();
+      const { data, error } = await supabase
+        .from("transactions")
+        .update({
+          status: finalStatus,
+          bank_tran_id,
+          card_type
+        })
+        .eq("id", tranId);
+
+      if (error) {
+        console.warn("[SSLCOMMERZ CALLBACK] Supabase transactions status update failed:", error.message);
+      } else {
+        console.log("[SSLCOMMERZ CALLBACK] Supabase transactions database updated successfully!");
+      }
+    } catch (e: any) {
+      console.warn("[SSLCOMMERZ CALLBACK] Supabase error hook:", e.message);
+    }
+
+    // 3. Redirect back to frontend
+    const appUrl = process.env.APP_URL || `${req.protocol}://${req.get("host")}`;
+    const redirectUrl = `${appUrl}/?activeTab=booking&pay_status=${finalStatus.toLowerCase()}&tran_id=${tranId}&amount=${amount}&card_type=${encodeURIComponent(card_type)}&bank_tran_id=${encodeURIComponent(bank_tran_id)}`;
+    
+    console.log(`[SSLCOMMERZ CALLBACK] Redirecting user browser to: ${redirectUrl}`);
+    res.redirect(redirectUrl);
+  } catch (error: any) {
+    console.error("[SSLCOMMERZ CALLBACK] General exception hook:", error);
+    const appUrl = process.env.APP_URL || `${req.protocol}://${req.get("host")}`;
+    res.redirect(`${appUrl}/?activeTab=booking&pay_status=error&message=${encodeURIComponent(error.message || "Callback exception")}`);
+  }
+});
+
+// 4. Batch sync local transactions to Supabase table
+app.post("/api/sslcommerz/sync", async (req, res) => {
+  try {
+    const { transactions } = req.body;
+    if (!transactions || !Array.isArray(transactions)) {
+      return res.status(400).json({ success: false, error: "Array of transaction items is required" });
+    }
+
+    const supabase = getSupabaseClient();
+    const rows = transactions.map((t: any) => ({
+      id: t.id || `TXN-${Date.now()}`,
+      name: t.name || "",
+      email: t.email || "",
+      phone: t.phone || "",
+      fee_type: t.feeType || t.fee_type || "",
+      amount: Number(t.amount || 0),
+      currency: t.currency || "BDT",
+      status: t.status || "Pending",
+      bank_tran_id: t.bankTranId || t.bank_tran_id || "N/A",
+      card_type: t.cardType || t.card_type || "N/A",
+      created_at: t.createdAt || t.created_at || new Date().toISOString().replace("T", " ").substring(0, 16)
+    }));
+
+    const { data, error } = await supabase
+      .from("transactions")
+      .upsert(rows, { onConflict: "id" })
+      .select();
+
+    if (error) {
+      if (error.code === "42P01" || error.message?.includes("does not exist") || error.message?.includes("relation \"transactions\" does not exist")) {
+        return res.status(250).json({
+          success: false,
+          tableNotFound: true,
+          error: "Table 'transactions' does not exist in Supabase database."
+        });
+      }
+      throw error;
+    }
+
+    res.json({ success: true, synced: rows.length, data });
+  } catch (error: any) {
+    console.error("[SSLCOMMERZ] Sync transactions failed:", error);
     res.status(500).json({ success: false, error: error.message || "Sync failed" });
   }
 });

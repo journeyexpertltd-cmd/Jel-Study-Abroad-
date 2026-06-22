@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Users, Filter, CheckCircle, Search, Edit3, MoreHorizontal, UserCheck, Plus, Trash2, Calendar, FileText, ChevronRight, Activity, ClipboardList } from "lucide-react";
+import { Users, Filter, CheckCircle, Search, Edit3, MoreHorizontal, UserCheck, Plus, Trash2, Calendar, FileText, ChevronRight, Activity, ClipboardList, Coins } from "lucide-react";
 import { Lead } from "../types";
 
 const INITIAL_LEADS: Lead[] = [
@@ -73,6 +73,37 @@ export function AdminDashboard() {
   const [editingNotes, setEditingNotes] = useState("");
   const [editingStatus, setEditingStatus] = useState<Lead["status"]>("New");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Counselor panel sub-mode
+  const [crmView, setCrmView] = useState<"leads" | "payments">("leads");
+  const [txList, setTxList] = useState<any[]>([]);
+  const [isTxLoading, setIsTxLoading] = useState(false);
+  const [txWarning, setTxWarning] = useState<string | null>(null);
+
+  const fetchTxList = async () => {
+    setIsTxLoading(true);
+    setTxWarning(null);
+    try {
+      const res = await fetch("/api/sslcommerz/transactions");
+      const resp = await res.json();
+      if (resp.success) {
+        setTxList(resp.data || []);
+        if (resp.tableNotFound) {
+          setTxWarning("Sandbox working! Stored in transient memories. Add the 'transactions' table to your Supabase postgres project to enable persistent bookkeeping.");
+        }
+      }
+    } catch (e: any) {
+      setTxWarning("Failed to connect to merchant transaction listener.");
+    } finally {
+      setIsTxLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (crmView === "payments") {
+      fetchTxList();
+    }
+  }, [crmView]);
 
   // Supabase dynamic state management
   const [supabaseStatus, setSupabaseStatus] = useState<"loading" | "connected" | "missing_table" | "error">("loading");
@@ -452,8 +483,34 @@ export function AdminDashboard() {
         )}
       </div>
 
-      {/* Search / Filters Controls */}
-      <div className="bg-white border border-slate-100 p-4 rounded-2xl shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+      {/* View Switcher Tabs */}
+      <div className="flex border-b border-slate-100 pb-2 space-x-2">
+        <button
+          onClick={() => setCrmView("leads")}
+          className={`py-2 px-4 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+            crmView === "leads"
+              ? "bg-[#003366] text-white"
+              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+          }`}
+        >
+          👥 Candidate Leads ({leads.length})
+        </button>
+        <button
+          onClick={() => setCrmView("payments")}
+          className={`py-2 px-4 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 ${
+            crmView === "payments"
+              ? "bg-amber-500 text-white"
+              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+          }`}
+        >
+          💳 SSLCOMMERZ Payments Ledger
+        </button>
+      </div>
+
+      {crmView === "leads" ? (
+        <>
+          {/* Search / Filters Controls */}
+          <div className="bg-white border border-slate-100 p-4 rounded-2xl shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="relative w-full md:w-72">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
           <input
@@ -633,9 +690,121 @@ export function AdminDashboard() {
           </div>
         )}
       </div>
+        </>
+      ) : (
+        /* SSLCOMMERZ Payments Ledger View for Internal Counselors */
+        <div className="space-y-4 text-left animate-in fade-in duration-300">
+          <div className="bg-white border border-slate-100 p-5 rounded-2xl shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h3 className="font-display font-bold text-slate-900 text-sm uppercase tracking-wider">
+                Safe Payment Settlement Ledger & Receipts
+              </h3>
+              <p className="text-xs text-slate-505 font-sans mt-0.5">
+                Authorized financial payments synced directly from SSLCOMMERZ gateway container nodes.
+              </p>
+            </div>
+            
+            <div className="flex gap-2">
+              <button
+                onClick={fetchTxList}
+                disabled={isTxLoading}
+                className="bg-[#003366] hover:bg-[#004d99] text-white text-xs font-bold py-2 px-3.5 rounded-lg transition-all active:scale-95 cursor-pointer font-sans select-none"
+              >
+                {isTxLoading ? "Refreshing..." : "Sync Fresh Logs"}
+              </button>
+            </div>
+          </div>
+
+          {txWarning && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900 leading-relaxed font-sans">
+              💡 {txWarning}
+            </div>
+          )}
+
+          {isTxLoading ? (
+            <div className="text-center py-12 space-y-2">
+              <span className="h-6 w-6 border-2 border-amber-500 border-t-transparent rounded-full animate-spin inline-block"></span>
+              <p className="text-xs text-slate-500 font-sans">Querying candidate payments from live sandbox cluster...</p>
+            </div>
+          ) : txList.length === 0 ? (
+            <div className="border border-dashed border-slate-200 rounded-2xl py-12 text-center text-slate-500 bg-slate-50">
+              <Coins className="h-8 w-8 text-slate-300 mx-auto mb-2 animate-bounce" />
+              <p className="text-xs font-bold text-slate-700">No payment settlement logs located.</p>
+              <p className="text-[11px] text-slate-400 mt-0.5">Initialize simulated payment logs inside Candidate's Schedule screen using SSLCOMMERZ Pay Online.</p>
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse font-sans">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-100 text-slate-600 font-extrabold select-none me-2">
+                    <th className="py-3 px-4">Transaction Details</th>
+                    <th className="py-3 px-4">Candidate Profile</th>
+                    <th className="py-3 px-4">Category</th>
+                    <th className="py-3 px-4">Charged</th>
+                    <th className="py-3 px-4">Gate Bank Ref</th>
+                    <th className="py-3 px-4 text-center">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {txList.map((tx) => (
+                    <tr key={tx.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="py-3 px-4">
+                        <div className="font-bold text-slate-900 font-mono">
+                          {tx.id}
+                        </div>
+                        <span className="text-[10px] text-slate-400 font-mono block mt-0.5">
+                          📅 {tx.createdAt}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="font-semibold text-slate-950 font-sans">{tx.name}</div>
+                        <div className="text-[10px] text-slate-500 font-mono mt-0.5">
+                          📧 {tx.email} &bull; {tx.phone}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-slate-600 font-medium font-sans">
+                        {tx.feeType}
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="font-extrabold text-[#003366] font-mono text-sm">
+                          {tx.currency === "BDT" ? "৳" : "$"} {tx.amount.toLocaleString()}
+                        </span>
+                        <span className="text-[9px] text-slate-400 block font-mono">
+                          {tx.currency}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="font-semibold font-mono text-slate-800">
+                          {tx.bankTranId || "N/A"}
+                        </div>
+                        <span className="text-[10px] text-slate-500 font-sans">
+                          💳 Method: {tx.cardType || "Online / SSL"}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest inline-block ${
+                          tx.status.toLowerCase() === "success"
+                            ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                            : tx.status.toLowerCase() === "pending"
+                            ? "bg-amber-100 text-amber-800 border border-amber-250 animate-pulse"
+                            : tx.status.toLowerCase() === "cancelled"
+                            ? "bg-slate-100 text-slate-600 border border-slate-200"
+                            : "bg-rose-100 text-rose-800 border border-rose-220"
+                        }`}>
+                          {tx.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Integration hints footer details */}
-      <div className="bg-slate-50 p-4 rounded-xl text-[10px] text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-2 border border-slate-200/50">
+      <div className="bg-slate-50 p-4 rounded-xl text-[10px] text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-2 border border-slate-200/50 select-none">
         <span>✅ Local consultation files synced with browser memory (`localStorage`).</span>
         <span>🔥 Designed ready for direct migration to Firebase Firestore or Supabase backend.</span>
       </div>
