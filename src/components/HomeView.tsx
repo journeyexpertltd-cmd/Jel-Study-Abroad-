@@ -2,6 +2,8 @@ import React from "react";
 import { GraduationCap, Award, Compass, Search, Globe, Shield, Star, Users, CheckCircle, HelpCircle, ArrowRight, BookOpen, ChevronRight } from "lucide-react";
 import { COUNTRIES, SCHOLARSHIPS, TESTIMONIALS, UNIVERSITY_PARTNERS } from "../data";
 
+const brandLogoImg = new URL("../assets/images/regenerated_image_1782126794199.png", import.meta.url).href;
+
 interface HomeViewProps {
   setActiveTab: (tab: string) => void;
   onPreSelectCountry: (countryName: string) => void;
@@ -75,26 +77,26 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
 
           {/* Visual graduates showcase */}
           <div className="lg:col-span-5 relative hidden lg:block">
-            <div className="relative mx-auto w-[340px] h-[340px]">
-              {/* Circular Avatar */}
-              <div className="w-full h-full rounded-full overflow-hidden shadow-2xl border-4 border-slate-100 bg-slate-100 group transition-all duration-300 hover:shadow-[#00AEEF]/20">
+            <div className="relative mx-auto w-[380px] h-[300px]">
+              {/* Elegant Brand Logo Card */}
+              <div className="w-full h-full rounded-3xl overflow-hidden shadow-2xl border-4 border-slate-100 bg-white group transition-all duration-300 hover:shadow-[#00AEEF]/10 flex items-center justify-center p-10 animate-fade-in">
                 <img
-                  src="/src/assets/images/chief_consultant_1782115849762.jpg"
-                  alt="Mahbub Murshed - JEL Co-Founder"
-                  className="object-cover w-full h-full scale-100 group-hover:scale-105 transition-transform duration-500"
+                  src={brandLogoImg}
+                  alt="JEL Study Abroad"
+                  className="object-contain w-full h-full scale-100 group-hover:scale-105 transition-transform duration-500"
                   referrerPolicy="no-referrer"
                 />
               </div>
 
               {/* Elegant floating caption card below/overlapping slightly at the bottom */}
-              <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur-md border border-slate-100 py-2.5 px-6 rounded-2xl shadow-xl hover:scale-105 transition-transform duration-300 text-center min-w-[240px] z-20">
-                <span className="text-[10px] text-[#00AEEF] font-black uppercase tracking-widest block">Co-Founder</span>
-                <span className="font-display font-extrabold text-[#003366] text-sm block mt-0.5">Mahbub Murshed</span>
+              <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur-md border border-slate-100 py-2.5 px-6 rounded-2xl shadow-xl hover:scale-105 transition-transform duration-300 text-center min-w-[200px] z-20">
+                <span className="text-[10px] text-[#00AEEF] font-black uppercase tracking-widest block font-mono">Trusted Partner</span>
+                <span className="font-display font-extrabold text-[#003366] text-xs block mt-0.5">JEL Study Abroad</span>
               </div>
             </div>
 
             {/* Float badge */}
-            <div className="absolute -top-2 -left-2 bg-[#003366] border border-white/10 p-3.5 rounded-2xl shadow-xl hover:scale-105 transition-transform z-10">
+            <div className="absolute -top-4 -left-4 bg-[#003366] border border-white/10 p-3.5 rounded-2xl shadow-xl hover:scale-105 transition-transform z-10">
               <span className="text-2xl font-display font-black text-[#00AEEF] block">50+</span>
               <span className="text-[9px] text-white font-bold uppercase tracking-wider">Uni Partners</span>
             </div>
