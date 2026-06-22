@@ -1,0 +1,6 @@
+{
+  "name": "JEL Study Abroad",
+  "description": "Premium international student consultancy website with AI-driven course matching, visa evaluation, and CRM tools, a concern of Journey Expert Ltd.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
