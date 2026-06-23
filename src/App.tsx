@@ -80,7 +80,7 @@ export default function App() {
 
       {/* 2. Main Navigation Shell */}
       <nav className="bg-white border-b border-slate-100 sticky top-0 z-30 shadow-sm" id="main-navigation-bar">
-        <div className="max-w-7xl mx-auto px-8 h-20 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-8 h-20 lg:h-24 flex items-center justify-between">
           
           {/* Logo Brand Segment */}
           <div 
@@ -91,11 +91,11 @@ export default function App() {
               <img 
                 src={jelLogo} 
                 alt="JEL Study Abroad" 
-                className="h-12 md:h-14 w-auto object-contain transition-all duration-300 group-hover:scale-105 group-hover:-translate-y-0.5 filter group-hover:drop-shadow-sm"
+                className="h-14 md:h-16 lg:h-[72px] w-auto object-contain transition-all duration-300 group-hover:scale-105 filter group-hover:drop-shadow-sm"
                 referrerPolicy="no-referrer"
               />
             </div>
-            <span className="text-[8px] tracking-[0.14em] uppercase text-[#05452d] font-extrabold mt-1 text-left block group-hover:text-amber-600 transition-colors duration-300">
+            <span className="text-[7px] md:text-[8px] tracking-[0.14em] uppercase text-[#05452d] font-extrabold mt-0.5 md:mt-1 text-left block group-hover:text-amber-600 transition-colors duration-300">
               A BRAND OF JOURNEY EXPERT LTD.
             </span>
           </div>

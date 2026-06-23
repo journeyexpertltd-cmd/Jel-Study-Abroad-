@@ -97,8 +97,8 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
 
             {/* Float badge */}
             <div className="absolute -top-4 -left-4 bg-[#003366] border border-white/10 p-3.5 rounded-2xl shadow-xl hover:scale-105 transition-transform z-10">
-              <span className="text-2xl font-display font-black text-[#00AEEF] block">50+</span>
-              <span className="text-[9px] text-white font-bold uppercase tracking-wider">Uni Partners</span>
+              <span className="text-2xl font-display font-black text-[#00AEEF] block">1000+</span>
+              <span className="text-[9px] text-white font-bold uppercase tracking-wider">University Partners</span>
             </div>
           </div>
         </div>
