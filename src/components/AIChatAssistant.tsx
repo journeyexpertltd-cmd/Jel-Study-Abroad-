@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from "react";
 import { MessageSquare, X, Send, Sparkles, Phone, MessageCircle, HelpCircle } from "lucide-react";
 import { ChatMessage } from "../types";
 
+const jelBrandIcon = new URL("../assets/images/jel_logo_brand_icon_1782126703149.jpg", import.meta.url).href;
+
 export function AIChatAssistant() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -87,7 +89,14 @@ export function AIChatAssistant() {
           id="btn-open-chat-assistant"
           aria-label="Open AI Assistant"
         >
-          <Sparkles className="h-6 w-6 animate-pulse" />
+          <div className="h-10 w-10 rounded-full overflow-hidden border border-white/20 bg-white flex items-center justify-center p-0.5 shadow-md">
+            <img 
+              src={jelBrandIcon} 
+              alt="JEL Study Abroad" 
+              className="h-full w-full object-contain rounded-full"
+              referrerPolicy="no-referrer"
+            />
+          </div>
           <span className="absolute right-16 top-2 bg-slate-900 text-white text-xs py-1.5 px-3 rounded-lg shadow-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300 hidden md:inline-block border border-slate-700">
             Need Help? Ask our AI 🎓
           </span>
@@ -108,8 +117,13 @@ export function AIChatAssistant() {
           {/* Header */}
           <div className="bg-gradient-to-r from-[#003366] via-[#004080] to-[#003366] text-white p-4 flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="bg-white/10 p-2 rounded-lg">
-                <Sparkles className="h-5 w-5 text-[#00AEEF]" />
+              <div className="bg-white p-1 rounded-lg h-9 w-9 flex items-center justify-center shadow-sm">
+                <img 
+                  src={jelBrandIcon} 
+                  alt="JEL Study Abroad" 
+                  className="h-full w-full object-contain rounded-md"
+                  referrerPolicy="no-referrer"
+                />
               </div>
               <div>
                 <h3 className="font-display font-semibold text-sm leading-tight">JEL Academic AI Companion</h3>

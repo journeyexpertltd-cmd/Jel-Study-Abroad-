@@ -8,7 +8,7 @@ import { ConsultationBooking } from "./components/ConsultationBooking";
 import { HomeView } from "./components/HomeView";
 import { AboutView, ServicesView, CountriesView, UniversitiesView, ScholarshipsView, BlogView, ContactView } from "./components/InfoViews";
 
-const jelLogo = new URL("./assets/images/jel_study_abroad_logo_1782110469815.jpg", import.meta.url).href;
+const jelLogo = new URL("./assets/images/regenerated_image_1782126794199.png", import.meta.url).href;
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>("home");
@@ -91,7 +91,7 @@ export default function App() {
               <img 
                 src={jelLogo} 
                 alt="JEL Study Abroad" 
-                className="h-14 md:h-16 lg:h-[72px] w-auto object-contain transition-all duration-300 group-hover:scale-105 filter group-hover:drop-shadow-sm"
+                className="h-11 md:h-13 lg:h-15 w-auto object-contain transition-all duration-300 group-hover:scale-105 filter group-hover:drop-shadow-sm"
                 referrerPolicy="no-referrer"
               />
             </div>

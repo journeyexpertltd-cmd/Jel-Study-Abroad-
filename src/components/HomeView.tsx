@@ -77,9 +77,9 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
 
           {/* Visual graduates showcase */}
           <div className="lg:col-span-5 relative hidden lg:block">
-            <div className="relative mx-auto w-[380px] h-[300px]">
+            <div className="relative mx-auto w-[400px] h-[245px]">
               {/* Elegant Brand Logo Card */}
-              <div className="w-full h-full rounded-3xl overflow-hidden shadow-2xl border-4 border-slate-100 bg-white group transition-all duration-300 hover:shadow-[#00AEEF]/10 flex items-center justify-center p-10 animate-fade-in">
+              <div className="w-full h-full rounded-3xl overflow-hidden shadow-2xl border-4 border-slate-100 bg-white group transition-all duration-300 hover:shadow-[#00AEEF]/10 flex items-center justify-center p-6 md:p-8 animate-fade-in font-sans">
                 <img
                   src={brandLogoImg}
                   alt="JEL Study Abroad"
