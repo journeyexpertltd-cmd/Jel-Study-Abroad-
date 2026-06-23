@@ -1,13 +1,47 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 
+:root {
+  --navy-color: #003366;
+  --sky-color: #00AEEF;
+  --gold-color: #F5A623;
+}
+
+/* Commonwealth Green & Amber Gold theme */
+[data-theme="emerald"] {
+  --navy-color: #0f5132;
+  --sky-color: #198754;
+  --gold-color: #ffc107;
+}
+
+/* Prestige Crimson Ruby & Premium Yellow theme */
+[data-theme="crimson"] {
+  --navy-color: #800020;
+  --sky-color: #dc3545;
+  --gold-color: #ffca2c;
+}
+
+/* Corporate Slate Teal and Bright Cyan theme */
+[data-theme="teal"] {
+  --navy-color: #005a70;
+  --sky-color: #20b2aa;
+  --gold-color: #ff6b6b;
+}
+
+/* Indigo Blue and Pink theme */
+[data-theme="indigo"] {
+  --navy-color: #4338ca;
+  --sky-color: #06b6d4;
+  --gold-color: #ec4899;
+}
+
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Outfit", sans-serif;
   --font-mono: "Fira Code", "JetBrains Mono", ui-monospace, monospace;
-  --color-navy: #003366;
-  --color-sky: #00AEEF;
-  --color-gold: #F5A623;
+  --color-navy: var(--navy-color);
+  --color-sky: var(--sky-color);
+  --color-gold: var(--gold-color);
 }
 
 /* Custom premium layouts */
