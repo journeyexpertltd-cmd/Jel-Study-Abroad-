@@ -15,16 +15,6 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<string>("home");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
   
-  // Theme management (persisted in localStorage)
-  const [theme, setTheme] = useState<string>(() => {
-    return localStorage.getItem("jel-theme") || "classic";
-  });
-
-  useEffect(() => {
-    localStorage.setItem("jel-theme", theme);
-    document.documentElement.setAttribute("data-theme", theme);
-  }, [theme]);
-  
   // Search parameters targeting specific sub-screens
   const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
   const [uniSearchTerm, setUniSearchTerm] = useState<string>("");
@@ -152,35 +142,6 @@ export default function App() {
 
           {/* Desktop Call to actions */}
           <div className="hidden lg:flex items-center space-x-3 border-l border-slate-100 pl-6">
-            
-            {/* Direct Theme Color Pins */}
-            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200/85 rounded-full p-1.5 shadow-2xs" title="Select Site Theme Color">
-              <span className="text-[9px] font-bold text-slate-400 pl-1 uppercase font-mono tracking-wider">Theme:</span>
-              {[
-                { id: "classic", color: "bg-[#003366]", border: "border-sky-500", name: "Classic Navy" },
-                { id: "emerald", color: "bg-[#0f5132]", border: "border-amber-500", name: "Forest Emerald" },
-                { id: "crimson", color: "bg-[#800020]", border: "border-yellow-400", name: "Prestige Crimson" },
-                { id: "teal", color: "bg-[#005a70]", border: "border-rose-400", name: "Ocean Teal" },
-                { id: "indigo", color: "bg-[#4338ca]", border: "border-pink-500", name: "Royal Indigo" }
-              ].map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => setTheme(t.id)}
-                  title={t.name}
-                  className={`w-4 h-4 rounded-full transition-all duration-300 relative group cursor-pointer ${t.color} ${
-                    theme === t.id 
-                      ? "ring-2 ring-offset-2 ring-slate-400 scale-110 shadow-sm" 
-                      : "opacity-60 hover:opacity-100 hover:scale-110"
-                  }`}
-                  id={`theme-btn-${t.id}`}
-                >
-                  {theme === t.id && (
-                    <span className="absolute inset-0 flex items-center justify-center text-[8px] text-white font-bold">✓</span>
-                  )}
-                </button>
-              ))}
-            </div>
-
             <button
               onClick={() => setIsSearchOpen(true)}
               className="p-2 py-2 rounded-full text-slate-500 hover:text-[#003366] hover:bg-slate-100 transition duration-200 focus:outline-none focus:ring-1 focus:ring-[#003366] flex items-center gap-1.5 group border border-slate-200 bg-slate-50/50 pr-3.5 pl-3 cursor-pointer"
@@ -299,33 +260,6 @@ export default function App() {
                 ))}
               </div>
             </div>
-
-            {/* Mobile Theme Switcher Panel */}
-            <div className="border-t border-slate-100 pt-3 space-y-2">
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Select App Style Theme</span>
-              <div className="flex items-center gap-2 flex-wrap bg-slate-50 border border-slate-100 rounded-xl p-2.5">
-                {[
-                  { id: "classic", badge: "🌌 Classic Navy", desc: "Original JEL branding blue themes" },
-                  { id: "emerald", badge: "🌿 Forest Green", desc: "Commonwealth prestigious green vibes" },
-                  { id: "crimson", badge: "🍷 Prestige Ruby", desc: "Cherry crimson and academic gold tones" },
-                  { id: "teal", badge: "🌊 Corporate Teal", desc: "Calm professional deep teal styling" },
-                  { id: "indigo", badge: "🔮 Royal Indigo", desc: "Youthful academic indigo and pink highlights" }
-                ].map((t) => (
-                  <button
-                    key={t.id}
-                    onClick={() => setTheme(t.id)}
-                    className={`text-[10px] py-1.5 px-3 rounded-lg font-bold transition-all relative cursor-pointer ${
-                      theme === t.id
-                        ? "bg-[#003366] text-white shadow-xs"
-                        : "bg-white text-slate-600 border border-slate-200"
-                    }`}
-                  >
-                    <span>{t.badge}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
           </div>
         )}
       </nav>
