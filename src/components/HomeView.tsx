@@ -2,7 +2,7 @@ import React from "react";
 import { GraduationCap, Award, Compass, Search, Globe, Shield, Star, Users, CheckCircle, HelpCircle, ArrowRight, BookOpen, ChevronRight } from "lucide-react";
 import { COUNTRIES, SCHOLARSHIPS, TESTIMONIALS, UNIVERSITY_PARTNERS } from "../data";
 
-const brandLogoImg = new URL("../assets/images/regenerated_image_1782126794199.png", import.meta.url).href;
+const brandLogoImg = new URL("../assets/images/jel_study_abroad_logo_1782110469815.jpg", import.meta.url).href;
 
 interface HomeViewProps {
   setActiveTab: (tab: string) => void;
