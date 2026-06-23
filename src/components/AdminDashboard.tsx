@@ -330,14 +330,14 @@ export function AdminDashboard() {
     <div className="font-sans space-y-6" id="admin-crm-dashboard">
       {/* Toast Alert */}
       {toastMessage && (
-        <div className="fixed top-6 right-6 z-50 bg-[#003366] text-[#00AEEF] px-4 py-3 rounded-xl shadow-2xl border border-[#00AEEF]/30 text-xs sm:text-sm font-semibold flex items-center space-x-2 animate-bounce">
+        <div className="fixed top-6 right-6 z-50 bg-[#05452d] text-[#00AEEF] px-4 py-3 rounded-xl shadow-2xl border border-[#00AEEF]/30 text-xs sm:text-sm font-semibold flex items-center space-x-2 animate-bounce">
           <Activity className="h-4 w-4 text-emerald-400 animate-spin" />
           <span>{toastMessage}</span>
         </div>
       )}
 
       {/* Intro and simulator header */}
-      <div className="bg-gradient-to-r from-[#003366] via-[#004080] to-[#003366] text-white p-6 rounded-2xl shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="bg-gradient-to-r from-[#05452d] via-[#085a3c] to-[#05452d] text-white p-6 rounded-2xl shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <span className="text-xs bg-[#00AEEF] text-slate-900 font-bold px-2 py-0.5 rounded uppercase tracking-wider">Internal Workspace</span>
           <h2 className="text-2xl font-display font-black text-white mt-1">JEL Study Abroad CRM Terminal</h2>
@@ -359,11 +359,11 @@ export function AdminDashboard() {
       {/* KPI stats section */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white border border-slate-100 p-4 rounded-2xl shadow-sm text-center md:text-left relative overflow-hidden">
-          <div className="bg-slate-100 p-2 rounded-xl inline-block mb-2 md:mb-0 md:absolute md:top-4 md:right-4 text-[#003366]">
+          <div className="bg-slate-100 p-2 rounded-xl inline-block mb-2 md:mb-0 md:absolute md:top-4 md:right-4 text-[#05452d]">
             <Users className="h-5 w-5" />
           </div>
           <span className="text-slate-400 text-[10px] sm:text-xs font-bold uppercase tracking-widest block">Total Inquiries</span>
-          <h3 className="text-2xl sm:text-3xl font-display font-black text-[#003366] mt-1">{totalCount}</h3>
+          <h3 className="text-2xl sm:text-3xl font-display font-black text-[#05452d] mt-1">{totalCount}</h3>
           <span className="text-[10px] font-mono text-emerald-600 font-bold mt-1 block">Live cloud sync ready</span>
         </div>
 
@@ -408,7 +408,7 @@ export function AdminDashboard() {
                 supabaseStatus === 'missing_table' ? 'bg-amber-500' :
                 supabaseStatus === 'loading' ? 'bg-indigo-500' : 'bg-rose-500'
               }`}></span>
-              <h4 className="font-display font-bold text-sm text-[#003366] uppercase tracking-wider">
+              <h4 className="font-display font-bold text-sm text-[#05452d] uppercase tracking-wider">
                 Supabase Integration Hub
               </h4>
               <span className="text-[10px] font-mono bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full font-bold">
@@ -428,7 +428,7 @@ export function AdminDashboard() {
             <button
               onClick={handleBackupToSupabase}
               disabled={isSyncing || supabaseStatus === 'loading'}
-              className="bg-[#003366] hover:bg-[#004080] text-white text-xs font-bold py-2 px-4 rounded-xl flex items-center space-x-2 transition-all shadow-md active:scale-95 disabled:opacity-50 cursor-pointer"
+              className="bg-[#05452d] hover:bg-[#03301f] text-white text-xs font-bold py-2 px-4 rounded-xl flex items-center space-x-2 transition-all shadow-md active:scale-95 disabled:opacity-50 cursor-pointer"
             >
               {isSyncing ? (
                 <>
@@ -473,7 +473,7 @@ export function AdminDashboard() {
                     navigator.clipboard.writeText(supabaseConfig.requiredSql);
                     showToast("SQL query copied to clipboard!");
                   }}
-                  className="absolute right-2 top-2 bg-[#003366] hover:bg-[#004d99] text-white text-[10px] font-bold px-2.5 py-1.5 rounded-md transition-all shadow-md"
+                  className="absolute right-2 top-2 bg-[#05452d] hover:bg-[#03301f] text-white text-[10px] font-bold px-2.5 py-1.5 rounded-md transition-all shadow-md"
                 >
                   Copy SQL Query
                 </button>
@@ -489,7 +489,7 @@ export function AdminDashboard() {
           onClick={() => setCrmView("leads")}
           className={`py-2 px-4 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
             crmView === "leads"
-              ? "bg-[#003366] text-white"
+              ? "bg-[#05452d] text-white"
               : "bg-slate-100 text-slate-600 hover:bg-slate-200"
           }`}
         >
@@ -518,7 +518,7 @@ export function AdminDashboard() {
             placeholder="Search by candidate name or country..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-slate-50 border border-slate-200 text-slate-700 text-xs sm:text-sm pl-9 pr-4 py-2 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#003366]"
+            className="w-full bg-slate-50 border border-slate-200 text-slate-700 text-xs sm:text-sm pl-9 pr-4 py-2 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#05452d]"
             id="admin-lead-search"
           />
         </div>
@@ -534,7 +534,7 @@ export function AdminDashboard() {
               onClick={() => setStatusFilter(status)}
               className={`text-[10px] sm:text-xs py-1.5 px-3 rounded-lg font-medium transition-all ${
                 statusFilter === status
-                  ? "bg-[#003366] text-white"
+                  ? "bg-[#05452d] text-white"
                   : "bg-slate-50 text-slate-600 hover:bg-slate-100"
               }`}
             >
@@ -548,7 +548,7 @@ export function AdminDashboard() {
       {selectedLead && (
         <div className="bg-amber-50/50 border border-[#f5a623]/20 p-5 rounded-2xl animate-in slide-in-from-top-6 duration-300">
           <div className="flex items-center justify-between mb-4 border-b border-amber-200/50 pb-2.5">
-            <h4 className="font-display font-bold text-base text-[#003366] flex items-center space-x-2">
+            <h4 className="font-display font-bold text-base text-[#05452d] flex items-center space-x-2">
               <Edit3 className="h-5 w-5 text-[#f5a623]" />
               <span>Update Consultation: {selectedLead.fullName}</span>
             </h4>
@@ -563,7 +563,7 @@ export function AdminDashboard() {
               <select
                 value={editingStatus}
                 onChange={(e) => setEditingStatus(e.target.value as Lead["status"])}
-                className="w-full bg-white border border-slate-200 text-xs py-2 px-3 rounded-lg font-medium text-[#003366]"
+                className="w-full bg-white border border-slate-200 text-xs py-2 px-3 rounded-lg font-medium text-[#05452d]"
               >
                 {["New", "Contacted", "In Assessment", "Uni Approved", "Visa Pending", "Visa Approved", "Completed", "No Response"].map(s => (
                   <option key={s} value={s}>{s}</option>
@@ -586,7 +586,7 @@ export function AdminDashboard() {
             <div className="md:col-span-3 flex justify-end">
               <button
                 type="submit"
-                className="bg-[#003366] hover:bg-[#002244] text-white py-2 px-5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all shadow-md shadow-[#003366]/10 cursor-pointer"
+                className="bg-[#05452d] hover:bg-[#03301f] text-white py-2 px-5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all shadow-md shadow-[#05452d]/15 cursor-pointer"
               >
                 Update CRM entries
               </button>
@@ -643,7 +643,7 @@ export function AdminDashboard() {
 
                 {/* Country */}
                 <div className="col-span-2 space-y-1">
-                  <span className="font-bold text-[#003366] bg-slate-100 px-2 py-0.5 rounded text-[10px] uppercase">
+                  <span className="font-bold text-[#05452d] bg-slate-100 px-2 py-0.5 rounded text-[10px] uppercase">
                     {lead.preferredCountry}
                   </span>
                   <p className="text-[11px] text-slate-500 font-sans italic">Intake: Fall 2026/28</p>
@@ -667,7 +667,7 @@ export function AdminDashboard() {
                     className={`inline-block py-1 px-2.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
                       lead.status === "New" ? "bg-red-100 text-red-700 border border-red-200" :
                       lead.status === "Visa Approved" ? "bg-green-100 text-green-700 border border-green-200" :
-                      lead.status === "Uni Approved" ? "bg-[#00AEEF]/20 text-[#003366] border border-[#00AEEF]/30" :
+                      lead.status === "Uni Approved" ? "bg-[#00AEEF]/20 text-[#05452d] border border-[#00AEEF]/30" :
                       "bg-amber-100 text-amber-700 border border-amber-200"
                     }`}
                   >
@@ -708,7 +708,7 @@ export function AdminDashboard() {
               <button
                 onClick={fetchTxList}
                 disabled={isTxLoading}
-                className="bg-[#003366] hover:bg-[#004d99] text-white text-xs font-bold py-2 px-3.5 rounded-lg transition-all active:scale-95 cursor-pointer font-sans select-none"
+                className="bg-[#05452d] hover:bg-[#03301f] text-white text-xs font-bold py-2 px-3.5 rounded-lg transition-all active:scale-95 cursor-pointer font-sans select-none"
               >
                 {isTxLoading ? "Refreshing..." : "Sync Fresh Logs"}
               </button>
@@ -766,7 +766,7 @@ export function AdminDashboard() {
                         {tx.feeType}
                       </td>
                       <td className="py-3 px-4">
-                        <span className="font-extrabold text-[#003366] font-mono text-sm">
+                        <span className="font-extrabold text-[#05452d] font-mono text-sm">
                           {tx.currency === "BDT" ? "৳" : "$"} {tx.amount.toLocaleString()}
                         </span>
                         <span className="text-[9px] text-slate-400 block font-mono">

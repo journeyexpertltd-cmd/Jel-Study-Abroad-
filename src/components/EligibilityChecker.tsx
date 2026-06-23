@@ -97,11 +97,11 @@ export function EligibilityChecker() {
   return (
     <div className="bg-white rounded-2xl shadow-xl border border-slate-100 p-6 md:p-8 font-sans max-w-4xl mx-auto" id="eligibility-checker-tool">
       <div className="flex items-center space-x-3 mb-6">
-        <div className="bg-[#003366] text-amber-400 p-3 rounded-xl shadow-lg">
+        <div className="bg-[#05452d] text-amber-400 p-3 rounded-xl shadow-lg">
           <ShieldCheck className="h-6 w-6" />
         </div>
         <div>
-          <h2 className="font-display font-bold text-xl md:text-2xl text-[#003366]">JEL Advanced GTE Eligibility Engine</h2>
+          <h2 className="font-display font-bold text-xl md:text-2xl text-[#05452d]">JEL Advanced GTE Eligibility Engine</h2>
           <p className="text-xs text-slate-500">Calculate admission percentages and student visa success factors instantly</p>
         </div>
       </div>
@@ -112,7 +112,7 @@ export function EligibilityChecker() {
           <select
             value={educationLevel}
             onChange={(e) => setEducationLevel(e.target.value)}
-            className="w-full bg-slate-50 border border-slate-200 text-sm py-2.5 px-3 rounded-lg text-slate-800 focus:ring-1 focus:ring-[#003366]"
+            className="w-full bg-slate-50 border border-slate-200 text-sm py-2.5 px-3 rounded-lg text-slate-800 focus:ring-1 focus:ring-[#05452d]"
           >
             {["Secondary School / SSC", "Higher Secondary / HSC / A Level", "Diploma / 3 Years", "Bachelor's Degree", "Master's Degree"].map((e) => (
               <option key={e} value={e}>{e}</option>
@@ -127,7 +127,7 @@ export function EligibilityChecker() {
             placeholder="e.g., GPA 4.80/5.00 or CGPA 3.32/4.00"
             value={gpa}
             onChange={(e) => setGpa(e.target.value)}
-            className="w-full bg-slate-50 border border-slate-200 text-sm py-2 px-3 rounded-lg text-slate-800 focus:ring-1 focus:ring-[#003366]"
+            className="w-full bg-slate-50 border border-slate-200 text-sm py-2 px-3 rounded-lg text-slate-800 focus:ring-1 focus:ring-[#05452d]"
             required
             id="gelig-gpa"
           />
@@ -138,7 +138,7 @@ export function EligibilityChecker() {
           <select
             value={englishTest}
             onChange={(e) => setEnglishTest(e.target.value)}
-            className="w-full bg-slate-50 border border-slate-200 text-sm py-2.5 px-3 rounded-lg text-slate-800 focus:ring-1 focus:ring-[#003366]"
+            className="w-full bg-slate-50 border border-slate-200 text-sm py-2.5 px-3 rounded-lg text-slate-800 focus:ring-1 focus:ring-[#05452d]"
           >
             {["IELTS Academic", "PTE Academic", "TOEFL iBT", "OIETC / Oxford ELLT", "Medium of Instruction (MOI) / Waived"].map((t) => (
               <option key={t} value={t}>{t}</option>
@@ -153,7 +153,7 @@ export function EligibilityChecker() {
             placeholder="e.g., 6.5 (no bands less than 6.0)"
             value={englishScore}
             onChange={(e) => setEnglishScore(e.target.value)}
-            className="w-full bg-slate-50 border border-slate-200 text-sm py-2 px-3 rounded-lg text-slate-800 focus:ring-1 focus:ring-[#003366]"
+            className="w-full bg-slate-50 border border-slate-200 text-sm py-2 px-3 rounded-lg text-slate-800 focus:ring-1 focus:ring-[#05452d]"
             required
             id="gelig-engscore"
           />
@@ -164,7 +164,7 @@ export function EligibilityChecker() {
           <select
             value={gapYears}
             onChange={(e) => setGapYears(e.target.value)}
-            className="w-full bg-slate-50 border border-slate-200 text-sm py-2.5 px-3 rounded-lg text-slate-800 focus:ring-1 focus:ring-[#003366]"
+            className="w-full bg-slate-50 border border-slate-200 text-sm py-2.5 px-3 rounded-lg text-slate-800 focus:ring-1 focus:ring-[#05452d]"
           >
             {["0 Years (Fresh Graduate)", "1-2 Years (With Job Letter)", "3 Years (With professional backup)", "4+ Years (Complex profile)"].map((g) => (
               <option key={g} value={g}>{g}</option>
@@ -177,7 +177,7 @@ export function EligibilityChecker() {
           <select
             value={budgetRange}
             onChange={(e) => setBudgetRange(e.target.value)}
-            className="w-full bg-slate-50 border border-slate-200 text-sm py-2.5 px-3 rounded-lg text-slate-800 focus:ring-1 focus:ring-[#003366]"
+            className="w-full bg-slate-50 border border-slate-200 text-sm py-2.5 px-3 rounded-lg text-slate-800 focus:ring-1 focus:ring-[#05452d]"
           >
             {["Low Budget Range", "Medium (£15,000 - £25,000 / year)", "High Budget Range", "Looking for fully-funded fellowships"].map((b) => (
               <option key={b} value={b}>{b}</option>
@@ -190,7 +190,7 @@ export function EligibilityChecker() {
           <select
             value={preferredCountry}
             onChange={(e) => setPreferredCountry(e.target.value)}
-            className="w-full bg-slate-50 border border-slate-200 text-sm py-2.5 px-3 rounded-lg text-[#003366] font-semibold focus:ring-1 focus:ring-[#003366]"
+            className="w-full bg-slate-50 border border-slate-200 text-sm py-2.5 px-3 rounded-lg text-[#05452d] font-semibold focus:ring-1 focus:ring-[#05452d]"
           >
             {["United Kingdom", "Australia", "Canada", "United States", "Ireland", "New Zealand", "Malaysia", "Europe"].map((c) => (
               <option key={c} value={c}>{c}</option>
@@ -208,7 +208,7 @@ export function EligibilityChecker() {
           <button
             type="submit"
             disabled={isLoading}
-            className="bg-[#003366] hover:bg-[#002244] disabled:opacity-70 text-white font-bold py-3.5 px-8 rounded-xl text-xs tracking-wider uppercase transition-all shadow-lg shadow-[#003366]/20 flex items-center space-x-2 cursor-pointer"
+            className="bg-[#05452d] hover:bg-[#03301f] disabled:opacity-70 text-white font-bold py-3.5 px-8 rounded-xl text-xs tracking-wider uppercase transition-all shadow-lg shadow-[#05452d]/25 flex items-center space-x-2 cursor-pointer"
             id="btn-trigger-eligibility-evaluate"
           >
             {isLoading ? (
@@ -233,8 +233,8 @@ export function EligibilityChecker() {
             {/* Eligibility Score Card */}
             <div className="bg-slate-50 border border-slate-100 rounded-xl p-5 text-center flex flex-col justify-center items-center">
               <span className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-1">GTE Feasibility</span>
-              <div className="h-24 w-24 rounded-full border-4 border-[#003366]/20 flex items-center justify-center relative bg-white my-2">
-                <span className="text-2xl font-bold font-display text-[#003366]">{result.eligibilityScore}%</span>
+              <div className="h-24 w-24 rounded-full border-4 border-[#05452d]/20 flex items-center justify-center relative bg-white my-2">
+                <span className="text-2xl font-bold font-display text-[#05452d]">{result.eligibilityScore}%</span>
               </div>
               <p className="text-[11px] text-slate-500 font-medium">calculated visa likelihood ratio</p>
             </div>

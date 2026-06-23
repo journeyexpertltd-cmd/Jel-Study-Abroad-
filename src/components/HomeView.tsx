@@ -27,7 +27,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
 
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10 w-full">
           <div className="lg:col-span-7 space-y-6 text-left">
-            <span className="inline-flex items-center space-x-2 bg-[#00AEEF]/10 border border-[#00AEEF]/10 text-[#003366] py-1.5 px-3.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-2xs">
+            <span className="inline-flex items-center space-x-2 bg-[#00AEEF]/10 border border-[#00AEEF]/10 text-[#05452d] py-1.5 px-3.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-2xs">
               <span className="flex h-2 w-2 relative shrink-0">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
@@ -35,9 +35,9 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
               <span>🎓 Premium Student Consultancy Bangladesh</span>
             </span>
             
-            <h1 className="text-3xl md:text-5xl lg:text-6xl font-display font-black text-[#003366] leading-tight tracking-tight">
+            <h1 className="text-3xl md:text-5xl lg:text-6xl font-display font-black text-[#05452d] leading-tight tracking-tight">
               Your Global Education <br/>
-              <span className="bg-gradient-to-r from-[#00AEEF] to-[#003366] bg-clip-text text-transparent">Journey Starts Here</span>
+              <span className="bg-gradient-to-r from-[#00AEEF] to-[#05452d] bg-clip-text text-transparent">Journey Starts Here</span>
             </h1>
             <p className="text-slate-500 text-sm sm:text-base md:text-lg leading-relaxed max-w-xl">
               Study at the world's highest-ranking universities with objective, transparent visa processing, scholarship matches, and pre-departure briefings. Driven by Bangladesh's lead consultants, JEL Study Abroad.
@@ -57,7 +57,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
                   <button
                     key={dst.name}
                     onClick={() => handleCountryExplore(dst.name)}
-                    className="flex items-center gap-1.5 bg-white hover:bg-[#003366] hover:text-white border border-slate-205 text-slate-700 text-xs py-1.5 px-3.5 rounded-xl font-bold transition-all duration-200 shadow-2xs hover:-translate-y-0.5 cursor-pointer"
+                    className="flex items-center gap-1.5 bg-white hover:bg-[#05452d] hover:text-white border border-slate-205 text-slate-700 text-xs py-1.5 px-3.5 rounded-xl font-bold transition-all duration-200 shadow-2xs hover:-translate-y-0.5 cursor-pointer"
                   >
                     <span>{dst.flag}</span>
                     <span>{dst.tag}</span>
@@ -72,7 +72,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
                   setActiveTab("booking");
                   window.scrollTo({ top: 0, behavior: "smooth" });
                 }}
-                className="bg-[#003366] hover:bg-[#002244] text-white font-bold px-8 py-4 rounded-xl text-xs uppercase tracking-wider transition-all duration-300 shadow-lg shadow-[#003366]/20 text-center shrink-0 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                className="bg-[#05452d] hover:bg-[#03301f] text-white font-bold px-8 py-4 rounded-xl text-xs uppercase tracking-wider transition-all duration-300 shadow-lg shadow-[#05452d]/20 text-center shrink-0 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
                 id="btn-hero-consultation"
               >
                 Book Free Consultation
@@ -82,7 +82,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
                   setActiveTab("universities");
                   window.scrollTo({ top: 0, behavior: "smooth" });
                 }}
-                className="border-2 border-slate-200 text-slate-600 hover:bg-slate-50 font-bold px-8 py-4 rounded-xl text-xs uppercase tracking-wider transition-all duration-300 text-center shrink-0 hover:border-[#003366] cursor-pointer"
+                className="border-2 border-slate-200 text-slate-600 hover:bg-slate-50 font-bold px-8 py-4 rounded-xl text-xs uppercase tracking-wider transition-all duration-300 text-center shrink-0 hover:border-[#05452d] cursor-pointer"
                 id="btn-hero-explore-unis"
               >
                 Explore Universities
@@ -123,12 +123,12 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
               {/* Elegant floating caption card below/overlapping slightly at the bottom */}
               <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur-md border border-slate-100 py-2.5 px-6 rounded-2xl shadow-xl hover:scale-105 transition-transform duration-300 text-center min-w-[200px] z-20">
                 <span className="text-[10px] text-[#00AEEF] font-black uppercase tracking-widest block font-mono">Trusted Partner</span>
-                <span className="font-display font-extrabold text-[#003366] text-xs block mt-0.5">JEL Study Abroad</span>
+                <span className="font-display font-extrabold text-[#05452d] text-xs block mt-0.5">JEL Study Abroad</span>
               </div>
             </div>
 
             {/* Float badge */}
-            <div className="absolute -top-4 -left-4 bg-[#003366] border border-white/10 p-3.5 rounded-2xl shadow-xl hover:scale-105 transition-transform z-10">
+            <div className="absolute -top-4 -left-4 bg-[#05452d] border border-white/10 p-3.5 rounded-2xl shadow-xl hover:scale-105 transition-transform z-10">
               <span className="text-2xl font-display font-black text-[#00AEEF] block">1000+</span>
               <span className="text-[9px] text-white font-bold uppercase tracking-wider">University Partners</span>
             </div>
@@ -140,7 +140,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
       <section className="max-w-7xl mx-auto px-6" id="why-choose-us">
         <div className="text-center space-y-2 max-w-2xl mx-auto mb-12">
           <span className="text-xs text-[#00AEEF] font-black uppercase tracking-wider block">Core Expertise</span>
-          <h2 className="text-2xl md:text-3xl font-display font-black text-[#003366]">Why Choose JEL Study Abroad?</h2>
+          <h2 className="text-2xl md:text-3xl font-display font-black text-[#05452d]">Why Choose JEL Study Abroad?</h2>
           <p className="text-slate-500 text-xs sm:text-sm leading-normal">
             We reject generalities. Every student profile receives complete personalized files auditing, financial counseling, and genuine mock tutoring.
           </p>
@@ -187,16 +187,16 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
           ].map((item, idx) => (
             <div
               key={idx}
-              className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-[#003366] hover:-translate-y-1 transition-all duration-300 group flex flex-col justify-between"
+              className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-[#05452d] hover:-translate-y-1 transition-all duration-300 group flex flex-col justify-between"
             >
               <div className="space-y-4">
                 <div className={`p-3 rounded-xl inline-block ${item.color}`}>
                   <item.icon className="h-6 w-6" />
                 </div>
-                <h3 className="font-display font-medium text-slate-900 group-hover:text-[#003366] transition-colors">{item.title}</h3>
+                <h3 className="font-display font-medium text-slate-900 group-hover:text-[#05452d] transition-colors">{item.title}</h3>
                 <p className="text-slate-500 text-xs sm:text-sm leading-relaxed">{item.desc}</p>
               </div>
-              <div className="pt-4 mt-4 border-t border-slate-100 text-[#003366] font-bold text-xs flex items-center space-x-1 hover:text-[#00AEEF]">
+              <div className="pt-4 mt-4 border-t border-slate-100 text-[#05452d] font-bold text-xs flex items-center space-x-1 hover:text-[#00AEEF]">
                 <span>Discover process</span>
                 <ArrowRight className="h-3 w-3" />
               </div>
@@ -215,7 +215,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
             { value: "10+", label: "Destination Countries", desc: "Global outreach" }
           ].map((stat, i) => (
             <div key={i} className="space-y-1 select-none">
-              <span className="text-3xl md:text-4xl lg:text-5xl font-display font-black text-[#003366] block">
+              <span className="text-3xl md:text-4xl lg:text-5xl font-display font-black text-[#05452d] block">
                 {stat.value}
               </span>
               <p className="text-xs sm:text-sm font-bold text-slate-800 tracking-wide leading-tight">
@@ -233,7 +233,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
       <section className="overflow-hidden space-y-6" id="university-partners-ticker">
         <div className="text-center space-y-1">
           <span className="text-xs text-[#00AEEF] font-bold uppercase tracking-wider block">Global Network</span>
-          <h2 className="text-xl md:text-2xl font-display font-black text-[#003366]">JEL Elite Partner Universities</h2>
+          <h2 className="text-xl md:text-2xl font-display font-black text-[#05452d]">JEL Elite Partner Universities</h2>
           <p className="text-xs text-slate-500">Over 50+ affiliated universities in 10 countries and 1,000+ courses</p>
         </div>
 
@@ -244,9 +244,9 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
             {[...UNIVERSITY_PARTNERS, ...UNIVERSITY_PARTNERS, ...UNIVERSITY_PARTNERS].map((uni, index) => (
               <div
                 key={index}
-                className="bg-slate-50 border border-slate-100/50 py-3 px-6 rounded-xl flex items-center space-x-3 text-xs font-bold text-slate-700 whitespace-nowrap shadow-sm hover:border-[#003366] transition-colors"
+                className="bg-slate-50 border border-slate-100/50 py-3 px-6 rounded-xl flex items-center space-x-3 text-xs font-bold text-slate-700 whitespace-nowrap shadow-sm hover:border-[#05452d] transition-colors"
               >
-                <div className="w-6 h-6 rounded-full bg-[#003366] text-white flex items-center justify-center font-mono text-[10px]">
+                <div className="w-6 h-6 rounded-full bg-[#05452d] text-white flex items-center justify-center font-mono text-[10px]">
                   {uni.logoLetter}
                 </div>
                 <div>
@@ -263,7 +263,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
       <section className="max-w-7xl mx-auto px-6" id="home-destinations">
         <div className="text-center space-y-2 max-w-2xl mx-auto mb-12">
           <span className="text-[#00AEEF] text-xs font-bold uppercase tracking-wider block">Where to study</span>
-          <h2 className="text-2xl md:text-3xl font-display font-black text-[#003366]">Select Your Dream Study Destination</h2>
+          <h2 className="text-2xl md:text-3xl font-display font-black text-[#05452d]">Select Your Dream Study Destination</h2>
           <p className="text-slate-500 text-xs sm:text-sm">
             Discover tailored tuition brackets, stay-back work visas, and postgraduate slots for each elite nation.
           </p>
@@ -274,7 +274,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
             <div
               key={c.id}
               onClick={() => handleCountryExplore(c.name)}
-              className="bg-white border border-slate-100 rounded-3xl overflow-hidden shadow-sm hover:shadow-xl hover:border-[#003366] transition-all duration-300 cursor-pointer flex flex-col justify-between"
+              className="bg-white border border-slate-100 rounded-3xl overflow-hidden shadow-sm hover:shadow-xl hover:border-[#05452d] transition-all duration-300 cursor-pointer flex flex-col justify-between"
             >
               <div className="p-6 space-y-4">
                 <div className="flex items-center justify-between">
@@ -282,16 +282,16 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
                     <span className="text-3xl leading-none">{c.flag}</span>
                     <h3 className="font-display font-bold text-slate-900 text-lg sm:text-xl leading-tight">{c.name}</h3>
                   </div>
-                  <span className="text-[10px] bg-[#00AEEF]/20 text-[#003366] px-2 py-0.5 rounded font-mono font-medium">QS Friendly</span>
+                  <span className="text-[10px] bg-[#00AEEF]/20 text-[#05452d] px-2 py-0.5 rounded font-mono font-medium">QS Friendly</span>
                 </div>
                 <p className="text-slate-500 text-xs sm:text-sm leading-relaxed line-clamp-3">{c.description}</p>
                 
                 <div className="space-y-1.5 pt-3 border-t border-slate-50 text-xs text-slate-700">
-                  <p>💰 <span className="font-bold text-[#003366]">Est. Tuition:</span> {c.tuitionRange}</p>
-                  <p>💼 <span className="font-bold text-[#003366]">Stay-Back Visa:</span> {c.workOpportunities}</p>
+                  <p>💰 <span className="font-bold text-[#05452d]">Est. Tuition:</span> {c.tuitionRange}</p>
+                  <p>💼 <span className="font-bold text-[#05452d]">Stay-Back Visa:</span> {c.workOpportunities}</p>
                 </div>
               </div>
-              <div className="bg-slate-50 py-3 px-6 text-[#003366] font-bold text-xs flex items-center justify-between">
+              <div className="bg-slate-50 py-3 px-6 text-[#05452d] font-bold text-xs flex items-center justify-between">
                 <span>View affiliated courses</span>
                 <ChevronRight className="h-4 w-4" />
               </div>
@@ -301,7 +301,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
       </section>
 
       {/* 6. Scholar opportunities highlights */}
-      <section className="bg-[#003366] text-white py-16 px-6 md:px-12 rounded-3xl mx-2 md:mx-6 relative overflow-hidden" id="scholarships-highlight">
+      <section className="bg-[#05452d] text-white py-16 px-6 md:px-12 rounded-3xl mx-2 md:mx-6 relative overflow-hidden" id="scholarships-highlight">
         <div className="absolute right-0 top-0 h-64 w-64 rounded-full bg-[#00AEEF] opacity-10 blur-3xl"></div>
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           <div className="lg:col-span-4 space-y-4">
@@ -315,7 +315,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
                 setActiveTab("scholarships");
                 window.scrollTo({ top: 0, behavior: "smooth" });
               }}
-              className="bg-white text-[#003366] font-bold text-xs py-3 px-6 rounded-lg uppercase tracking-wider hover:bg-[#00AEEF] hover:text-white transition-all inline-block shadow-md"
+              className="bg-white text-[#05452d] font-bold text-xs py-3 px-6 rounded-lg uppercase tracking-wider hover:bg-[#00AEEF] hover:text-white transition-all inline-block shadow-md"
             >
               Browse Active Scholarships
             </button>
@@ -340,7 +340,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
       <section className="max-w-7xl mx-auto px-6" id="testimonials">
         <div className="text-center space-y-2 max-w-2xl mx-auto mb-12">
           <span className="text-[#00AEEF] text-xs font-bold uppercase tracking-wider block">Alumni Success</span>
-          <h2 className="text-2xl md:text-3xl font-display font-black text-[#003366]">Student Success Stories</h2>
+          <h2 className="text-2xl md:text-3xl font-display font-black text-[#05452d]">Student Success Stories</h2>
           <p className="text-slate-500 text-xs sm:text-sm">
             Read real feedback from students from Dhaka under counselor guidelines, now flourishing in global research and corporate fields.
           </p>

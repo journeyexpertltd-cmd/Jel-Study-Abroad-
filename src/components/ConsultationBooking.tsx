@@ -325,7 +325,7 @@ Thank you for executing smart payments.
             onClick={() => { setActiveSubTab("book"); setCallbackReceipt(null); }}
             className={`py-2 px-3 text-xs sm:text-sm font-bold uppercase tracking-wider transition-all rounded-lg select-none ${
               activeSubTab === "book"
-                ? "bg-[#003366] text-white"
+                ? "bg-[#05452d] text-white"
                 : "text-slate-500 hover:bg-slate-100"
             }`}
           >
@@ -361,11 +361,11 @@ Thank you for executing smart payments.
       {activeSubTab === "book" && (
         <>
           <div className="flex items-center space-x-3 mb-6">
-            <div className="bg-[#003366] text-[#00AEEF] p-3 rounded-xl shadow-lg">
+            <div className="bg-[#05452d] text-[#00AEEF] p-3 rounded-xl shadow-lg">
               <Calendar className="h-6 w-6" />
             </div>
             <div className="text-left">
-              <h2 className="font-display font-bold text-lg md:text-xl text-[#003366]">Book Your Consult Session</h2>
+              <h2 className="font-display font-bold text-lg md:text-xl text-[#05452d]">Book Your Consult Session</h2>
               <p className="text-xs text-slate-500">Secure a private physical seat or WhatsApp admission consulting hour.</p>
             </div>
           </div>
@@ -383,7 +383,7 @@ Thank you for executing smart payments.
                 <Sparkles className="h-4 w-4 text-amber-500 animate-pulse shrink-0" />
                 <span className="font-bold">Course Match Transferred:</span>
               </div>
-              <p className="font-medium mt-1">Pre-selected University: <span className="font-bold text-[#003366]">{preSelectedUniversity}</span> ({preSelectedCountry})</p>
+              <p className="font-medium mt-1">Pre-selected University: <span className="font-bold text-[#05452d]">{preSelectedUniversity}</span> ({preSelectedCountry})</p>
               <p className="text-[11px] text-amber-700/80 mt-1">Submit booking below &mdash; your selection has been attached automatically!</p>
             </div>
           )}
@@ -399,7 +399,7 @@ Thank you for executing smart payments.
               </div>
 
               <div className="bg-white border border-emerald-100 p-4 rounded-xl max-w-sm mx-auto text-left text-xs font-mono">
-                <p className="font-bold text-[#003366] uppercase tracking-wider mb-2 border-b pb-1.5 border-slate-100">Booking Summary</p>
+                <p className="font-bold text-[#05452d] uppercase tracking-wider mb-2 border-b pb-1.5 border-slate-100">Booking Summary</p>
                 <p className="text-slate-600"><span className="font-semibold text-slate-900">ID:</span> {successLead?.id}</p>
                 <p className="text-slate-600"><span className="font-semibold text-slate-900">E-mail:</span> {successLead?.email}</p>
                 <p className="text-slate-600"><span className="font-semibold text-slate-900">Target:</span> {successLead?.preferredCountry}</p>
@@ -417,7 +417,7 @@ Thank you for executing smart payments.
                     setActiveTab("admin");
                     window.scrollTo({ top: 0, behavior: "smooth" });
                   }}
-                  className="bg-[#003366] hover:bg-[#004d99] text-white text-xs font-bold py-2.5 px-6 rounded-lg uppercase tracking-wider transition-all cursor-pointer"
+                  className="bg-[#05452d] hover:bg-[#03301f] text-white text-xs font-bold py-2.5 px-6 rounded-lg uppercase tracking-wider transition-all cursor-pointer"
                 >
                   Check JEL CRM Table
                 </button>
@@ -571,7 +571,7 @@ Thank you for executing smart payments.
                   </p>
 
                   <div className="bg-white border rounded-xl p-4 mt-3 space-y-1.5 font-mono text-[11px] text-slate-700 shadow-xs border-slate-200">
-                    <p className="text-xs uppercase tracking-wider font-extrabold text-[#003366] border-b pb-1 mb-2">Invoice details</p>
+                    <p className="text-xs uppercase tracking-wider font-extrabold text-[#05452d] border-b pb-1 mb-2">Invoice details</p>
                     <p><span className="font-bold text-slate-900">Transaction ID:</span> {callbackReceipt.tranId}</p>
                     <p><span className="font-bold text-slate-900">Amount Charged:</span> {callbackReceipt.amount} BDT</p>
                     <p><span className="font-bold text-slate-900">Payment Channel:</span> {callbackReceipt.cardType}</p>
@@ -628,7 +628,7 @@ Thank you for executing smart payments.
               )}
 
               <div className="bg-slate-50 p-4 border border-slate-200/60 rounded-xl text-left text-xs mb-5 space-y-1">
-                <p className="font-bold text-[#003366] uppercase tracking-wider flex items-center gap-1 select-none">
+                <p className="font-bold text-[#05452d] uppercase tracking-wider flex items-center gap-1 select-none">
                   <ShieldCheck className="h-4 w-4 text-emerald-600" /> Authorized Merchant Sandbox Engine
                 </p>
                 <p className="text-slate-650 leading-relaxed font-sans">
@@ -714,7 +714,7 @@ Thank you for executing smart payments.
                 <div className="sm:col-span-2 flex items-center justify-between border-t border-slate-100 pt-3 mt-1">
                   <div className="text-left font-sans">
                     <p className="text-[10px] text-slate-500 uppercase tracking-wider font-sans select-none">Estimated Settlement</p>
-                    <p className="text-base font-extrabold text-[#003366] font-sans">
+                    <p className="text-base font-extrabold text-[#05452d] font-sans">
                       {payCurrency === "BDT" ? "৳" : "$"} {Number(payAmount || 0).toLocaleString()} {payCurrency}
                     </p>
                   </div>
@@ -759,7 +759,7 @@ Thank you for executing smart payments.
             <button
               onClick={fetchTransactions}
               disabled={isTransactionsLoading}
-              className="bg-[#003366] hover:bg-[#004d99] text-white text-[11px] font-bold py-1.5 px-2.5 rounded-lg shrink-0 cursor-pointer font-sans select-none"
+              className="bg-[#05452d] hover:bg-[#03301f] text-white text-[11px] font-bold py-1.5 px-2.5 rounded-lg shrink-0 cursor-pointer font-sans select-none"
             >
               Refresh Table
             </button>

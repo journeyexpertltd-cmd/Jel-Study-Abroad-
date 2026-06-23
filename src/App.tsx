@@ -77,7 +77,7 @@ export default function App() {
     <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans selection:bg-[#00AEEF] selection:text-white" id="jel-root-app">
       
       {/* 1. Header Banner Contacts */}
-      <header className="bg-[#003366] text-white text-[11px] py-2.5 px-8 flex justify-between items-center border-b border-white/10 relative z-40">
+      <header className="bg-[#05452d] text-white text-[11px] py-2.5 px-8 flex justify-between items-center border-b border-white/10 relative z-40">
         <div className="flex items-center space-x-6">
           <span className="flex items-center gap-1.5 opacity-90">
             <MapPin className="h-3.5 w-3.5 text-[#00AEEF]" /> 
@@ -129,9 +129,9 @@ export default function App() {
                   setActiveTab(item.id);
                   window.scrollTo({ top: 0, behavior: "smooth" });
                 }}
-                className={`py-6 text-xs sm:text-sm font-bold uppercase tracking-wider transition-all border-b-2 hover:text-[#003366] ${
+                className={`py-6 text-xs sm:text-sm font-bold uppercase tracking-wider transition-all border-b-2 hover:text-[#05452d] ${
                   activeTab === item.id
-                    ? "text-[#003366] border-[#003366]"
+                    ? "text-[#05452d] border-[#05452d]"
                     : "text-slate-500 border-transparent hover:border-slate-300"
                 }`}
               >
@@ -144,11 +144,11 @@ export default function App() {
           <div className="hidden lg:flex items-center space-x-3 border-l border-slate-100 pl-6">
             <button
               onClick={() => setIsSearchOpen(true)}
-              className="p-2 py-2 rounded-full text-slate-500 hover:text-[#003366] hover:bg-slate-100 transition duration-200 focus:outline-none focus:ring-1 focus:ring-[#003366] flex items-center gap-1.5 group border border-slate-200 bg-slate-50/50 pr-3.5 pl-3 cursor-pointer"
+              className="p-2 py-2 rounded-full text-slate-500 hover:text-[#05452d] hover:bg-slate-100 transition duration-200 focus:outline-none focus:ring-1 focus:ring-[#05452d] flex items-center gap-1.5 group border border-slate-200 bg-slate-50/50 pr-3.5 pl-3 cursor-pointer"
               title="Search across the app (⌘K)"
             >
-              <Search className="h-3.5 w-3.5 text-slate-400 group-hover:text-[#003366] transition duration-200" />
-              <span className="text-xs font-bold text-slate-500 group-hover:text-[#003366] tracking-wider uppercase">Search...</span>
+              <Search className="h-3.5 w-3.5 text-slate-400 group-hover:text-[#05452d] transition duration-200" />
+              <span className="text-xs font-bold text-slate-500 group-hover:text-[#05452d] tracking-wider uppercase">Search...</span>
               <kbd className="hidden xl:inline-block bg-slate-255 border border-slate-200 text-slate-500 text-[9px] leading-none px-1.5 py-0.5 rounded font-mono font-bold tracking-normal">⌘K</kbd>
             </button>
 
@@ -156,8 +156,8 @@ export default function App() {
               onClick={() => { setActiveTab("finder"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
               className={`text-xs font-bold px-4 py-2.5 rounded-full flex items-center space-x-1.5 border transition-all ${
                 activeTab === "finder"
-                  ? "bg-[#003366] text-white border-transparent shadow shadow-[#003366]/10"
-                  : "bg-slate-50 text-[#003366] border-slate-250 hover:bg-slate-100"
+                  ? "bg-[#05452d] text-white border-transparent shadow shadow-[#05452d]/10"
+                  : "bg-slate-50 text-[#05452d] border-slate-250 hover:bg-slate-100"
               }`}
             >
               <Brain className="h-3.5 w-3.5 text-[#00AEEF]" />
@@ -176,14 +176,14 @@ export default function App() {
           <div className="lg:hidden flex items-center space-x-2">
             <button
               onClick={() => setIsSearchOpen(true)}
-              className="p-2 text-slate-500 hover:text-[#003366] bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition shrink-0"
+              className="p-2 text-slate-500 hover:text-[#05452d] bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition shrink-0"
               title="Open search"
             >
               <Search className="h-4 w-4" />
             </button>
             <button
               onClick={() => { setActiveTab("booking"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-              className="bg-[#003366] text-white text-[11px] font-bold py-1.5 px-3 rounded-lg"
+              className="bg-[#05452d] text-white text-[11px] font-bold py-1.5 px-3 rounded-lg"
             >
               Book Now
             </button>
@@ -207,7 +207,7 @@ export default function App() {
                 setIsMobileMenuOpen(false);
                 setIsSearchOpen(true);
               }}
-              className="w-full bg-slate-50 border border-slate-200 hover:border-[#003366] rounded-xl p-3.5 flex items-center space-x-2 text-slate-500 text-left hover:bg-slate-100 cursor-pointer text-xs font-bold transition-all"
+              className="w-full bg-slate-50 border border-slate-200 hover:border-[#05452d] rounded-xl p-3.5 flex items-center space-x-2 text-slate-500 text-left hover:bg-slate-100 cursor-pointer text-xs font-bold transition-all"
             >
               <Search className="h-4 w-4 text-slate-400" />
               <span>Search universities, scholarships, visa guides...</span>
@@ -225,7 +225,7 @@ export default function App() {
                   }}
                   className={`py-2.5 px-3 rounded-lg text-xs font-bold uppercase tracking-wider text-left ${
                     activeTab === item.id
-                      ? "bg-slate-100 text-[#003366]"
+                      ? "bg-slate-100 text-[#05452d]"
                       : "text-slate-600 hover:bg-slate-50"
                   }`}
                 >
@@ -247,11 +247,11 @@ export default function App() {
                     }}
                     className={`p-2 rounded-xl text-left border flex flex-col justify-between h-16 ${
                       activeTab === tool.id
-                        ? "bg-[#00AEEF]/10 border-[#00AEEF]/40 text-[#003366]"
+                        ? "bg-[#00AEEF]/10 border-[#00AEEF]/40 text-[#05452d]"
                         : "bg-slate-50 border-slate-100 text-slate-700 hover:bg-slate-100"
                     }`}
                   >
-                    <tool.icon className="h-4 w-4 text-[#003366]" />
+                    <tool.icon className="h-4 w-4 text-[#05452d]" />
                     <div>
                       <p className="text-[10px] font-mono leading-none text-slate-400">{tool.desc}</p>
                       <p className="text-[11px] font-bold mt-1 leading-none">{tool.label}</p>
@@ -265,7 +265,7 @@ export default function App() {
       </nav>
 
       {/* 3. Global AI & CRM Floating Bar Actions */}
-      <section className="bg-[#003366] text-white py-5 px-6 md:px-12 rounded-3xl mx-2 md:mx-6 mt-6 mb-8 border border-white/10 shadow-lg shadow-[#003366]/10 relative overflow-hidden" id="ai-quick-tools-bar">
+      <section className="bg-[#05452d] text-white py-5 px-6 md:px-12 rounded-3xl mx-2 md:mx-6 mt-6 mb-8 border border-white/10 shadow-lg shadow-[#05452d]/10 relative overflow-hidden" id="ai-quick-tools-bar">
         <div className="absolute right-0 top-0 h-32 w-32 rounded-full bg-[#00AEEF] opacity-10 blur-2xl"></div>
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center space-x-3">

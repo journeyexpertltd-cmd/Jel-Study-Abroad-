@@ -79,11 +79,11 @@ export function SmartCourseFinder({ onPreSelectCourse }: SmartCourseFinderProps)
   return (
     <div className="bg-white rounded-2xl shadow-xl border border-slate-100 p-6 md:p-8 font-sans max-w-4xl mx-auto" id="smart-course-finder">
       <div className="flex items-center space-x-3 mb-6">
-        <div className="bg-[#003366] text-[#00AEEF] p-3 rounded-xl shadow-lg">
+        <div className="bg-[#05452d] text-[#00AEEF] p-3 rounded-xl shadow-lg">
           <Brain className="h-6 w-6 animate-pulse" />
         </div>
         <div>
-          <h2 className="font-display font-bold text-xl md:text-2xl text-[#003366]">JEL smart Course Finder</h2>
+          <h2 className="font-display font-bold text-xl md:text-2xl text-[#05452d]">JEL smart Course Finder</h2>
           <p className="text-xs text-slate-500">Instant database matching powered by advanced university intelligence</p>
         </div>
       </div>
@@ -96,7 +96,7 @@ export function SmartCourseFinder({ onPreSelectCourse }: SmartCourseFinderProps)
           <select
             value={preferredCountry}
             onChange={(e) => setPreferredCountry(e.target.value)}
-            className="w-full bg-slate-50 border border-slate-200 text-sm py-2.5 px-3 rounded-lg text-slate-800 transition focus:ring-1 focus:ring-[#003366]"
+            className="w-full bg-slate-50 border border-slate-200 text-sm py-2.5 px-3 rounded-lg text-slate-800 transition focus:ring-1 focus:ring-[#05452d]"
           >
             {["United Kingdom", "Australia", "Canada", "United States", "Ireland", "New Zealand", "Malaysia", "Europe"].map((c) => (
               <option key={c} value={c}>{c}</option>
@@ -111,7 +111,7 @@ export function SmartCourseFinder({ onPreSelectCourse }: SmartCourseFinderProps)
           <select
             value={educationLevel}
             onChange={(e) => setEducationLevel(e.target.value)}
-            className="w-full bg-slate-50 border border-slate-200 text-sm py-2.5 px-3 rounded-lg text-slate-800 transition focus:ring-1 focus:ring-[#003366]"
+            className="w-full bg-slate-50 border border-slate-200 text-sm py-2.5 px-3 rounded-lg text-slate-800 transition focus:ring-1 focus:ring-[#05452d]"
           >
             {["Diploma", "Bachelor's Degree", "Master's Degree", "PhD / Doctorate"].map((l) => (
               <option key={l} value={l}>{l}</option>
@@ -126,7 +126,7 @@ export function SmartCourseFinder({ onPreSelectCourse }: SmartCourseFinderProps)
           <select
             value={budgetRange}
             onChange={(e) => setBudgetRange(e.target.value)}
-            className="w-full bg-slate-50 border border-slate-200 text-sm py-2.5 px-3 rounded-lg text-slate-800 transition focus:ring-1 focus:ring-[#003366]"
+            className="w-full bg-slate-50 border border-slate-200 text-sm py-2.5 px-3 rounded-lg text-slate-800 transition focus:ring-1 focus:ring-[#05452d]"
           >
             <option value="Low ($4,000 - $9,000 / year)">Low ($4,000 - $9,000 / year)</option>
             <option value="Medium (£15,000 - £25,000 / year)">Medium (£15,000 - £25,000 / year)</option>
@@ -144,7 +144,7 @@ export function SmartCourseFinder({ onPreSelectCourse }: SmartCourseFinderProps)
             placeholder="e.g., Computer Science, MBA, Public Health, Cybersecurity"
             value={interestArea}
             onChange={(e) => setInterestArea(e.target.value)}
-            className="w-full bg-slate-50 border border-slate-200 text-sm py-2 px-3 rounded-lg text-slate-800 transition focus:ring-1 focus:ring-[#003366]"
+            className="w-full bg-slate-50 border border-slate-200 text-sm py-2 px-3 rounded-lg text-slate-800 transition focus:ring-1 focus:ring-[#05452d]"
             required
             id="gfind-major-input"
           />
@@ -159,7 +159,7 @@ export function SmartCourseFinder({ onPreSelectCourse }: SmartCourseFinderProps)
             placeholder="e.g., GPA 5.00/5.00 or CGPA 3.65/4.00"
             value={gpa}
             onChange={(e) => setGpa(e.target.value)}
-            className="w-full bg-slate-50 border border-slate-200 text-sm py-2 px-3 rounded-lg text-slate-800 transition focus:ring-1 focus:ring-[#003366]"
+            className="w-full bg-slate-50 border border-slate-200 text-sm py-2 px-3 rounded-lg text-slate-800 transition focus:ring-1 focus:ring-[#05452d]"
             required
             id="gfind-gpa-input"
           />
@@ -175,7 +175,7 @@ export function SmartCourseFinder({ onPreSelectCourse }: SmartCourseFinderProps)
           <button
             type="submit"
             disabled={isLoading}
-            className="bg-[#003366] hover:bg-[#002244] disabled:opacity-50 text-white font-bold py-3.5 px-8 rounded-xl text-xs uppercase tracking-wider transition-all duration-300 shadow-lg shadow-[#003366]/20 flex items-center space-x-2 cursor-pointer"
+            className="bg-[#05452d] hover:bg-[#03301f] disabled:opacity-50 text-white font-bold py-3.5 px-8 rounded-xl text-xs uppercase tracking-wider transition-all duration-300 shadow-lg shadow-[#05452d]/25 flex items-center space-x-2 cursor-pointer"
             id="btn-trigger-course-finder"
           >
             {isLoading ? (
@@ -205,14 +205,14 @@ export function SmartCourseFinder({ onPreSelectCourse }: SmartCourseFinderProps)
             {recommendations.map((rec, idx) => (
               <div
                 key={idx}
-                className="bg-slate-50 border border-slate-100 rounded-xl p-5 hover:border-[#003366] transition-all duration-300 relative group flex flex-col md:flex-row md:items-center justify-between"
+                className="bg-slate-50 border border-slate-100 rounded-xl p-5 hover:border-[#05452d] transition-all duration-300 relative group flex flex-col md:flex-row md:items-center justify-between"
               >
                 <div className="md:max-w-[70%] space-y-2">
                   <div className="flex items-center space-x-2">
                     <span className="text-lg">🎓</span>
-                    <span className="text-[#003366] text-[11px] font-bold uppercase tracking-widest">{rec.country}</span>
+                    <span className="text-[#05452d] text-[11px] font-bold uppercase tracking-widest">{rec.country}</span>
                   </div>
-                  <h4 className="font-display font-bold text-[#003366] text-base leading-tight group-hover:text-[#00AEEF] transition-colors">
+                  <h4 className="font-display font-bold text-[#05452d] text-base leading-tight group-hover:text-[#00AEEF] transition-colors">
                     {rec.courseName}
                   </h4>
                   <p className="text-xs text-slate-500 font-medium">{rec.university} (Est. Duration: {rec.duration})</p>
@@ -229,7 +229,7 @@ export function SmartCourseFinder({ onPreSelectCourse }: SmartCourseFinderProps)
 
                   <button
                     onClick={() => handleInquire(rec, idx)}
-                    className="w-full md:w-auto bg-gradient-to-r from-[#003366] to-[#004d99] hover:from-[#00AEEF] hover:to-[#00AEEF] text-white py-2 px-4 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all duration-300 flex items-center justify-center space-x-1.5"
+                    className="w-full md:w-auto bg-gradient-to-r from-[#05452d] to-[#0b5439] hover:from-[#00AEEF] hover:to-[#00AEEF] text-white py-2 px-4 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all duration-300 flex items-center justify-center space-x-1.5"
                   >
                     {copiedIndex === idx ? (
                       <>

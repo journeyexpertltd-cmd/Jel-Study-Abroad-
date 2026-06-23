@@ -244,7 +244,7 @@ export function SearchModal({
                       }}
                       className={`text-xs px-3 py-1.5 rounded-xl font-bold transition-all shrink-0 uppercase tracking-wider ${
                         activeCategory === cat
-                          ? "bg-[#003366] text-white shadow-xs"
+                          ? "bg-[#05452d] text-white shadow-xs"
                           : "text-slate-500 hover:bg-slate-100 hover:text-slate-800"
                       }`}
                     >
@@ -264,13 +264,13 @@ export function SearchModal({
               {!isQueryTyped ? (
                 // Recommendations UI when query is empty
                 <div className="py-8 text-center space-y-4">
-                  <div className="inline-flex p-3 bg-blue-50 text-[#003366] rounded-2xl">
+                  <div className="inline-flex p-3 bg-emerald-50 text-[#05452d] rounded-2xl">
                     <GraduationCap className="h-6 w-6 text-[#00AEEF] animate-bounce" />
                   </div>
                   <div className="space-y-1">
                     <h4 className="font-display font-bold text-slate-800 text-sm">Search with Keywords</h4>
                     <p className="text-xs text-slate-405 text-slate-500 max-w-sm mx-auto">
-                      Type terms like <span className="font-semibold text-[#003366]">"Canada"</span>, <span className="font-semibold text-[#003366]">"SOP"</span>, <span className="font-semibold text-[#003366]">"Monash"</span>, or <span className="font-semibold text-[#003366]">"Tuition"</span> to trigger real-time registry matches.
+                      Type terms like <span className="font-semibold text-[#05452d]">"Canada"</span>, <span className="font-semibold text-[#05452d]">"SOP"</span>, <span className="font-semibold text-[#05452d]">"Monash"</span>, or <span className="font-semibold text-[#05452d]">"Tuition"</span> to trigger real-time registry matches.
                     </p>
                   </div>
                   
@@ -319,7 +319,7 @@ export function SearchModal({
                           }`}
                         >
                           <div className="flex items-start space-x-3">
-                            <div className="bg-[#003366]/10 text-[#003366] font-display font-black text-xs h-9 w-9 rounded-xl flex items-center justify-center shrink-0">
+                            <div className="bg-[#05452d]/10 text-[#05452d] font-display font-black text-xs h-9 w-9 rounded-xl flex items-center justify-center shrink-0">
                               🏫
                             </div>
                             <div className="space-y-1 flex-1">
@@ -331,7 +331,7 @@ export function SearchModal({
                                   {uni.ranking}
                                 </span>
                               </div>
-                              <h3 className="font-display font-bold text-[#003366] text-sm">
+                              <h3 className="font-display font-bold text-[#05452d] text-sm">
                                 {uni.name}
                               </h3>
                               <p className="text-slate-500 text-xs flex flex-wrap gap-1 mt-1">
@@ -376,7 +376,7 @@ export function SearchModal({
                                   Ends: {sch.deadline}
                                 </span>
                               </div>
-                              <h3 className="font-display font-bold text-[#003366] text-sm">
+                              <h3 className="font-display font-bold text-[#05452d] text-sm">
                                 {sch.title}
                               </h3>
                               <p className="text-amber-600 text-xs font-extrabold">
