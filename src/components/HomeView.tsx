@@ -20,23 +20,51 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
     <div className="font-sans space-y-20 animate-in fade-in duration-300" id="jel-home-view">
       
       {/* 1. Hero Section */}
-      <section className="relative bg-white rounded-[32px] md:rounded-[40px] p-8 md:p-12 border border-slate-150/80 shadow-md text-slate-800 min-h-[500px] flex items-center overflow-hidden mx-2 md:mx-6" id="home-hero">
-        {/* Abstract design nodes */}
-        <div className="absolute -right-10 -top-10 w-96 h-96 bg-[#00AEEF]/5 rounded-full"></div>
-        <div className="absolute -left-20 -bottom-20 w-80 h-80 bg-[#F5A623]/5 rounded-full"></div>
+      <section className="relative bg-gradient-to-br from-slate-50 via-white to-blue-50/20 rounded-[32px] md:rounded-[40px] p-8 md:p-14 border border-slate-150/80 shadow-md text-slate-800 min-h-[500px] flex items-center overflow-hidden mx-2 md:mx-6" id="home-hero">
+        {/* Abstract gorgeous backdrop design nodes */}
+        <div className="absolute -right-16 -top-16 w-[450px] h-[450px] bg-gradient-to-br from-[#00AEEF]/5 to-indigo-500/5 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute -left-20 -bottom-20 w-96 h-96 bg-[#F5A623]/5 rounded-full blur-2xl pointer-events-none"></div>
 
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10 w-full">
           <div className="lg:col-span-7 space-y-6 text-left">
-            <span className="inline-flex items-center space-x-2 bg-[#00AEEF]/10 text-[#003366] py-1.5 px-3.5 rounded-full text-xs font-bold uppercase tracking-wider">
-              🎓 Premium Student Consultancy Bangladesh
+            <span className="inline-flex items-center space-x-2 bg-[#00AEEF]/10 border border-[#00AEEF]/10 text-[#003366] py-1.5 px-3.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-2xs">
+              <span className="flex h-2 w-2 relative shrink-0">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span>🎓 Premium Student Consultancy Bangladesh</span>
             </span>
+            
             <h1 className="text-3xl md:text-5xl lg:text-6xl font-display font-black text-[#003366] leading-tight tracking-tight">
               Your Global Education <br/>
-              <span className="text-[#00AEEF]">Journey Starts Here</span>
+              <span className="bg-gradient-to-r from-[#00AEEF] to-[#003366] bg-clip-text text-transparent">Journey Starts Here</span>
             </h1>
             <p className="text-slate-500 text-sm sm:text-base md:text-lg leading-relaxed max-w-xl">
               Study at the world's highest-ranking universities with objective, transparent visa processing, scholarship matches, and pre-departure briefings. Driven by Bangladesh's lead consultants, JEL Study Abroad.
             </p>
+
+            {/* Quick Country Explorer Flags row */}
+            <div className="space-y-2 pt-2">
+              <p className="text-[10px] uppercase font-bold tracking-widest text-slate-400 font-mono">Explore Top destinations natively:</p>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { name: "United Kingdom", flag: "🇬🇧", tag: "UK" },
+                  { name: "Australia", flag: "🇦🇺", tag: "Australia" },
+                  { name: "Canada", flag: "🇨🇦", tag: "Canada" },
+                  { name: "United States", flag: "🇺🇸", tag: "USA" },
+                  { name: "Ireland", flag: "🇮🇪", tag: "Ireland" }
+                ].map((dst) => (
+                  <button
+                    key={dst.name}
+                    onClick={() => handleCountryExplore(dst.name)}
+                    className="flex items-center gap-1.5 bg-white hover:bg-[#003366] hover:text-white border border-slate-205 text-slate-700 text-xs py-1.5 px-3.5 rounded-xl font-bold transition-all duration-200 shadow-2xs hover:-translate-y-0.5 cursor-pointer"
+                  >
+                    <span>{dst.flag}</span>
+                    <span>{dst.tag}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 pt-2">
               <button
@@ -44,7 +72,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
                   setActiveTab("booking");
                   window.scrollTo({ top: 0, behavior: "smooth" });
                 }}
-                className="bg-[#003366] hover:bg-[#002244] text-white font-bold px-8 py-4 rounded-xl text-xs uppercase tracking-wider transition-all duration-300 shadow-lg shadow-[#003366]/20 text-center shrink-0"
+                className="bg-[#003366] hover:bg-[#002244] text-white font-bold px-8 py-4 rounded-xl text-xs uppercase tracking-wider transition-all duration-300 shadow-lg shadow-[#003366]/20 text-center shrink-0 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
                 id="btn-hero-consultation"
               >
                 Book Free Consultation
@@ -54,7 +82,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
                   setActiveTab("universities");
                   window.scrollTo({ top: 0, behavior: "smooth" });
                 }}
-                className="border-2 border-slate-200 text-slate-600 hover:bg-slate-50 font-bold px-8 py-4 rounded-xl text-xs uppercase tracking-wider transition-all duration-300 text-center shrink-0"
+                className="border-2 border-slate-200 text-slate-600 hover:bg-slate-50 font-bold px-8 py-4 rounded-xl text-xs uppercase tracking-wider transition-all duration-300 text-center shrink-0 hover:border-[#003366] cursor-pointer"
                 id="btn-hero-explore-unis"
               >
                 Explore Universities
@@ -62,15 +90,19 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
             </div>
 
             {/* Quick trust metrics */}
-            <div className="flex items-center space-x-6 pt-4 border-t border-slate-100 text-xs text-slate-500 font-medium">
+            <div className="flex flex-wrap items-center gap-4 sm:gap-6 pt-4 border-t border-slate-150 text-xs text-slate-500 font-medium">
               <div className="flex items-center space-x-2">
                 <span className="text-amber-500 font-bold">★ 4.9/5</span>
                 <span>Facebook Rating</span>
               </div>
-              <div className="h-4 w-px bg-slate-200"></div>
+              <div className="h-4 w-px bg-slate-200 hidden sm:block"></div>
               <div className="flex items-center space-x-2">
                 <span className="text-[#00AEEF] font-bold">100%</span>
                 <span>Ethical Auditing</span>
+              </div>
+              <div className="h-4 w-px bg-slate-200 hidden sm:block"></div>
+              <div className="text-[11px] text-[#00AEEF] font-bold">
+                💡 Hint: Press <kbd className="bg-slate-100 border border-slate-200 px-1 py-0.5 rounded text-slate-600 font-mono text-[9px]">⌘K</kbd> to search everything
               </div>
             </div>
           </div>
