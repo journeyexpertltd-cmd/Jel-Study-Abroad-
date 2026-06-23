@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { GraduationCap, Brain, ShieldCheck, Calendar, Users, Phone, MessageSquare, Star, Mail, MapPin, Globe, Menu, X, ArrowRight, Eye, ShieldAlert } from "lucide-react";
+import { GraduationCap, Brain, ShieldCheck, Calendar, Users, Phone, MessageSquare, Star, Mail, MapPin, Globe, Menu, X, ArrowRight, Eye, ShieldAlert, Search } from "lucide-react";
 import { AIChatAssistant } from "./components/AIChatAssistant";
 import { SmartCourseFinder } from "./components/SmartCourseFinder";
 import { EligibilityChecker } from "./components/EligibilityChecker";
@@ -7,12 +7,32 @@ import { AdminDashboard } from "./components/AdminDashboard";
 import { ConsultationBooking } from "./components/ConsultationBooking";
 import { HomeView } from "./components/HomeView";
 import { AboutView, ServicesView, CountriesView, UniversitiesView, ScholarshipsView, BlogView, ContactView } from "./components/InfoViews";
+import { SearchModal } from "./components/SearchModal";
 
 const jelLogo = new URL("./assets/images/jel_study_abroad_logo_1782110469815.jpg", import.meta.url).href;
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>("home");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
+  
+  // Search parameters targeting specific sub-screens
+  const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
+  const [uniSearchTerm, setUniSearchTerm] = useState<string>("");
+  const [schSearchTerm, setSchSearchTerm] = useState<string>("");
+  const [blogSearchTerm, setBlogSearchTerm] = useState<string>("");
+  const [initialBlogId, setInitialBlogId] = useState<string | null>(null);
+
+  // Global Ctrl+K / Cmd+K listener to trigger search modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setIsSearchOpen(true);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
   
   // Transfers between AI finder, country explore, and booking forms
   const [courseFinderUni, setCourseFinderUni] = useState<string>("");
@@ -123,6 +143,16 @@ export default function App() {
           {/* Desktop Call to actions */}
           <div className="hidden lg:flex items-center space-x-3 border-l border-slate-100 pl-6">
             <button
+              onClick={() => setIsSearchOpen(true)}
+              className="p-2 py-2 rounded-full text-slate-500 hover:text-[#003366] hover:bg-slate-100 transition duration-200 focus:outline-none focus:ring-1 focus:ring-[#003366] flex items-center gap-1.5 group border border-slate-200 bg-slate-50/50 pr-3.5 pl-3 cursor-pointer"
+              title="Search across the app (⌘K)"
+            >
+              <Search className="h-3.5 w-3.5 text-slate-400 group-hover:text-[#003366] transition duration-200" />
+              <span className="text-xs font-bold text-slate-500 group-hover:text-[#003366] tracking-wider uppercase">Search...</span>
+              <kbd className="hidden xl:inline-block bg-slate-255 border border-slate-200 text-slate-500 text-[9px] leading-none px-1.5 py-0.5 rounded font-mono font-bold tracking-normal">⌘K</kbd>
+            </button>
+
+            <button
               onClick={() => { setActiveTab("finder"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
               className={`text-xs font-bold px-4 py-2.5 rounded-full flex items-center space-x-1.5 border transition-all ${
                 activeTab === "finder"
@@ -136,7 +166,7 @@ export default function App() {
 
             <button
               onClick={() => { setActiveTab("booking"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-              className="bg-[#F5A623] hover:bg-[#e0951a] text-white px-6 py-2.5 rounded-full font-bold shadow-lg shadow-[#F5A623]/20 hover:scale-105 active:scale-95 transition-all text-xs uppercase tracking-wider"
+              className="bg-[#F5A623] hover:bg-[#e0951a] text-white px-6 py-2.5 rounded-full font-bold shadow-lg shadow-[#F5A623]/20 hover:scale-105 active:scale-95 transition-all text-xs uppercase tracking-wider animate-pulse hover:animate-none"
             >
               Book Consultation
             </button>
@@ -144,6 +174,13 @@ export default function App() {
 
           {/* Mobile Menu Actions Button */}
           <div className="lg:hidden flex items-center space-x-2">
+            <button
+              onClick={() => setIsSearchOpen(true)}
+              className="p-2 text-slate-500 hover:text-[#003366] bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition shrink-0"
+              title="Open search"
+            >
+              <Search className="h-4 w-4" />
+            </button>
             <button
               onClick={() => { setActiveTab("booking"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
               className="bg-[#003366] text-white text-[11px] font-bold py-1.5 px-3 rounded-lg"
@@ -164,6 +201,19 @@ export default function App() {
         {/* Mobile menu panel dropdown */}
         {isMobileMenuOpen && (
           <div className="lg:hidden bg-white border-t border-slate-100 p-4 space-y-4 animate-in slide-in-from-top duration-300 relative z-25">
+            {/* Interactive Search Tool */}
+            <button
+              onClick={() => {
+                setIsMobileMenuOpen(false);
+                setIsSearchOpen(true);
+              }}
+              className="w-full bg-slate-50 border border-slate-200 hover:border-[#003366] rounded-xl p-3.5 flex items-center space-x-2 text-slate-500 text-left hover:bg-slate-100 cursor-pointer text-xs font-bold transition-all"
+            >
+              <Search className="h-4 w-4 text-slate-400" />
+              <span>Search universities, scholarships, visa guides...</span>
+              <span className="text-[9px] bg-slate-200 px-1.5 py-0.5 rounded text-slate-500 ml-auto font-mono">GO</span>
+            </button>
+
             <div className="grid grid-cols-2 gap-2">
               {menuItems.map((item) => (
                 <button
@@ -264,10 +314,26 @@ export default function App() {
           <CountriesView selectedCountryName={exploreCountryName} />
         )}
         {activeTab === "universities" && (
-          <UniversitiesView onPreSelectCourse={handlePreSelectCourse} />
+          <UniversitiesView 
+            onPreSelectCourse={handlePreSelectCourse} 
+            initialSearchTerm={uniSearchTerm} 
+          />
         )}
-        {activeTab === "scholarships" && <ScholarshipsView />}
-        {activeTab === "blog" && <BlogView />}
+        {activeTab === "scholarships" && (
+          <ScholarshipsView 
+            initialSearchTerm={schSearchTerm} 
+          />
+        )}
+        {activeTab === "blog" && (
+          <BlogView 
+            initialSearchTerm={blogSearchTerm}
+            initialBlogId={initialBlogId}
+            onClearInitialBlog={() => {
+              setInitialBlogId(null);
+              setBlogSearchTerm("");
+            }}
+          />
+        )}
         {activeTab === "contact" && <ContactView />}
         
         {/* Core AI matched tools */}
@@ -387,6 +453,17 @@ export default function App() {
           </div>
         </div>
       </footer>
+
+      {/* JEL Global Registry Search Panel */}
+      <SearchModal
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+        setActiveTab={setActiveTab}
+        setUniversitySearch={setUniSearchTerm}
+        setScholarshipSearch={setSchSearchTerm}
+        setBlogSearch={setBlogSearchTerm}
+        setInitialBlogId={setInitialBlogId}
+      />
 
     </div>
   );

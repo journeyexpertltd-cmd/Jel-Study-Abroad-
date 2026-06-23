@@ -254,11 +254,18 @@ export function CountriesView({ selectedCountryName }: CountriesViewProps) {
 // ================= UniversitiesView Component =================
 interface UniversitiesViewProps {
   onPreSelectCourse: (uniName: string, country: string) => void;
+  initialSearchTerm?: string;
 }
 
-export function UniversitiesView({ onPreSelectCourse }: UniversitiesViewProps) {
+export function UniversitiesView({ onPreSelectCourse, initialSearchTerm = "" }: UniversitiesViewProps) {
   const [selectedCountry, setSelectedCountry] = useState("All");
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
+
+  React.useEffect(() => {
+    if (initialSearchTerm) {
+      setSearchTerm(initialSearchTerm);
+    }
+  }, [initialSearchTerm]);
 
   const filteredUnis = UNIVERSITY_PARTNERS.filter((uni) => {
     const matchesCountry = selectedCountry === "All" || uni.country.trim() === selectedCountry.trim();
@@ -351,7 +358,32 @@ export function UniversitiesView({ onPreSelectCourse }: UniversitiesViewProps) {
 
 
 // ================= ScholarshipsView Component =================
-export function ScholarshipsView() {
+interface ScholarshipsViewProps {
+  initialSearchTerm?: string;
+}
+
+export function ScholarshipsView({ initialSearchTerm = "" }: ScholarshipsViewProps) {
+  const [selectedCountry, setSelectedCountry] = useState("All");
+  const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
+
+  React.useEffect(() => {
+    if (initialSearchTerm) {
+      setSearchTerm(initialSearchTerm);
+    }
+  }, [initialSearchTerm]);
+
+  const filteredScholarships = SCHOLARSHIPS.filter((sch) => {
+    const matchesCountry = selectedCountry === "All" || sch.country.trim().toLowerCase() === selectedCountry.trim().toLowerCase();
+    const matchesSearch = 
+      sch.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      sch.description.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      sch.country.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      sch.eligibility.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesCountry && matchesSearch;
+  });
+
+  const uniqueCountries = ["All", "United Kingdom", "Australia", "Canada", "United States", "Ireland"];
+
   return (
     <div className="space-y-8 animate-in fade-in duration-300 font-sans" id="scholarships-view">
       <div className="text-center space-y-2 max-w-2xl mx-auto">
@@ -360,39 +392,106 @@ export function ScholarshipsView() {
         <p className="text-slate-500 text-xs sm:text-sm">Explore specialized bursaries, full government rewards and partial waivers. Let JEL draft matching credentials.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {SCHOLARSHIPS.map((sch) => (
-          <div key={sch.id} className="bg-white border border-slate-100 rounded-3xl p-6 hover:shadow-xl hover:border-[#003366] transition duration-300 text-left flex flex-col justify-between">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-50 pb-2">
-                <span className="text-[11px] font-mono text-indigo-600 font-bold uppercase bg-indigo-50 px-2.5 py-0.5 rounded-full">{sch.country}</span>
-                <span className="text-[10px] text-slate-400 font-mono">Deadline: {sch.deadline}</span>
-              </div>
-              
-              <h3 className="font-display font-bold text-[#003366] text-base leading-tight">{sch.title}</h3>
-              <p className="text-amber-500 text-sm font-black font-display">{sch.coverage}</p>
-              <p className="text-slate-500 text-xs leading-normal">{sch.description}</p>
-            </div>
+      {/* Scholarships Search and Filter bar */}
+      <div className="bg-white border border-slate-100 p-4 rounded-2xl shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="relative w-full md:w-72">
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search matching scholarships..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full bg-slate-50 border border-slate-200 text-slate-700 text-xs sm:text-sm pl-9 pr-4 py-2 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#003366]"
+            id="scholarship-internal-search-input"
+          />
+        </div>
 
-            <div className="mt-6 pt-4 border-t border-slate-50">
-              <span className="text-[10px] text-slate-400 font-bold block uppercase mb-1.5">Direct eligibility mandate:</span>
-              <p className="text-xs text-slate-700 bg-slate-50 p-2.5 rounded-lg leading-relaxed font-sans border border-slate-100">
-                {sch.eligibility}
-              </p>
-            </div>
-          </div>
-        ))}
+        <div className="flex flex-wrap items-center gap-1">
+          {uniqueCountries.map((c) => (
+            <button
+              key={c}
+              onClick={() => setSelectedCountry(c)}
+              className={`text-[10px] sm:text-xs py-1.5 px-3 rounded-lg font-medium transition-all ${
+                selectedCountry === c
+                  ? "bg-[#003366] text-white shadow"
+                  : "bg-slate-50 text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              {c}
+            </button>
+          ))}
+        </div>
       </div>
+
+      {filteredScholarships.length === 0 ? (
+        <div className="bg-white rounded-3xl p-12 text-center border border-slate-100 space-y-2">
+          <span className="text-2xl">🎓</span>
+          <h4 className="font-display font-bold text-slate-800">No matching scholarships</h4>
+          <p className="text-xs text-slate-400 max-w-xs mx-auto">Try checking your spelling or selecting an alternative country filter.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredScholarships.map((sch) => (
+            <div key={sch.id} className="bg-white border border-slate-100 rounded-3xl p-6 hover:shadow-xl hover:border-[#003366] transition duration-300 text-left flex flex-col justify-between">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-50 pb-2">
+                  <span className="text-[11px] font-mono text-indigo-600 font-bold uppercase bg-indigo-50 px-2.5 py-0.5 rounded-full">{sch.country}</span>
+                  <span className="text-[10px] text-slate-400 font-mono">Deadline: {sch.deadline}</span>
+                </div>
+                
+                <h3 className="font-display font-bold text-[#003366] text-base leading-tight">{sch.title}</h3>
+                <p className="text-amber-500 text-sm font-black font-display">{sch.coverage}</p>
+                <p className="text-slate-500 text-xs leading-normal">{sch.description}</p>
+              </div>
+
+              <div className="mt-6 pt-4 border-t border-slate-50">
+                <span className="text-[10px] text-slate-400 font-bold block uppercase mb-1.5">Direct eligibility mandate:</span>
+                <p className="text-xs text-slate-700 bg-slate-50 p-2.5 rounded-lg leading-relaxed font-sans border border-slate-100">
+                  {sch.eligibility}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
 
 // ================= BlogView Component =================
-export function BlogView() {
+interface BlogViewProps {
+  initialSearchTerm?: string;
+  initialBlogId?: string | null;
+  onClearInitialBlog?: () => void;
+}
+
+export function BlogView({ initialSearchTerm = "", initialBlogId = null, onClearInitialBlog }: BlogViewProps) {
   const [activeCategory, setActiveCategory] = useState("All");
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
   const [expandedBlog, setExpandedBlog] = useState<BlogItem | null>(null);
+
+  React.useEffect(() => {
+    if (initialSearchTerm) {
+      setSearchTerm(initialSearchTerm);
+    }
+  }, [initialSearchTerm]);
+
+  React.useEffect(() => {
+    if (initialBlogId) {
+      const found = BLOGS.find(b => b.id === initialBlogId);
+      if (found) {
+        setExpandedBlog(found);
+      }
+    }
+  }, [initialBlogId]);
+
+  const handleCloseBlog = () => {
+    setExpandedBlog(null);
+    if (onClearInitialBlog) {
+      onClearInitialBlog();
+    }
+  };
 
   const filteredBlogs = BLOGS.filter((b) => {
     const matchesCategory = activeCategory === "All" || b.category === activeCategory;
@@ -413,7 +512,7 @@ export function BlogView() {
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[85vh] overflow-y-auto shadow-2xl p-6 md:p-8 relative text-left">
             <button
-              onClick={() => setExpandedBlog(null)}
+              onClick={handleCloseBlog}
               className="absolute top-4 right-4 bg-slate-100 hover:bg-slate-200 text-slate-800 p-2 rounded-full transition-colors text-xs font-bold"
             >
               ✕ Close
