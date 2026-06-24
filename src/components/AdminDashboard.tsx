@@ -398,7 +398,7 @@ export function AdminDashboard() {
       {/* Supabase Cloud Connection Panel */}
       <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-5 shadow-sm text-left relative overflow-hidden">
         <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full filter blur-xl transform translate-x-12 -translate-y-12"></div>
-        <div className="absolute bottom-0 left-0 w-32 h-32 bg-[#00AEEF]/5 rounded-full filter blur-xl transform -translate-x-12 translate-y-12"></div>
+        <div className="absolute bottom-0 left-0 w-32 h-32 bg-[#c5a059]/10 rounded-full filter blur-xl transform -translate-x-12 translate-y-12"></div>
         
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
           <div>
@@ -437,7 +437,7 @@ export function AdminDashboard() {
                 </>
               ) : (
                 <>
-                  <Activity className="h-4 w-4 text-[#00AEEF]" />
+                  <Activity className="h-4 w-4 text-[#c5a059]" />
                   <span>Sync Local &rarr; Supabase</span>
                 </>
               )}
@@ -667,7 +667,7 @@ export function AdminDashboard() {
                     className={`inline-block py-1 px-2.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
                       lead.status === "New" ? "bg-red-100 text-red-700 border border-red-200" :
                       lead.status === "Visa Approved" ? "bg-green-100 text-green-700 border border-green-200" :
-                      lead.status === "Uni Approved" ? "bg-[#00AEEF]/20 text-[#05452d] border border-[#00AEEF]/30" :
+                      lead.status === "Uni Approved" ? "bg-[#c5a059]/20 text-[#05452d] border border-[#c5a059]/30" :
                       "bg-amber-100 text-amber-700 border border-amber-200"
                     }`}
                   >

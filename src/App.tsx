@@ -74,25 +74,25 @@ export default function App() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans selection:bg-[#00AEEF] selection:text-white" id="jel-root-app">
+    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans selection:bg-[#d61a1a] selection:text-white" id="jel-root-app">
       
       {/* 1. Header Banner Contacts */}
       <header className="bg-[#05452d] text-white text-[11px] py-2.5 px-8 flex justify-between items-center border-b border-white/10 relative z-40">
         <div className="flex items-center space-x-6">
           <span className="flex items-center gap-1.5 opacity-90">
-            <MapPin className="h-3.5 w-3.5 text-[#00AEEF]" /> 
+            <MapPin className="h-3.5 w-3.5 text-[#c5a059]" /> 
             Tejgaon (Nabisco), Dhaka
           </span>
           <span className="hidden sm:inline-flex items-center gap-1.5 opacity-90">
-            <Mail className="h-3.5 w-3.5 text-[#00AEEF]" /> 
+            <Mail className="h-3.5 w-3.5 text-[#c5a059]" /> 
             journeyexpertbd@gmail.com
           </span>
         </div>
         <div className="flex items-center space-x-6 font-semibold">
-          <a href="tel:+8801926400400" className="hover:text-[#00AEEF] transition-colors flex items-center gap-1">
+          <a href="tel:+8801926400400" className="hover:text-[#c5a059] transition-colors flex items-center gap-1">
             📞 Hotline: +8801926400400
           </a>
-          <span className="hidden md:inline-block text-[#00AEEF] font-black font-mono bg-white/10 px-2.5 py-0.5 rounded border border-white/5">
+          <span className="hidden md:inline-block text-[#c5a059] font-black font-mono bg-white/10 px-2.5 py-0.5 rounded border border-white/5">
             98.2% Visa Conversion
           </span>
         </div>
@@ -160,7 +160,7 @@ export default function App() {
                   : "bg-slate-50 text-[#05452d] border-slate-250 hover:bg-slate-100"
               }`}
             >
-              <Brain className="h-3.5 w-3.5 text-[#00AEEF]" />
+              <Brain className="h-3.5 w-3.5 text-[#c5a059]" />
               <span>AI FINDER</span>
             </button>
 
@@ -247,7 +247,7 @@ export default function App() {
                     }}
                     className={`p-2 rounded-xl text-left border flex flex-col justify-between h-16 ${
                       activeTab === tool.id
-                        ? "bg-[#00AEEF]/10 border-[#00AEEF]/40 text-[#05452d]"
+                        ? "bg-[#c5a059]/15 border-[#c5a059]/40 text-[#05452d]"
                         : "bg-slate-50 border-slate-100 text-slate-700 hover:bg-slate-100"
                     }`}
                   >
@@ -263,14 +263,14 @@ export default function App() {
           </div>
         )}
       </nav>
-
+      
       {/* 3. Global AI & CRM Floating Bar Actions */}
       <section className="bg-[#05452d] text-white py-5 px-6 md:px-12 rounded-3xl mx-2 md:mx-6 mt-6 mb-8 border border-white/10 shadow-lg shadow-[#05452d]/10 relative overflow-hidden" id="ai-quick-tools-bar">
-        <div className="absolute right-0 top-0 h-32 w-32 rounded-full bg-[#00AEEF] opacity-10 blur-2xl"></div>
+        <div className="absolute right-0 top-0 h-32 w-32 rounded-full bg-[#c5a059] opacity-15 blur-2xl"></div>
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center space-x-3">
-            <div className="bg-[#00AEEF]/20 p-2.5 rounded-2xl">
-              <Brain className="h-6 w-6 text-[#00AEEF] animate-pulse" />
+            <div className="bg-[#c5a059]/20 p-2.5 rounded-2xl">
+              <Brain className="h-6 w-6 text-[#c5a059] animate-pulse" />
             </div>
             <div>
               <h3 className="font-display font-medium text-sm md:text-base tracking-wide text-white">Need immediate profile evaluation?</h3>
@@ -377,7 +377,7 @@ export default function App() {
             <p className="text-xs text-slate-400 leading-relaxed">
               JEL Study Abroad is a premium division of Journey Expert Ltd (Govt Trade License: TRAD/DNCC/008823/2022). Authorised consultants helping students study in top world colleges.
             </p>
-            <div className="flex items-center space-x-3 text-xs text-[#00AEEF]">
+            <div className="flex items-center space-x-3 text-xs text-[#c5a059]">
               <span className="h-2 w-2 bg-green-400 rounded-full animate-ping"></span>
               <span className="font-mono uppercase font-bold text-[10px]">Ministry Registered</span>
             </div>
@@ -385,7 +385,7 @@ export default function App() {
 
           {/* Destination Col */}
           <div className="space-y-4">
-            <h4 className="font-display font-semibold text-white text-sm tracking-wider uppercase border-l-2 border-[#00AEEF] pl-3">Study Destinations</h4>
+            <h4 className="font-display font-semibold text-white text-sm tracking-wider uppercase border-l-2 border-[#c5a059] pl-3">Study Destinations</h4>
             <ul className="space-y-2 text-xs text-slate-400 font-medium">
               {["United Kingdom", "Canada", "Australia", "United States", "Ireland", "New Zealand", "Malaysia", "Europe"].map((c) => (
                 <li key={c}>
@@ -402,7 +402,7 @@ export default function App() {
 
           {/* Sitemap Col */}
           <div className="space-y-4">
-            <h4 className="font-display font-semibold text-white text-sm tracking-wider uppercase border-l-2 border-[#00AEEF] pl-3">Sitemap Links</h4>
+            <h4 className="font-display font-semibold text-white text-sm tracking-wider uppercase border-l-2 border-[#c5a059] pl-3">Sitemap Links</h4>
             <div className="grid grid-cols-2 gap-2 text-xs text-slate-400">
               {menuItems.map((item) => (
                 <button
@@ -424,7 +424,7 @@ export default function App() {
 
           {/* Physical Address Col */}
           <div className="space-y-4">
-            <h4 className="font-display font-semibold text-white text-sm tracking-wider uppercase border-l-2 border-[#00AEEF] pl-3">Dhaka Physical Office</h4>
+            <h4 className="font-display font-semibold text-white text-sm tracking-wider uppercase border-l-2 border-[#c5a059] pl-3">Dhaka Physical Office</h4>
             <div className="text-xs text-slate-400 space-y-3">
               <p className="leading-relaxed">
                 📍 Abdul Motin Complex, 189/A, Nabisco Mor, Tejgaon, Dhaka, Bangladesh.
@@ -434,7 +434,7 @@ export default function App() {
               </p>
               <div className="pt-2">
                 <span className="text-[10px] text-slate-500 uppercase block font-bold mb-1">Follow updates on</span>
-                <a href="https://facebook.com" target="_blank" rel="noreferrer" className="text-xs text-[#00AEEF] hover:underline flex items-center">
+                <a href="https://facebook.com" target="_blank" rel="noreferrer" className="text-xs text-[#c5a059] hover:underline flex items-center">
                   💻 JEL Official Facebook Page →
                 </a>
               </div>
@@ -446,7 +446,7 @@ export default function App() {
         {/* Footer Legal credits */}
         <div className="max-w-7xl mx-auto border-t border-slate-900 pt-8 flex flex-col md:flex-row items-center justify-between text-[11px] text-slate-500 gap-4">
           <p>© {new Date().getFullYear()} JEL Study Abroad. All Rights Reserved. A concern of Journey Expert Ltd.</p>
-          <div className="flex items-center space-x-4 font-mono font-bold text-[#00AEEF]">
+          <div className="flex items-center space-x-4 font-mono font-bold text-[#c5a059]">
             <span>LIC: TRAD/DNCC/008823/2022</span>
             <span>•</span>
             <span>SSL Secured Connection</span>

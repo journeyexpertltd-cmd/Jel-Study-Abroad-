@@ -248,7 +248,7 @@ export function SearchModal({
                           : "text-slate-500 hover:bg-slate-100 hover:text-slate-800"
                       }`}
                     >
-                      {cat} {badgeCount > 0 && <span className={`ml-1 text-[10px] opacity-80 ${activeCategory === cat ? "text-white" : "text-[#00AEEF]"}`}>({badgeCount})</span>}
+                      {cat} {badgeCount > 0 && <span className={`ml-1 text-[10px] opacity-80 ${activeCategory === cat ? "text-white" : "text-[#c5a059]"}`}>({badgeCount})</span>}
                     </button>
                   );
                 })}
@@ -265,7 +265,7 @@ export function SearchModal({
                 // Recommendations UI when query is empty
                 <div className="py-8 text-center space-y-4">
                   <div className="inline-flex p-3 bg-emerald-50 text-[#05452d] rounded-2xl">
-                    <GraduationCap className="h-6 w-6 text-[#00AEEF] animate-bounce" />
+                    <GraduationCap className="h-6 w-6 text-[#c5a059] animate-bounce" />
                   </div>
                   <div className="space-y-1">
                     <h4 className="font-display font-bold text-slate-800 text-sm">Search with Keywords</h4>
@@ -283,7 +283,7 @@ export function SearchModal({
                           setQuery(suggest);
                           inputRef.current?.focus();
                         }}
-                        className="text-[11px] font-bold border border-slate-200 hover:border-[#00AEEF] bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-lg text-slate-650 transition duration-150"
+                        className="text-[11px] font-bold border border-slate-200 hover:border-[#c5a059] bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-lg text-slate-650 transition duration-150"
                       >
                         ⚡ "{suggest}"
                       </button>
@@ -314,7 +314,7 @@ export function SearchModal({
                           onMouseEnter={() => setSelectedIndex(idx)}
                           className={`p-3.5 rounded-2xl border transition-all cursor-pointer text-left ${
                             isSelected
-                              ? "bg-slate-50 border-[#00AEEF]/50 shadow-xs search-result-active"
+                              ? "bg-slate-50 border-[#c5a059]/50 shadow-xs search-result-active"
                               : "border-transparent hover:bg-slate-50/40"
                           }`}
                         >
@@ -359,7 +359,7 @@ export function SearchModal({
                           onMouseEnter={() => setSelectedIndex(idx)}
                           className={`p-3.5 rounded-2xl border transition-all cursor-pointer text-left ${
                             isSelected
-                              ? "bg-slate-50 border-[#00AEEF]/50 shadow-xs search-result-active"
+                              ? "bg-slate-50 border-[#c5a059]/50 shadow-xs search-result-active"
                               : "border-transparent hover:bg-slate-50/40"
                           }`}
                         >
@@ -401,7 +401,7 @@ export function SearchModal({
                           onMouseEnter={() => setSelectedIndex(idx)}
                           className={`p-3.5 rounded-2xl border transition-all cursor-pointer text-left ${
                             isSelected
-                              ? "bg-slate-50 border-[#00AEEF]/50 shadow-xs search-result-active"
+                              ? "bg-slate-50 border-[#c5a059]/50 shadow-xs search-result-active"
                               : "border-transparent hover:bg-slate-50/40"
                           }`}
                         >
@@ -424,7 +424,7 @@ export function SearchModal({
                               <p className="text-slate-500 text-xs line-clamp-1 leading-normal">
                                 {blog.excerpt}
                               </p>
-                              <div className="flex items-center gap-1.5 text-[10px] text-[#00AEEF] font-bold pt-1">
+                              <div className="flex items-center gap-1.5 text-[10px] text-[#c5a059] font-bold pt-1">
                                 <Clock className="h-3 w-3" />
                                 <span>{blog.readTime}</span>
                                 <span>•</span>

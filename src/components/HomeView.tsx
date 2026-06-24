@@ -111,7 +111,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
           <div className="lg:col-span-5 relative hidden lg:block">
             <div className="relative mx-auto w-[400px] h-[245px]">
               {/* Elegant Brand Logo Card */}
-              <div className="w-full h-full rounded-3xl overflow-hidden shadow-2xl border-4 border-slate-100 bg-white group transition-all duration-300 hover:shadow-[#00AEEF]/10 flex items-center justify-center p-6 md:p-8 animate-fade-in font-sans">
+              <div className="w-full h-full rounded-3xl overflow-hidden shadow-2xl border-4 border-slate-100 bg-white group transition-all duration-300 hover:shadow-[#c5a059]/15 flex items-center justify-center p-6 md:p-8 animate-fade-in font-sans">
                 <img
                   src={brandLogoImg}
                   alt="JEL Study Abroad"
@@ -122,14 +122,14 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
 
               {/* Elegant floating caption card below/overlapping slightly at the bottom */}
               <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur-md border border-slate-100 py-2.5 px-6 rounded-2xl shadow-xl hover:scale-105 transition-transform duration-300 text-center min-w-[200px] z-20">
-                <span className="text-[10px] text-[#00AEEF] font-black uppercase tracking-widest block font-mono">Trusted Partner</span>
+                <span className="text-[10px] text-[#c5a059] font-black uppercase tracking-widest block font-mono">Trusted Partner</span>
                 <span className="font-display font-extrabold text-[#05452d] text-xs block mt-0.5">JEL Study Abroad</span>
               </div>
             </div>
 
             {/* Float badge */}
             <div className="absolute -top-4 -left-4 bg-[#05452d] border border-white/10 p-3.5 rounded-2xl shadow-xl hover:scale-105 transition-transform z-10">
-              <span className="text-2xl font-display font-black text-[#00AEEF] block">1000+</span>
+              <span className="text-2xl font-display font-black text-[#c5a059] block">1000+</span>
               <span className="text-[9px] text-white font-bold uppercase tracking-wider">University Partners</span>
             </div>
           </div>
@@ -139,7 +139,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
       {/* 2. Why Choose JEL Study Abroad (6 Cards) */}
       <section className="max-w-7xl mx-auto px-6" id="why-choose-us">
         <div className="text-center space-y-2 max-w-2xl mx-auto mb-12">
-          <span className="text-xs text-[#00AEEF] font-black uppercase tracking-wider block">Core Expertise</span>
+          <span className="text-xs text-[#c5a059] font-black uppercase tracking-wider block">Core Expertise</span>
           <h2 className="text-2xl md:text-3xl font-display font-black text-[#05452d]">Why Choose JEL Study Abroad?</h2>
           <p className="text-slate-500 text-xs sm:text-sm leading-normal">
             We reject generalities. Every student profile receives complete personalized files auditing, financial counseling, and genuine mock tutoring.
@@ -164,7 +164,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
               title: "Embassy Visa File Preparation",
               desc: "Navigate strict visa compliance indices. We double-audit financial files and tax declarations meticulously.",
               icon: Compass,
-              color: "text-[#00AEEF] bg-sky-50"
+              color: "text-[#d61a1a] bg-red-50"
             },
             {
               title: "Language Test Preparations",
@@ -196,7 +196,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
                 <h3 className="font-display font-medium text-slate-900 group-hover:text-[#05452d] transition-colors">{item.title}</h3>
                 <p className="text-slate-500 text-xs sm:text-sm leading-relaxed">{item.desc}</p>
               </div>
-              <div className="pt-4 mt-4 border-t border-slate-100 text-[#05452d] font-bold text-xs flex items-center space-x-1 hover:text-[#00AEEF]">
+              <div className="pt-4 mt-4 border-t border-slate-100 text-[#05452d] font-bold text-xs flex items-center space-x-1 hover:text-[#c5a059]">
                 <span>Discover process</span>
                 <ArrowRight className="h-3 w-3" />
               </div>
@@ -232,7 +232,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
       {/* 4. Partner Universities Ticker Showcase */}
       <section className="overflow-hidden space-y-6" id="university-partners-ticker">
         <div className="text-center space-y-1">
-          <span className="text-xs text-[#00AEEF] font-bold uppercase tracking-wider block">Global Network</span>
+          <span className="text-xs text-[#c5a059] font-bold uppercase tracking-wider block">Global Network</span>
           <h2 className="text-xl md:text-2xl font-display font-black text-[#05452d]">JEL Elite Partner Universities</h2>
           <p className="text-xs text-slate-500">Over 50+ affiliated universities in 10 countries and 1,000+ courses</p>
         </div>
@@ -251,7 +251,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
                 </div>
                 <div>
                   <p className="text-slate-800 text-[11px] font-bold leading-none">{uni.name}</p>
-                  <p className="text-[9px] text-[#00AEEF] font-mono leading-none mt-1">{uni.country}</p>
+                  <p className="text-[9px] text-[#c5a059] font-mono leading-none mt-1">{uni.country}</p>
                 </div>
               </div>
             ))}
@@ -262,7 +262,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
       {/* 5. Study Destinations (Interactive Country Cards) */}
       <section className="max-w-7xl mx-auto px-6" id="home-destinations">
         <div className="text-center space-y-2 max-w-2xl mx-auto mb-12">
-          <span className="text-[#00AEEF] text-xs font-bold uppercase tracking-wider block">Where to study</span>
+          <span className="text-[#c5a059] text-xs font-bold uppercase tracking-wider block">Where to study</span>
           <h2 className="text-2xl md:text-3xl font-display font-black text-[#05452d]">Select Your Dream Study Destination</h2>
           <p className="text-slate-500 text-xs sm:text-sm">
             Discover tailored tuition brackets, stay-back work visas, and postgraduate slots for each elite nation.
@@ -282,7 +282,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
                     <span className="text-3xl leading-none">{c.flag}</span>
                     <h3 className="font-display font-bold text-slate-900 text-lg sm:text-xl leading-tight">{c.name}</h3>
                   </div>
-                  <span className="text-[10px] bg-[#00AEEF]/20 text-[#05452d] px-2 py-0.5 rounded font-mono font-medium">QS Friendly</span>
+                  <span className="text-[10px] bg-[#c5a059]/20 text-[#05452d] px-2 py-0.5 rounded font-mono font-medium">QS Friendly</span>
                 </div>
                 <p className="text-slate-500 text-xs sm:text-sm leading-relaxed line-clamp-3">{c.description}</p>
                 
@@ -302,7 +302,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
 
       {/* 6. Scholar opportunities highlights */}
       <section className="bg-[#05452d] text-white py-16 px-6 md:px-12 rounded-3xl mx-2 md:mx-6 relative overflow-hidden" id="scholarships-highlight">
-        <div className="absolute right-0 top-0 h-64 w-64 rounded-full bg-[#00AEEF] opacity-10 blur-3xl"></div>
+        <div className="absolute right-0 top-0 h-64 w-64 rounded-full bg-[#c5a059] opacity-10 blur-3xl"></div>
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           <div className="lg:col-span-4 space-y-4">
             <span className="text-xs bg-yellow-400 text-slate-900 font-bold px-3 py-1 rounded uppercase tracking-wider">Scholarships</span>
@@ -315,7 +315,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
                 setActiveTab("scholarships");
                 window.scrollTo({ top: 0, behavior: "smooth" });
               }}
-              className="bg-white text-[#05452d] font-bold text-xs py-3 px-6 rounded-lg uppercase tracking-wider hover:bg-[#00AEEF] hover:text-white transition-all inline-block shadow-md"
+              className="bg-white text-[#05452d] font-bold text-xs py-3 px-6 rounded-lg uppercase tracking-wider hover:bg-[#c5a059] hover:text-white transition-all inline-block shadow-md"
             >
               Browse Active Scholarships
             </button>
@@ -326,7 +326,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
               <div key={sch.id} className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-3 hover:border-white/20 transition-all text-left">
                 <span className="text-[10px] font-mono text-yellow-400 font-bold tracking-widest block uppercase">{sch.country}</span>
                 <h3 className="font-display font-semibold text-white text-sm sm:text-base leading-tight">{sch.title}</h3>
-                <p className="text-[#00AEEF] text-xs font-bold">{sch.coverage}</p>
+                <p className="text-[#d61a1a] text-xs font-bold">{sch.coverage}</p>
                 <div className="text-[11px] text-slate-300 leading-normal line-clamp-3">
                   <span className="font-semibold text-white">Eligibility:</span> {sch.eligibility}
                 </div>
@@ -339,7 +339,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
       {/* 7. Student Success Stories (Testimonials Grid) */}
       <section className="max-w-7xl mx-auto px-6" id="testimonials">
         <div className="text-center space-y-2 max-w-2xl mx-auto mb-12">
-          <span className="text-[#00AEEF] text-xs font-bold uppercase tracking-wider block">Alumni Success</span>
+          <span className="text-[#c5a059] text-xs font-bold uppercase tracking-wider block">Alumni Success</span>
           <h2 className="text-2xl md:text-3xl font-display font-black text-[#05452d]">Student Success Stories</h2>
           <p className="text-slate-500 text-xs sm:text-sm">
             Read real feedback from students from Dhaka under counselor guidelines, now flourishing in global research and corporate fields.
@@ -371,7 +371,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
                 <div className="text-left">
                   <h4 className="font-display font-bold text-slate-900 text-xs leading-none">{t.name}</h4>
                   <p className="text-[10px] text-slate-400 mt-1">{t.course}</p>
-                  <p className="text-[10px] text-[#00AEEF] font-bold mt-0.5">{t.universityName}, {t.destinationCountry}</p>
+                  <p className="text-[10px] text-[#c5a059] font-bold mt-0.5">{t.universityName}, {t.destinationCountry}</p>
                 </div>
               </div>
             </div>

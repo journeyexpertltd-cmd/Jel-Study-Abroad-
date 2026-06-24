@@ -79,7 +79,7 @@ export function SmartCourseFinder({ onPreSelectCourse }: SmartCourseFinderProps)
   return (
     <div className="bg-white rounded-2xl shadow-xl border border-slate-100 p-6 md:p-8 font-sans max-w-4xl mx-auto" id="smart-course-finder">
       <div className="flex items-center space-x-3 mb-6">
-        <div className="bg-[#05452d] text-[#00AEEF] p-3 rounded-xl shadow-lg">
+        <div className="bg-[#05452d] text-[#c5a059] p-3 rounded-xl shadow-lg">
           <Brain className="h-6 w-6 animate-pulse" />
         </div>
         <div>
@@ -91,7 +91,7 @@ export function SmartCourseFinder({ onPreSelectCourse }: SmartCourseFinderProps)
       <form onSubmit={handleFindCourses} className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-1.5">
           <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center">
-            <MapPin className="h-3.5 w-3.5 mr-1.5 text-[#00AEEF]" /> Preferred Country
+            <MapPin className="h-3.5 w-3.5 mr-1.5 text-[#c5a059]" /> Preferred Country
           </label>
           <select
             value={preferredCountry}
@@ -106,7 +106,7 @@ export function SmartCourseFinder({ onPreSelectCourse }: SmartCourseFinderProps)
 
         <div className="space-y-1.5">
           <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center">
-            <GraduationCap className="h-3.5 w-3.5 mr-1.5 text-[#00AEEF]" /> level of Study
+            <GraduationCap className="h-3.5 w-3.5 mr-1.5 text-[#c5a059]" /> level of Study
           </label>
           <select
             value={educationLevel}
@@ -121,7 +121,7 @@ export function SmartCourseFinder({ onPreSelectCourse }: SmartCourseFinderProps)
 
         <div className="space-y-1.5">
           <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center">
-            <DollarSign className="h-3.5 w-3.5 mr-1.5 text-[#00AEEF]" /> Budget Range
+            <DollarSign className="h-3.5 w-3.5 mr-1.5 text-[#c5a059]" /> Budget Range
           </label>
           <select
             value={budgetRange}
@@ -137,7 +137,7 @@ export function SmartCourseFinder({ onPreSelectCourse }: SmartCourseFinderProps)
 
         <div className="space-y-1.5">
           <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center">
-            <Search className="h-3.5 w-3.5 mr-1.5 text-[#00AEEF]" /> Interest Field / Major
+            <Search className="h-3.5 w-3.5 mr-1.5 text-[#c5a059]" /> Interest Field / Major
           </label>
           <input
             type="text"
@@ -198,7 +198,7 @@ export function SmartCourseFinder({ onPreSelectCourse }: SmartCourseFinderProps)
         <div className="mt-8 pt-8 border-t border-slate-100 space-y-6 animate-in fade-in slide-in-from-top-6 duration-400">
           <div className="flex items-center justify-between">
             <h3 className="font-display font-semibold text-slate-800 text-base">Matched Programs</h3>
-            <span className="text-xs text-[#00AEEF] bg-[#00AEEF]/10 px-2 py-0.5 rounded font-mono font-medium">Matching Complete</span>
+            <span className="text-xs text-[#c5a059] bg-[#c5a059]/10 px-2 py-0.5 rounded font-mono font-medium">Matching Complete</span>
           </div>
 
           <div className="grid grid-cols-1 gap-6">
@@ -212,7 +212,7 @@ export function SmartCourseFinder({ onPreSelectCourse }: SmartCourseFinderProps)
                     <span className="text-lg">🎓</span>
                     <span className="text-[#05452d] text-[11px] font-bold uppercase tracking-widest">{rec.country}</span>
                   </div>
-                  <h4 className="font-display font-bold text-[#05452d] text-base leading-tight group-hover:text-[#00AEEF] transition-colors">
+                  <h4 className="font-display font-bold text-[#05452d] text-base leading-tight group-hover:text-[#c5a059] transition-colors">
                     {rec.courseName}
                   </h4>
                   <p className="text-xs text-slate-500 font-medium">{rec.university} (Est. Duration: {rec.duration})</p>
@@ -229,7 +229,7 @@ export function SmartCourseFinder({ onPreSelectCourse }: SmartCourseFinderProps)
 
                   <button
                     onClick={() => handleInquire(rec, idx)}
-                    className="w-full md:w-auto bg-gradient-to-r from-[#05452d] to-[#0b5439] hover:from-[#00AEEF] hover:to-[#00AEEF] text-white py-2 px-4 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all duration-300 flex items-center justify-center space-x-1.5"
+                    className="w-full md:w-auto bg-gradient-to-r from-[#05452d] to-[#0b5439] hover:from-[#c5a059] hover:to-[#c5a059] text-white py-2 px-4 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all duration-300 flex items-center justify-center space-x-1.5"
                   >
                     {copiedIndex === idx ? (
                       <>
