@@ -7,7 +7,7 @@ import { BlogItem, PartnerUniversity } from "../types";
 export function AboutView() {
   return (
     <div className="space-y-12 animate-in fade-in duration-300" id="about-us-view">
-      <div className="bg-[#05452d] text-white p-8 md:p-12 rounded-3xl text-center space-y-3 relative overflow-hidden">
+      <div className="bg-[#0B5D3B] text-white p-8 md:p-12 rounded-3xl text-center space-y-3 relative overflow-hidden">
         <span className="text-xs bg-[#00AEEF] text-slate-900 font-bold px-3 py-1 rounded uppercase tracking-wider">Meet the Brand</span>
         <h2 className="text-3xl font-display font-black">A Brand of Journey Expert Ltd.</h2>
         <p className="text-slate-300 text-sm max-w-xl mx-autoLeading-relaxed">
@@ -17,12 +17,12 @@ export function AboutView() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center" id="about-mission-vision">
         <div className="space-y-4 text-left">
-          <h3 className="font-display font-bold text-[#05452d] text-2xl">Our Mission & Strategic Vision</h3>
+          <h3 className="font-display font-bold text-[#0B5D3B] text-2xl">Our Mission & Strategic Vision</h3>
           <p className="text-slate-600 text-xs sm:text-sm leading-relaxed">
             To empower South Asian student candidates with truthful profiling reviews and zero-plagiarism Statement of Purpose (SOP) guidance. JEL helps students find educational fits that respect budgets, scores, and settlement aspirations.
           </p>
           <div className="bg-slate-50 border border-slate-100 p-4 rounded-2xl">
-            <h4 className="font-display font-semibold text-[#05452d] text-sm">Vision Statement</h4>
+            <h4 className="font-display font-semibold text-[#0B5D3B] text-sm">Vision Statement</h4>
             <p className="text-slate-500 text-xs mt-1">To become the most reliable, client-first, ethical international educational consultant ecosystem in Bangladesh.</p>
           </div>
         </div>
@@ -48,13 +48,13 @@ export function AboutView() {
       <section className="space-y-8" id="about-team">
         <div className="text-center space-y-1">
           <span className="text-xs text-[#00AEEF] font-bold uppercase tracking-wider block">Leadership & Experts</span>
-          <h3 className="text-2xl font-display font-black text-[#05452d]">JEL Board of Counselors</h3>
+          <h3 className="text-2xl font-display font-black text-[#0B5D3B]">JEL Board of Counselors</h3>
           <p className="text-slate-500 text-xs sm:text-sm">Driven by certified professionals with profound immigration insights.</p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {TEAM_MEMBERS.map((m, idx) => (
-            <div key={idx} className="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm flex flex-col justify-between group hover:border-[#05452d] transition-all">
+            <div key={idx} className="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm flex flex-col justify-between group hover:border-[#0B5D3B] transition-all">
               <div className="relative h-48 bg-slate-100">
                 <img src={m.img} alt={m.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" referrerPolicy="no-referrer" />
               </div>
@@ -80,7 +80,7 @@ export function ServicesView() {
     <div className="space-y-12 animate-in fade-in duration-300 font-sans" id="services-view">
       <div className="text-center space-y-2 max-w-2xl mx-auto">
         <span className="text-xs text-[#00AEEF] font-bold uppercase tracking-wider block">What we do</span>
-        <h2 className="text-3xl font-display font-black text-[#05452d]">Our Comprehensive Services</h2>
+        <h2 className="text-3xl font-display font-black text-[#0B5D3B]">Our Comprehensive Services</h2>
         <p className="text-slate-500 text-xs sm:text-sm">
           We handle everything from initial capability audits and admissions applications to visas filing and post-arrival accommodation.
         </p>
@@ -187,7 +187,7 @@ export function CountriesView({ selectedCountryName }: CountriesViewProps) {
             onClick={() => setActiveCountryId(c.id)}
             className={`py-2 px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center space-x-1.5 ${
               activeCountryId === c.id
-                ? "bg-[#05452d] text-white shadow-md"
+                ? "bg-[#0B5D3B] text-white shadow-md"
                 : "bg-slate-100 text-slate-600 hover:bg-slate-200"
             }`}
           >
@@ -214,7 +214,7 @@ export function CountriesView({ selectedCountryName }: CountriesViewProps) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-slate-100 pt-6">
               <div className="bg-slate-50 border border-slate-100 p-4 rounded-2xl">
                 <span className="text-xs text-slate-400 font-bold block uppercase tracking-wide">Approx Tuition Expenses</span>
-                <span className="text-sm font-display font-bold text-[#05452d] block mt-1">{activeCountry.tuitionRange}</span>
+                <span className="text-sm font-display font-bold text-[#0B5D3B] block mt-1">{activeCountry.tuitionRange}</span>
                 <p className="text-[10px] text-slate-400 mt-1 leading-tight">Dependent on course, ranking tier, and regional location.</p>
               </div>
 
@@ -279,7 +279,7 @@ export function UniversitiesView({ onPreSelectCourse, initialSearchTerm = "" }: 
     <div className="space-y-8 animate-in fade-in duration-300 font-sans" id="universities-view">
       <div className="text-center space-y-2 max-w-2xl mx-auto">
         <span className="text-xs text-[#00AEEF] font-bold uppercase tracking-wider block">Affiliations</span>
-        <h2 className="text-3xl font-display font-black text-[#05452d]">50+ Certified Partner Universities</h2>
+        <h2 className="text-3xl font-display font-black text-[#0B5D3B]">50+ Certified Partner Universities</h2>
         <p className="text-slate-500 text-xs sm:text-sm">Filter, search, and review active courses with global scholarship options available right now.</p>
       </div>
 
@@ -318,14 +318,14 @@ export function UniversitiesView({ onPreSelectCourse, initialSearchTerm = "" }: 
         {filteredUnis.map((uni) => (
           <div
             key={uni.id}
-            className="bg-white border border-slate-100 rounded-2xl p-5 hover:border-[#05452d] hover:shadow-lg transition-all duration-300 text-left flex flex-col justify-between"
+            className="bg-white border border-slate-100 rounded-2xl p-5 hover:border-[#0B5D3B] hover:shadow-lg transition-all duration-300 text-left flex flex-col justify-between"
           >
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] bg-slate-100 px-2.5 py-0.5 rounded-full font-mono text-slate-500 font-bold uppercase tracking-wider">{uni.country}</span>
                 <span className="text-xs font-mono font-bold text-amber-500">{uni.ranking}</span>
               </div>
-              <h3 className="font-display font-bold text-[#05452d] text-base leading-snug line-clamp-1">{uni.name}</h3>
+              <h3 className="font-display font-bold text-[#0B5D3B] text-base leading-snug line-clamp-1">{uni.name}</h3>
               
               <div className="space-y-1 pt-2">
                 <span className="text-[10px] text-slate-400 uppercase font-bold block">Popular Degree Transfer streams:</span>
@@ -344,7 +344,7 @@ export function UniversitiesView({ onPreSelectCourse, initialSearchTerm = "" }: 
               </div>
               <button
                 onClick={() => onPreSelectCourse(uni.name, uni.country)}
-                className="bg-slate-50 hover:bg-[#05452d] hover:text-white border border-slate-100 text-[#05452d] text-[11px] font-bold py-1.5 px-3 rounded-lg transition-colors flex items-center"
+                className="bg-slate-50 hover:bg-[#0B5D3B] hover:text-white border border-slate-100 text-[#0B5D3B] text-[11px] font-bold py-1.5 px-3 rounded-lg transition-colors flex items-center"
               >
                 Inquire <ExternalLink className="h-3 w-3 ml-1" />
               </button>
@@ -388,7 +388,7 @@ export function ScholarshipsView({ initialSearchTerm = "" }: ScholarshipsViewPro
     <div className="space-y-8 animate-in fade-in duration-300 font-sans" id="scholarships-view">
       <div className="text-center space-y-2 max-w-2xl mx-auto">
         <span className="text-xs text-[#00AEEF] font-bold uppercase tracking-wider block font-mono">Financial waivers</span>
-        <h2 className="text-3xl font-display font-black text-[#05452d]">Active Scholarships: Intake 2026/2027</h2>
+        <h2 className="text-3xl font-display font-black text-[#0B5D3B]">Active Scholarships: Intake 2026/2027</h2>
         <p className="text-slate-500 text-xs sm:text-sm">Explore specialized bursaries, full government rewards and partial waivers. Let JEL draft matching credentials.</p>
       </div>
 
@@ -432,14 +432,14 @@ export function ScholarshipsView({ initialSearchTerm = "" }: ScholarshipsViewPro
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredScholarships.map((sch) => (
-            <div key={sch.id} className="bg-white border border-slate-100 rounded-3xl p-6 hover:shadow-xl hover:border-[#05452d] transition duration-300 text-left flex flex-col justify-between">
+            <div key={sch.id} className="bg-white border border-slate-100 rounded-3xl p-6 hover:shadow-xl hover:border-[#0B5D3B] transition duration-300 text-left flex flex-col justify-between">
               <div className="space-y-4">
                 <div className="flex items-center justify-between border-b border-slate-50 pb-2">
                   <span className="text-[11px] font-mono text-indigo-600 font-bold uppercase bg-indigo-50 px-2.5 py-0.5 rounded-full">{sch.country}</span>
                   <span className="text-[10px] text-slate-400 font-mono">Deadline: {sch.deadline}</span>
                 </div>
                 
-                <h3 className="font-display font-bold text-[#05452d] text-base leading-tight">{sch.title}</h3>
+                <h3 className="font-display font-bold text-[#0B5D3B] text-base leading-tight">{sch.title}</h3>
                 <p className="text-amber-500 text-sm font-black font-display">{sch.coverage}</p>
                 <p className="text-slate-500 text-xs leading-normal">{sch.description}</p>
               </div>
@@ -503,7 +503,7 @@ export function BlogView({ initialSearchTerm = "", initialBlogId = null, onClear
     <div className="space-y-8 animate-in fade-in duration-300 font-sans" id="blog-view">
       <div className="text-center space-y-2 max-w-2xl mx-auto">
         <span className="text-xs text-[#00AEEF] font-bold uppercase tracking-wider block">Resource Hub</span>
-        <h2 className="text-3xl font-display font-black text-[#05452d]">Guides, Visa Updates & Blogs</h2>
+        <h2 className="text-3xl font-display font-black text-[#0B5D3B]">Guides, Visa Updates & Blogs</h2>
         <p className="text-slate-500 text-xs sm:text-sm">Read masterclasses compiled by JEL's senior registry directors and stay ahead of immigration index revisions.</p>
       </div>
 
@@ -519,7 +519,7 @@ export function BlogView({ initialSearchTerm = "", initialBlogId = null, onClear
             </button>
             <div className="space-y-4">
               <span className="text-[10px] bg-indigo-100 text-indigo-700 font-bold px-2 py-0.5 rounded uppercase tracking-wider">{expandedBlog.category}</span>
-              <h3 className="font-display font-black text-[#05452d] text-xl md:text-2xl leading-snug">{expandedBlog.title}</h3>
+              <h3 className="font-display font-black text-[#0B5D3B] text-xl md:text-2xl leading-snug">{expandedBlog.title}</h3>
               
               <div className="flex items-center space-x-3 text-xs text-slate-400 font-mono">
                 <span>By {expandedBlog.author}</span>
@@ -573,7 +573,7 @@ export function BlogView({ initialSearchTerm = "", initialBlogId = null, onClear
           <div
             key={b.id}
             onClick={() => setExpandedBlog(b)}
-            className="bg-white border border-slate-100 rounded-3xl overflow-hidden hover:shadow-xl hover:border-[#05452d] transitionduration-300 cursor-pointer text-left flex flex-col md:flex-row"
+            className="bg-white border border-slate-100 rounded-3xl overflow-hidden hover:shadow-xl hover:border-[#0B5D3B] transitionduration-300 cursor-pointer text-left flex flex-col md:flex-row"
           >
             <div className="md:w-1/3 relative h-40 md:h-auto bg-slate-100">
               <img src={b.imageUrl} alt={b.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
@@ -581,14 +581,14 @@ export function BlogView({ initialSearchTerm = "", initialBlogId = null, onClear
 
             <div className="p-6 md:w-2/3 space-y-3 flex flex-col justify-between">
               <div className="space-y-1.5">
-                <span className="text-[10px] bg-[#00AEEF]/20 text-[#05452d] font-bold px-2 py-0.5 rounded uppercase tracking-wider">{b.category}</span>
+                <span className="text-[10px] bg-[#00AEEF]/20 text-[#0B5D3B] font-bold px-2 py-0.5 rounded uppercase tracking-wider">{b.category}</span>
                 <h3 className="font-display font-bold text-slate-950 text-sm sm:text-base leading-tight hover:text-[#00AEEF] transition duration-200">{b.title}</h3>
                 <p className="text-slate-500 text-xs leading-normal line-clamp-3">{b.excerpt}</p>
               </div>
 
               <div className="flex items-center justify-between text-[11px] text-slate-400 font-mono">
                 <span>{b.date} • {b.readTime}</span>
-                <span className="text-[#05452d] font-bold">Read Full Guide →</span>
+                <span className="text-[#0B5D3B] font-bold">Read Full Guide →</span>
               </div>
             </div>
           </div>
@@ -617,7 +617,7 @@ export function ContactView() {
     <div className="space-y-12 animate-in fade-in duration-300 font-sans" id="contact-us-view">
       <div className="text-center space-y-2 max-w-2xl mx-auto">
         <span className="text-xs text-[#00AEEF] font-bold uppercase tracking-wider block">Office & Map</span>
-        <h2 className="text-3xl font-display font-black text-[#05452d]">Get in Touch with JEL Office</h2>
+        <h2 className="text-3xl font-display font-black text-[#0B5D3B]">Get in Touch with JEL Office</h2>
         <p className="text-slate-500 text-xs sm:text-sm">Walk into our premium consultancy space at Tejgaon or send a message directly to counselors.</p>
       </div>
 
@@ -744,7 +744,7 @@ export function ContactView() {
             <div className="sm:col-span-2 flex justify-end">
               <button
                 type="submit"
-                className="bg-[#05452d] hover:bg-[#03301f] text-white font-bold py-2.5 px-6 rounded-lg text-xs uppercase tracking-wider shadow"
+                className="bg-[#0B5D3B] hover:bg-[#03301f] text-white font-bold py-2.5 px-6 rounded-lg text-xs uppercase tracking-wider shadow"
               >
                 Submit message
               </button>
@@ -758,8 +758,8 @@ export function ContactView() {
               <span>JEL Studio Maps Location (Tejgaon Mor)</span>
             </div>
             
-            <div className="bg-gradient-to-br from-[#05452d]/5 to-[#00AEEF]/5 rounded-xl border border-slate-200 h-28 flex flex-col justify-center items-center text-center p-4">
-              <h4 className="text-xs font-bold text-[#05452d]">JEL Study Abroad Hub (Nabisco Mor)</h4>
+            <div className="bg-gradient-to-br from-[#0B5D3B]/5 to-[#00AEEF]/5 rounded-xl border border-slate-200 h-28 flex flex-col justify-center items-center text-center p-4">
+              <h4 className="text-xs font-bold text-[#0B5D3B]">JEL Study Abroad Hub (Nabisco Mor)</h4>
               <p className="text-[10px] text-slate-500 mt-1 max-w-sm">
                 Next to Abdul Motin Complex, opposite to Nabisco mor bus station. Accessible by rickshaw and local bus.
               </p>

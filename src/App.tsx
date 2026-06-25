@@ -78,7 +78,7 @@ export default function App() {
       
       {/* 1. Header Premium Contact Bar */}
       <header className="bg-[#0B5D3B] text-white text-[11px] py-2 relative z-40 font-medium border-b border-white/10">
-        <div className="max-w-[1800px] w-[92%] mx-auto flex flex-col md:flex-row justify-between items-center gap-2 px-4">
+        <div className="max-w-[1800px] w-[94%] xl:w-[95%] mx-auto flex flex-col md:flex-row justify-between items-center gap-2 px-4">
           <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 md:gap-6">
             <span className="flex items-center gap-1.5 opacity-90">
               <MapPin className="h-3.5 w-3.5 text-[#D4AF37]" /> 
@@ -105,7 +105,7 @@ export default function App() {
 
       {/* 2. Sticky Luxury Navigation Menu */}
       <nav className="bg-white/90 backdrop-blur-md border-b border-slate-100 sticky top-0 z-30 shadow-sm" id="main-navigation-bar">
-        <div className="max-w-[1800px] w-[92%] mx-auto px-4 h-16 md:h-20 flex items-center justify-between">
+        <div className="max-w-[1800px] w-[94%] xl:w-[95%] mx-auto px-4 h-16 md:h-20 flex items-center justify-between">
           
           {/* Logo Brand Segment */}
           <div 
@@ -181,14 +181,14 @@ export default function App() {
           <div className="lg:hidden flex items-center space-x-2">
             <button
               onClick={() => setIsSearchOpen(true)}
-              className="p-2 text-slate-500 hover:text-[#05452d] bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition shrink-0"
+              className="p-2 text-slate-500 hover:text-[#0B5D3B] bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition shrink-0"
               title="Open search"
             >
               <Search className="h-4 w-4" />
             </button>
             <button
               onClick={() => { setActiveTab("booking"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-              className="bg-[#05452d] text-white text-[11px] font-bold py-1.5 px-3 rounded-lg"
+              className="bg-[#0B5D3B] text-white text-[11px] font-bold py-1.5 px-3 rounded-lg"
             >
               Book Now
             </button>
@@ -212,7 +212,7 @@ export default function App() {
                 setIsMobileMenuOpen(false);
                 setIsSearchOpen(true);
               }}
-              className="w-full bg-slate-50 border border-slate-200 hover:border-[#05452d] rounded-xl p-3.5 flex items-center space-x-2 text-slate-500 text-left hover:bg-slate-100 cursor-pointer text-xs font-bold transition-all"
+              className="w-full bg-slate-50 border border-slate-200 hover:border-[#0B5D3B] rounded-xl p-3.5 flex items-center space-x-2 text-slate-500 text-left hover:bg-slate-100 cursor-pointer text-xs font-bold transition-all"
             >
               <Search className="h-4 w-4 text-slate-400" />
               <span>Search universities, scholarships, visa guides...</span>
@@ -230,7 +230,7 @@ export default function App() {
                   }}
                   className={`py-2.5 px-3 rounded-lg text-xs font-bold uppercase tracking-wider text-left ${
                     activeTab === item.id
-                      ? "bg-slate-100 text-[#05452d]"
+                      ? "bg-slate-100 text-[#0B5D3B]"
                       : "text-slate-600 hover:bg-slate-50"
                   }`}
                 >
@@ -270,7 +270,7 @@ export default function App() {
       </nav>
       
       {/* 3. Global AI & CRM Floating Bar Actions */}
-      <section className="bg-[#0B5D3B] text-white py-4 px-6 md:px-10 rounded-3xl w-[92%] max-w-[1800px] mx-auto mt-4 mb-6 border border-white/10 shadow-lg shadow-[#0B5D3B]/10 relative overflow-hidden" id="ai-quick-tools-bar">
+      <section className="bg-[#0B5D3B] text-white py-4 px-6 md:px-10 rounded-3xl w-[94%] xl:w-[95%] max-w-[1800px] mx-auto mt-4 mb-6 border border-white/10 shadow-lg shadow-[#0B5D3B]/10 relative overflow-hidden" id="ai-quick-tools-bar">
         <div className="absolute right-0 top-0 h-32 w-32 rounded-full bg-[#D4AF37] opacity-15 blur-2xl"></div>
         <div className="max-w-[1800px] mx-auto flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex items-center space-x-3">
@@ -306,7 +306,7 @@ export default function App() {
       </section>
 
       {/* 4. Main Page View Render */}
-      <main className="flex-1 w-full max-w-[1800px] w-[92%] mx-auto px-4 pb-20 relative z-10" id="main-content-canvas">
+      <main className="flex-1 w-full max-w-[1800px] w-[94%] xl:w-[95%] mx-auto px-4 pb-20 relative z-10" id="main-content-canvas">
         {activeTab === "home" && (
           <HomeView 
             setActiveTab={setActiveTab} 
@@ -376,7 +376,7 @@ export default function App() {
 
       {/* 6. Premium Humanized Footer */}
       <footer className="bg-slate-950 text-white pt-16 pb-8 border-t border-slate-900 px-6 mt-auto rounded-t-[40px]" id="jel-footer">
-        <div className="max-w-[1800px] w-[92%] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 text-left mb-12">
+        <div className="max-w-[1800px] w-[94%] xl:w-[95%] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 text-left mb-12">
           
            {/* Brand Col */}
           <div className="space-y-4">
@@ -463,7 +463,7 @@ export default function App() {
         </div>
 
         {/* Footer Legal credits */}
-        <div className="max-w-[1800px] w-[92%] mx-auto border-t border-slate-900 pt-8 flex flex-col md:flex-row items-center justify-between text-[11px] text-slate-500 gap-4">
+        <div className="max-w-[1800px] w-[94%] xl:w-[95%] mx-auto border-t border-slate-900 pt-8 flex flex-col md:flex-row items-center justify-between text-[11px] text-slate-500 gap-4">
           <p>© {new Date().getFullYear()} JEL Study Abroad. All Rights Reserved. A concern of Journey Expert Ltd.</p>
           <div className="flex items-center space-x-4 font-mono font-bold text-[#D4AF37]">
             <span>LIC: TRAD/DNCC/008823/2022</span>

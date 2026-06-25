@@ -219,7 +219,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
       </section>
 
       {/* 2. Trust Indicators Banner */}
-      <section className="w-full max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12" id="trust-indicators">
+      <section className="w-full mx-auto" id="trust-indicators">
         <div className="bg-white rounded-3xl border border-slate-100 p-8 md:p-10 shadow-lg shadow-slate-100/50">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
@@ -267,7 +267,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
       </section>
 
       {/* 3. AI-POWERED FEATURES (6 Interactive Assistant Cards) */}
-      <section className="w-full max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 relative" id="ai-powered-features">
+      <section className="w-full relative" id="ai-powered-features">
         <div className="text-center space-y-3 max-w-2xl mx-auto mb-16">
           <span className="text-xs text-[#0B5D3B] font-black uppercase tracking-wider block bg-[#0B5D3B]/5 py-1 px-3.5 rounded-full w-fit mx-auto">
             🚀 Intelligent Education Engine
@@ -397,7 +397,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
       </section>
 
       {/* 4. Study Destinations (Premium Country Cards with gorgeous high-res photos) */}
-      <section className="w-full max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12" id="home-destinations">
+      <section className="w-full" id="home-destinations">
         <div className="text-center space-y-3 max-w-2xl mx-auto mb-16">
           <span className="text-[#D4AF37] text-xs font-bold uppercase tracking-widest block font-mono">
             🌍 Global Academic Destinations
@@ -466,7 +466,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
       </section>
 
       {/* 5. CAREER SERVICES (Premium 7 Dedicated Section) */}
-      <section className="w-full max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 relative" id="career-services">
+      <section className="w-full relative" id="career-services">
         <div className="bg-[#0B5D3B] text-white p-8 md:p-16 rounded-[40px] shadow-2xl relative overflow-hidden">
           <div className="absolute right-0 bottom-0 h-96 w-96 rounded-full bg-[#D4AF37] opacity-10 blur-3xl"></div>
           <div className="absolute left-0 top-0 h-96 w-96 rounded-full bg-[#00AEEF] opacity-10 blur-3xl"></div>
@@ -598,7 +598,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
       </section>
 
       {/* 7. SUCCESS STORIES (Testimonials Metrics + Student Achievements) */}
-      <section className="w-full max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12" id="success-stories">
+      <section className="w-full" id="success-stories">
         <div className="text-center space-y-3 max-w-2xl mx-auto mb-16">
           <span className="text-[#0B5D3B] text-xs font-bold uppercase tracking-widest block font-mono">
             🎓 Genuine Placements
@@ -647,7 +647,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
       </section>
 
       {/* 8. VIDEO TESTIMONIALS (Dedicated testimoinal cards layout) */}
-      <section className="w-full max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12" id="video-testimonials">
+      <section className="w-full" id="video-testimonials">
         <div className="text-center space-y-3 max-w-2xl mx-auto mb-16">
           <span className="text-xs text-[#0B5D3B] font-bold uppercase tracking-widest block font-mono bg-[#0B5D3B]/5 px-3 py-1 rounded-full w-fit mx-auto">
             🎥 Video Success Stories
@@ -714,7 +714,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
       </section>
 
       {/* 9. GOOGLE REVIEWS SECTION (Trust Score Badge) */}
-      <section className="w-full max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12" id="google-reviews">
+      <section className="w-full" id="google-reviews">
         <div className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-3xl p-8 md:p-12 border border-slate-200/60 shadow-inner flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="space-y-3 text-left">
             <div className="flex items-center space-x-2">
@@ -762,7 +762,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
       </section>
 
       {/* 10. FAQ SECTION */}
-      <section className="w-full max-w-[1000px] mx-auto px-4 sm:px-6 lg:px-8 text-left" id="faq-section">
+      <section className="w-full max-w-4xl mx-auto text-left" id="faq-section">
         <div className="text-center space-y-3 mb-12">
           <span className="text-xs text-[#0B5D3B] font-bold uppercase tracking-widest block font-mono">
             💡 Clarifications & Questions
