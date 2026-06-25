@@ -9,7 +9,7 @@ import { HomeView } from "./components/HomeView";
 import { AboutView, ServicesView, CountriesView, UniversitiesView, ScholarshipsView, BlogView, ContactView } from "./components/InfoViews";
 import { SearchModal } from "./components/SearchModal";
 
-const jelLogo = new URL("./assets/images/jel_study_abroad_logo_1782110469815.jpg", import.meta.url).href;
+const jelLogo = new URL("./assets/images/jel_circular_logo_1782372441429.jpg", import.meta.url).href;
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>("home");
