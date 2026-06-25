@@ -85,7 +85,7 @@ export function AIChatAssistant() {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-[#05452d] to-[#00AEEF] text-white shadow-xl hover:scale-105 active:scale-95 transition-all duration-300 relative group"
+          className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-[#0B5D3B] to-[#00AEEF] text-white shadow-xl hover:scale-105 active:scale-95 transition-all duration-300 relative group"
           id="btn-open-chat-assistant"
           aria-label="Open AI Assistant"
         >
@@ -115,7 +115,7 @@ export function AIChatAssistant() {
           id="ai-chat-assistant-panel"
         >
           {/* Header */}
-          <div className="bg-gradient-to-r from-[#05452d] via-[#0b5439] to-[#05452d] text-white p-4 flex items-center justify-between">
+          <div className="bg-gradient-to-r from-[#0B5D3B] via-[#0B5D3B]/90 to-[#0B5D3B] text-white p-4 flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="bg-white p-1 rounded-lg h-9 w-9 flex items-center justify-center shadow-sm">
                 <img 
@@ -145,10 +145,10 @@ export function AIChatAssistant() {
           {/* Quick Notice Banner */}
           <div className="bg-slate-50 border-b border-slate-100 px-4 py-2 flex items-center justify-between text-xs text-slate-500 font-sans">
             <span className="flex items-center">
-              <MessageSquare className="h-3 w-3 text-[#05452d] mr-1.5" />
+              <MessageSquare className="h-3 w-3 text-[#0B5D3B] mr-1.5" />
               Direct Support:
             </span>
-            <div className="flex items-center space-x-3 text-[11px] font-medium text-[#05452d]">
+            <div className="flex items-center space-x-3 text-[11px] font-medium text-[#0B5D3B]">
               <a href="tel:+8801926400400" className="flex items-center hover:underline">
                 <Phone className="h-3 w-3 mr-0.5" /> Call
               </a>
@@ -170,7 +170,7 @@ export function AIChatAssistant() {
                 <div
                   className={`p-3 rounded-2xl text-xs sm:text-[13px] leading-relaxed shadow-sm ${
                     m.sender === "user"
-                      ? "bg-gradient-to-r from-[#05452d] to-[#0b5439] text-white rounded-br-none"
+                      ? "bg-gradient-to-r from-[#0B5D3B] to-[#0B5D3B]/90 text-white rounded-br-none"
                       : "bg-white text-slate-800 border border-slate-100 rounded-bl-none"
                   }`}
                 >
@@ -206,7 +206,7 @@ export function AIChatAssistant() {
                   <button
                     key={idx}
                     onClick={() => handleQuickPrompt(p.substring(2))}
-                    className="text-[11px] text-[#05452d] bg-slate-100 hover:bg-slate-200 transition-colors py-1.5 px-2.5 rounded-lg font-medium text-left border border-slate-200"
+                    className="text-[11px] text-[#0B5D3B] bg-slate-100 hover:bg-slate-200 transition-colors py-1.5 px-2.5 rounded-lg font-medium text-left border border-slate-200"
                   >
                     {p}
                   </button>
@@ -225,13 +225,13 @@ export function AIChatAssistant() {
                 if (e.key === "Enter") handleSendMessage(inputValue);
               }}
               placeholder="Type your study abroad query..."
-              className="flex-1 bg-slate-50 border border-slate-200 text-xs sm:text-sm py-2 px-3 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#05452d] text-slate-800"
+              className="flex-1 bg-slate-50 border border-slate-200 text-xs sm:text-sm py-2 px-3 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#0B5D3B] text-slate-800"
               id="input-chat-assistant"
             />
             <button
               onClick={() => handleSendMessage(inputValue)}
               disabled={!inputValue.trim()}
-              className="bg-[#05452d] hover:bg-[#03301f] disabled:opacity-50 text-white rounded-xl p-2.5 transition-all text-xs"
+              className="bg-[#0B5D3B] hover:bg-[#0B5D3B]/90 disabled:opacity-50 text-white rounded-xl p-2.5 transition-all text-xs"
               id="btn-send-chat-assistant"
             >
               <Send className="h-4 w-4" />

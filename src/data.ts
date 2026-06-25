@@ -9,7 +9,8 @@ export const COUNTRIES: CountryData[] = [
     tuitionRange: "£14,000 - £26,000 / year",
     workOpportunities: "20 hours/week part-time. 2 years Post-Study Work (PSW) Visa (3 years for PhD).",
     popularUniversities: ["University College London (UCL)", "University of Greenwich", "Manchester Metropolitan University", "Coventry University"],
-    description: "The UK is world-renowned for its heritage in education, highly intensive 1-year master's degrees, and exciting multi-cultural student hubs."
+    description: "The UK is world-renowned for its heritage in education, highly intensive 1-year master's degrees, and exciting multi-cultural student hubs.",
+    imageUrl: "https://images.unsplash.com/photo-1513635269975-59663e0ca1ad?auto=format&fit=crop&q=80&w=600"
   },
   {
     id: "australia",
@@ -19,7 +20,8 @@ export const COUNTRIES: CountryData[] = [
     tuitionRange: "A$22,000 - A$45,000 / year",
     workOpportunities: "48 hours/fortnight part-time. 2 to 4 years post-study work rights depending on qualification.",
     popularUniversities: ["Monash University", "University of Sydney", "Macquarie University", "Deakin University"],
-    description: "Australia offers superb educational rigor, great postgraduate wage structures, an active lifestyle, and clear temporary-to-permanent avenues."
+    description: "Australia offers superb educational rigor, great postgraduate wage structures, an active lifestyle, and clear temporary-to-permanent avenues.",
+    imageUrl: "https://images.unsplash.com/photo-1523482596112-99c8192048c1?auto=format&fit=crop&q=80&w=600"
   },
   {
     id: "canada",
@@ -29,7 +31,8 @@ export const COUNTRIES: CountryData[] = [
     tuitionRange: "C$18,000 - C$38,000 / year",
     workOpportunities: "Standard off-campus part-time work rights. Up to 3 years Post-Graduation Work Permit (PGWP).",
     popularUniversities: ["University of Toronto", "McGill University", "Seneca College", "York University"],
-    description: "Widely regarded as the most progressive student destination, Canada represents unrivaled immigration friendliness, tech growth, and safety."
+    description: "Widely regarded as the most progressive student destination, Canada represents unrivaled immigration friendliness, tech growth, and safety.",
+    imageUrl: "https://images.unsplash.com/photo-1502082553048-f009c37129b9?auto=format&fit=crop&q=80&w=600"
   },
   {
     id: "usa",
@@ -39,7 +42,8 @@ export const COUNTRIES: CountryData[] = [
     tuitionRange: "$20,000 - $48,000 / year",
     workOpportunities: "On-campus part-time (20 hrs/week). 1 year of standard OPT (up to 3 years total for STEM graduates).",
     popularUniversities: ["New York University (NYU)", "Northeastern University", "Arizona State University", "University of Texas at Dallas"],
-    description: "Home to the world's highest density of Top 100 QS Ranked schools, state-of-the-art research funding, and unmatched venture startup environments."
+    description: "Home to the world's highest density of Top 100 QS Ranked schools, state-of-the-art research funding, and unmatched venture startup environments.",
+    imageUrl: "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?auto=format&fit=crop&q=80&w=600"
   },
   {
     id: "ireland",
@@ -49,7 +53,8 @@ export const COUNTRIES: CountryData[] = [
     tuitionRange: "€12,000 - €24,000 / year",
     workOpportunities: "20 hours/week part-time (40 hrs during holidays). 2-year stay back visa for master's grads.",
     popularUniversities: ["Trinity College Dublin", "University College Dublin (UCD)", "Dublin City University", "Galway Mayo Institute of Tech"],
-    description: "Rapidly scaling as the European tech headquarters, Ireland combines warm hospitality with deep global employment opportunities in coding and finance."
+    description: "Rapidly scaling as the European tech headquarters, Ireland combines warm hospitality with deep global employment opportunities in coding and finance.",
+    imageUrl: "https://images.unsplash.com/photo-1590089415225-403ed0f96a2d?auto=format&fit=crop&q=80&w=600"
   },
   {
     id: "newzealand",
@@ -59,7 +64,19 @@ export const COUNTRIES: CountryData[] = [
     tuitionRange: "NZ$24,000 - NZ$35,000 / year",
     workOpportunities: "20 hours/week part-time. Up to 3 years post-study work visa depending on qualification levels.",
     popularUniversities: ["University of Auckland", "Auckland University of Technology", "Waikato University", "Lincoln University"],
-    description: "Kiwi education champions hands-on discovery and research integrity, wrapped in standard post-study work rights and breathtaking, peaceful scenery."
+    description: "Kiwi education champions hands-on discovery and research integrity, wrapped in standard post-study work rights and breathtaking, peaceful scenery.",
+    imageUrl: "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&q=80&w=600"
+  },
+  {
+    id: "germany",
+    name: "Germany",
+    code: "DE",
+    flag: "🇩🇪",
+    tuitionRange: "Exempt (Public Universities) or €0 - €3,000 / year",
+    workOpportunities: "120 full days or 240 half days/year. Clear structural pathways to post-study work visa and EU Blue Card.",
+    popularUniversities: ["Technical University of Munich", "Heidelberg University", "Ludwig Maximilian University of Munich", "RWTH Aachen University"],
+    description: "As Europe's economic powerhouse, Germany offers world-class free education at highly-ranked public institutions with excellent engineering and tech sectors.",
+    imageUrl: "https://images.unsplash.com/photo-1467269204594-9661b134dd2b?auto=format&fit=crop&q=80&w=600"
   },
   {
     id: "malaysia",
@@ -69,7 +86,8 @@ export const COUNTRIES: CountryData[] = [
     tuitionRange: "$4,000 - $9,000 / year",
     workOpportunities: "Restricted part-time permissions. High-quality standard degree transfer routes to Western institutions.",
     popularUniversities: ["Taylor's University", "Sunway University", "Asia Pacific University (APU)", "UCSI University"],
-    description: "Malaysia has evolved into a powerhouse for low-tuition global degrees, hosting esteemed branch campuses of top UK and Australian universities."
+    description: "Malaysia has evolved into a powerhouse for low-tuition global degrees, hosting esteemed branch campuses of top UK and Australian universities.",
+    imageUrl: "https://images.unsplash.com/photo-1540959733332-eab4deceeaf7?auto=format&fit=crop&q=80&w=600"
   }
 ];
 

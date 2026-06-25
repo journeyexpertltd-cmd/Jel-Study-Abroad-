@@ -53,6 +53,7 @@ export interface CountryData {
   workOpportunities: string;
   popularUniversities: string[];
   description: string;
+  imageUrl?: string;
 }
 
 export interface PartnerUniversity {
