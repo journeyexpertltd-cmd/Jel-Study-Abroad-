@@ -199,6 +199,10 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
                   alt="JEL Study Abroad"
                   className="object-contain w-52 h-52 sm:w-60 sm:h-60 xl:w-72 xl:h-72 rounded-full shadow-lg scale-95 group-hover:scale-100 transition-transform duration-700 bg-white p-4"
                   referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&q=80&w=600";
+                  }}
                 />
               </div>
 
@@ -426,6 +430,10 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
                     alt={c.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                     referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&q=80&w=600";
+                    }}
                   />
                   <div className="absolute bottom-4 left-6 right-6 z-20 flex items-center justify-between">
                     <span className="text-4xl leading-none">{c.flag}</span>
@@ -634,6 +642,10 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
                   alt={t.name}
                   className="w-12 h-12 rounded-full object-cover shadow-inner border border-slate-100"
                   referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=200";
+                  }}
                 />
                 <div>
                   <h4 className="font-display font-bold text-slate-950 text-sm leading-none">{t.name}</h4>
@@ -674,6 +686,11 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
                     src={v.photoUrl} 
                     alt={v.name} 
                     className="w-full h-full object-cover blur-[1px] opacity-70 group-hover:scale-105 transition-transform duration-500"
+                    referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=200";
+                    }}
                   />
                   {/* Glassmorphic Play button icon overlay */}
                   <div className="absolute z-20 bg-white/20 hover:bg-white/30 border border-white/30 h-14 w-14 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-115 cursor-pointer">

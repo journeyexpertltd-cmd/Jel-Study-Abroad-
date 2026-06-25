@@ -118,6 +118,10 @@ export default function App() {
                 alt="JEL Study Abroad" 
                 className="h-11 md:h-13 lg:h-15 w-auto object-contain transition-all duration-300 group-hover:scale-105 filter group-hover:drop-shadow-sm bg-white rounded-full p-0.5 shadow-xs"
                 referrerPolicy="no-referrer"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.style.display = "none";
+                }}
               />
             </div>
             <span className="text-[7px] md:text-[8px] tracking-[0.14em] uppercase text-[#0B5D3B] font-extrabold mt-1 text-left block group-hover:text-[#D4AF37] transition-colors duration-300">
@@ -387,6 +391,10 @@ export default function App() {
                   alt="JEL Study Abroad" 
                   className="h-10 w-auto object-contain"
                   referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.style.display = "none";
+                  }}
                 />
               </div>
               <span className="text-[8px] tracking-[0.14em] uppercase text-[#0B5D3B] font-extrabold mt-3 block group-hover:text-amber-500 transition-colors duration-300">

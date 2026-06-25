@@ -95,6 +95,10 @@ export function AIChatAssistant() {
               alt="JEL Study Abroad" 
               className="h-full w-full object-contain rounded-full"
               referrerPolicy="no-referrer"
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.style.display = "none";
+              }}
             />
           </div>
           <span className="absolute right-16 top-2 bg-slate-900 text-white text-xs py-1.5 px-3 rounded-lg shadow-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300 hidden md:inline-block border border-slate-700">
@@ -123,6 +127,10 @@ export function AIChatAssistant() {
                   alt="JEL Study Abroad" 
                   className="h-full w-full object-contain rounded-md"
                   referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.style.display = "none";
+                  }}
                 />
               </div>
               <div>

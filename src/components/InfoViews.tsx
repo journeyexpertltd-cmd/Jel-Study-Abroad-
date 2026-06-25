@@ -56,7 +56,16 @@ export function AboutView() {
           {TEAM_MEMBERS.map((m, idx) => (
             <div key={idx} className="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm flex flex-col justify-between group hover:border-[#0B5D3B] transition-all">
               <div className="relative h-48 bg-slate-100">
-                <img src={m.img} alt={m.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" referrerPolicy="no-referrer" />
+                <img 
+                  src={m.img} 
+                  alt={m.name} 
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                  referrerPolicy="no-referrer" 
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=200";
+                  }}
+                />
               </div>
               <div className="p-4 space-y-2 text-left flex-1 flex flex-col justify-between">
                 <div>
@@ -576,7 +585,16 @@ export function BlogView({ initialSearchTerm = "", initialBlogId = null, onClear
             className="bg-white border border-slate-100 rounded-3xl overflow-hidden hover:shadow-xl hover:border-[#0B5D3B] transitionduration-300 cursor-pointer text-left flex flex-col md:flex-row"
           >
             <div className="md:w-1/3 relative h-40 md:h-auto bg-slate-100">
-              <img src={b.imageUrl} alt={b.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+              <img 
+                src={b.imageUrl} 
+                alt={b.title} 
+                className="w-full h-full object-cover" 
+                referrerPolicy="no-referrer" 
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&q=80&w=400";
+                }}
+              />
             </div>
 
             <div className="p-6 md:w-2/3 space-y-3 flex flex-col justify-between">
