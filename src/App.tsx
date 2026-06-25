@@ -78,7 +78,7 @@ export default function App() {
       
       {/* 1. Header Premium Contact Bar */}
       <header className="bg-[#0B5D3B] text-white text-[11px] py-2 relative z-40 font-medium border-b border-white/10">
-        <div className="max-w-[1800px] w-[94%] xl:w-[95%] mx-auto flex flex-col md:flex-row justify-between items-center gap-2 px-4">
+        <div className="max-w-[1600px] w-full mx-auto flex flex-col md:flex-row justify-between items-center gap-2 px-4 sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 md:gap-6">
             <span className="flex items-center gap-1.5 opacity-90">
               <MapPin className="h-3.5 w-3.5 text-[#D4AF37]" /> 
@@ -105,7 +105,7 @@ export default function App() {
 
       {/* 2. Sticky Luxury Navigation Menu */}
       <nav className="bg-white/90 backdrop-blur-md border-b border-slate-100 sticky top-0 z-30 shadow-sm" id="main-navigation-bar">
-        <div className="max-w-[1800px] w-[94%] xl:w-[95%] mx-auto px-4 h-16 md:h-20 flex items-center justify-between">
+        <div className="max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 h-16 md:h-20 flex items-center justify-between">
           
           {/* Logo Brand Segment */}
           <div 
@@ -270,9 +270,9 @@ export default function App() {
       </nav>
       
       {/* 3. Global AI & CRM Floating Bar Actions */}
-      <section className="bg-[#0B5D3B] text-white py-4 px-6 md:px-10 rounded-3xl w-[94%] xl:w-[95%] max-w-[1800px] mx-auto mt-4 mb-6 border border-white/10 shadow-lg shadow-[#0B5D3B]/10 relative overflow-hidden" id="ai-quick-tools-bar">
+      <section className="bg-[#0B5D3B] text-white py-4 px-6 md:px-10 rounded-3xl w-full max-w-[1600px] mx-auto mt-4 mb-6 border border-white/10 shadow-lg shadow-[#0B5D3B]/10 relative overflow-hidden" id="ai-quick-tools-bar">
         <div className="absolute right-0 top-0 h-32 w-32 rounded-full bg-[#D4AF37] opacity-15 blur-2xl"></div>
-        <div className="max-w-[1800px] mx-auto flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="max-w-[1600px] mx-auto flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex items-center space-x-3">
             <div className="bg-[#D4AF37]/20 p-2.5 rounded-2xl">
               <Brain className="h-6 w-6 text-[#D4AF37] animate-pulse" />
@@ -306,7 +306,7 @@ export default function App() {
       </section>
 
       {/* 4. Main Page View Render */}
-      <main className="flex-1 w-full max-w-[1800px] w-[94%] xl:w-[95%] mx-auto px-4 pb-20 relative z-10" id="main-content-canvas">
+      <main className="flex-1 w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pb-16 relative z-10" id="main-content-canvas">
         {activeTab === "home" && (
           <HomeView 
             setActiveTab={setActiveTab} 
@@ -375,8 +375,8 @@ export default function App() {
       </a>
 
       {/* 6. Premium Humanized Footer */}
-      <footer className="bg-slate-950 text-white pt-16 pb-8 border-t border-slate-900 px-6 mt-auto rounded-t-[40px]" id="jel-footer">
-        <div className="max-w-[1800px] w-[94%] xl:w-[95%] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 text-left mb-12">
+      <footer className="bg-slate-950 text-white pt-12 pb-8 border-t border-slate-900 px-4 sm:px-6 lg:px-8 mt-auto rounded-t-[40px]" id="jel-footer">
+        <div className="max-w-[1600px] w-full mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 text-left mb-8">
           
            {/* Brand Col */}
           <div className="space-y-4">
@@ -463,7 +463,7 @@ export default function App() {
         </div>
 
         {/* Footer Legal credits */}
-        <div className="max-w-[1800px] w-[94%] xl:w-[95%] mx-auto border-t border-slate-900 pt-8 flex flex-col md:flex-row items-center justify-between text-[11px] text-slate-500 gap-4">
+        <div className="max-w-[1600px] w-full mx-auto border-t border-slate-900 pt-6 flex flex-col md:flex-row items-center justify-between text-[11px] text-slate-500 gap-4">
           <p>© {new Date().getFullYear()} JEL Study Abroad. All Rights Reserved. A concern of Journey Expert Ltd.</p>
           <div className="flex items-center space-x-4 font-mono font-bold text-[#D4AF37]">
             <span>LIC: TRAD/DNCC/008823/2022</span>

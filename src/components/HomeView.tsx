@@ -100,10 +100,10 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
   };
 
   return (
-    <div className="font-sans space-y-20 md:space-y-28 xl:space-y-36 animate-in fade-in duration-500 bg-[#F8F9FA]" id="jel-premium-home">
+    <div className="font-sans space-y-10 md:space-y-14 lg:space-y-18 animate-in fade-in duration-500 bg-[#F8F9FA]" id="jel-premium-home">
       
       {/* 1. Hero Section */}
-      <section className="relative bg-gradient-to-br from-slate-900 via-[#0B5D3B]/95 to-slate-950 rounded-[40px] p-6 sm:p-10 md:p-16 lg:p-20 text-white min-h-[500px] xl:min-h-[640px] py-12 md:py-16 xl:py-24 flex items-center overflow-hidden shadow-2xl w-full mx-auto" id="home-hero">
+      <section className="relative bg-gradient-to-br from-slate-900 via-[#0B5D3B]/95 to-slate-950 rounded-3xl p-6 sm:p-10 md:p-14 lg:p-16 text-white min-h-[500px] xl:min-h-[580px] flex items-center overflow-hidden shadow-2xl w-full mx-auto" id="home-hero">
         {/* Abstract luxurious overlays & golden glow highlights */}
         <div className="absolute -right-24 -top-24 w-[500px] h-[500px] bg-gradient-to-br from-[#00AEEF]/20 to-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
         <div className="absolute -left-20 -bottom-20 w-[400px] h-[400px] bg-gradient-to-br from-[#D4AF37]/20 to-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
@@ -193,7 +193,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
               <div className="absolute inset-0 bg-gradient-to-r from-[#D4AF37]/20 to-[#00AEEF]/20 rounded-full blur-2xl animate-pulse"></div>
 
               {/* Luxury Logo frame */}
-              <div className="relative w-full h-full rounded-[40px] overflow-hidden shadow-2xl border-4 border-white/20 bg-white/5 backdrop-blur-xl group transition-all duration-500 hover:shadow-yellow-500/10 flex items-center justify-center p-6 md:p-8 xl:p-12">
+              <div className="relative w-full h-full rounded-3xl overflow-hidden shadow-2xl border-4 border-white/20 bg-white/5 backdrop-blur-xl group transition-all duration-500 hover:shadow-yellow-500/10 flex items-center justify-center p-6 md:p-8 xl:p-12">
                 <img
                   src={brandLogoImg}
                   alt="JEL Study Abroad"
@@ -268,7 +268,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
 
       {/* 3. AI-POWERED FEATURES (6 Interactive Assistant Cards) */}
       <section className="w-full relative" id="ai-powered-features">
-        <div className="text-center space-y-3 max-w-2xl mx-auto mb-16">
+        <div className="text-center space-y-3 max-w-2xl mx-auto mb-10 lg:mb-12">
           <span className="text-xs text-[#0B5D3B] font-black uppercase tracking-wider block bg-[#0B5D3B]/5 py-1 px-3.5 rounded-full w-fit mx-auto">
             🚀 Intelligent Education Engine
           </span>
@@ -398,7 +398,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
 
       {/* 4. Study Destinations (Premium Country Cards with gorgeous high-res photos) */}
       <section className="w-full" id="home-destinations">
-        <div className="text-center space-y-3 max-w-2xl mx-auto mb-16">
+        <div className="text-center space-y-3 max-w-2xl mx-auto mb-10 lg:mb-12">
           <span className="text-[#D4AF37] text-xs font-bold uppercase tracking-widest block font-mono">
             🌍 Global Academic Destinations
           </span>
@@ -419,7 +419,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
             >
               <div>
                 {/* Visual rich banner segment */}
-                <div className="h-48 overflow-hidden relative">
+                <div className="h-48 overflow-hidden relative bg-slate-100">
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-900/30 to-transparent z-10"></div>
                   <img
                     src={c.imageUrl || "https://images.unsplash.com/photo-1513635269975-59663e0ca1ad?auto=format&fit=crop&q=80&w=400"}
@@ -467,11 +467,11 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
 
       {/* 5. CAREER SERVICES (Premium 7 Dedicated Section) */}
       <section className="w-full relative" id="career-services">
-        <div className="bg-[#0B5D3B] text-white p-8 md:p-16 rounded-[40px] shadow-2xl relative overflow-hidden">
+        <div className="bg-[#0B5D3B] text-white px-6 py-12 sm:px-10 sm:py-14 md:px-14 md:py-16 rounded-3xl shadow-2xl relative overflow-hidden">
           <div className="absolute right-0 bottom-0 h-96 w-96 rounded-full bg-[#D4AF37] opacity-10 blur-3xl"></div>
           <div className="absolute left-0 top-0 h-96 w-96 rounded-full bg-[#00AEEF] opacity-10 blur-3xl"></div>
 
-          <div className="text-center space-y-3 max-w-2xl mx-auto mb-16 relative z-10">
+          <div className="text-center space-y-3 max-w-2xl mx-auto mb-10 lg:mb-12 relative z-10">
             <span className="text-xs bg-white/15 text-[#D4AF37] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
               Comprehensive Student Care
             </span>
@@ -599,7 +599,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
 
       {/* 7. SUCCESS STORIES (Testimonials Metrics + Student Achievements) */}
       <section className="w-full" id="success-stories">
-        <div className="text-center space-y-3 max-w-2xl mx-auto mb-16">
+        <div className="text-center space-y-3 max-w-2xl mx-auto mb-10 lg:mb-12">
           <span className="text-[#0B5D3B] text-xs font-bold uppercase tracking-widest block font-mono">
             🎓 Genuine Placements
           </span>
@@ -648,7 +648,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
 
       {/* 8. VIDEO TESTIMONIALS (Dedicated testimoinal cards layout) */}
       <section className="w-full" id="video-testimonials">
-        <div className="text-center space-y-3 max-w-2xl mx-auto mb-16">
+        <div className="text-center space-y-3 max-w-2xl mx-auto mb-10 lg:mb-12">
           <span className="text-xs text-[#0B5D3B] font-bold uppercase tracking-widest block font-mono bg-[#0B5D3B]/5 px-3 py-1 rounded-full w-fit mx-auto">
             🎥 Video Success Stories
           </span>
@@ -763,7 +763,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
 
       {/* 10. FAQ SECTION */}
       <section className="w-full max-w-4xl mx-auto text-left" id="faq-section">
-        <div className="text-center space-y-3 mb-12">
+        <div className="text-center space-y-3 mb-8 lg:mb-10">
           <span className="text-xs text-[#0B5D3B] font-bold uppercase tracking-widest block font-mono">
             💡 Clarifications & Questions
           </span>
