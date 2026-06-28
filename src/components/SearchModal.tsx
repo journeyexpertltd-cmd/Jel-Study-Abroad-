@@ -269,7 +269,7 @@ export function SearchModal({
                   </div>
                   <div className="space-y-1">
                     <h4 className="font-display font-bold text-slate-800 text-sm">Search with Keywords</h4>
-                    <p className="text-xs text-slate-405 text-slate-500 max-w-sm mx-auto">
+                    <p className="text-xs text-slate-500 max-w-sm mx-auto">
                       Type terms like <span className="font-semibold text-[#0B5D3B]">"Canada"</span>, <span className="font-semibold text-[#0B5D3B]">"SOP"</span>, <span className="font-semibold text-[#0B5D3B]">"Monash"</span>, or <span className="font-semibold text-[#0B5D3B]">"Tuition"</span> to trigger real-time registry matches.
                     </p>
                   </div>
@@ -283,7 +283,7 @@ export function SearchModal({
                           setQuery(suggest);
                           inputRef.current?.focus();
                         }}
-                        className="text-[11px] font-bold border border-slate-200 hover:border-[#D4AF37] bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-lg text-slate-650 transition duration-150"
+                        className="text-[11px] font-bold border border-slate-200 hover:border-[#D4AF37] bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-lg text-slate-600 transition duration-150"
                       >
                         ⚡ "{suggest}"
                       </button>
@@ -336,7 +336,7 @@ export function SearchModal({
                               </h3>
                               <p className="text-slate-500 text-xs flex flex-wrap gap-1 mt-1">
                                 {uni.popularPrograms.map((p, i) => (
-                                  <span key={i} className="bg-slate-50 text-slate-700 px-1.5 py-0.5 rounded border border-slate-150/40 text-[10px]">
+                                  <span key={i} className="bg-slate-50 text-slate-700 px-1.5 py-0.5 rounded border border-slate-200/40 text-[10px]">
                                     {p}
                                   </span>
                                 ))}
@@ -444,12 +444,12 @@ export function SearchModal({
             <div className="bg-slate-50/80 px-4 py-2.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400 font-medium select-none shrink-0">
               <div className="flex items-center space-x-4">
                 <span className="flex items-center space-x-1">
-                  <kbd className="bg-white border border-slate-205 py-0.5 px-1 rounded shadow-xs font-mono">↓</kbd>
-                  <kbd className="bg-white border border-slate-205 py-0.5 px-1 rounded shadow-xs font-mono">↑</kbd>
+                  <kbd className="bg-white border border-slate-200 py-0.5 px-1 rounded shadow-xs font-mono">↓</kbd>
+                  <kbd className="bg-white border border-slate-200 py-0.5 px-1 rounded shadow-xs font-mono">↑</kbd>
                   <span>to navigate</span>
                 </span>
                 <span className="flex items-center space-x-1">
-                  <kbd className="bg-white border border-slate-205 py-0.5 px-1.5 rounded shadow-xs font-mono">Enter</kbd>
+                  <kbd className="bg-white border border-slate-200 py-0.5 px-1.5 rounded shadow-xs font-mono">Enter</kbd>
                   <span>to select</span>
                 </span>
               </div>

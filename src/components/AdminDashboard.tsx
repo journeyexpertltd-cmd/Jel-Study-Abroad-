@@ -699,7 +699,7 @@ export function AdminDashboard() {
               <h3 className="font-display font-bold text-slate-900 text-sm uppercase tracking-wider">
                 Safe Payment Settlement Ledger & Receipts
               </h3>
-              <p className="text-xs text-slate-505 font-sans mt-0.5">
+              <p className="text-xs text-slate-500 font-sans mt-0.5">
                 Authorized financial payments synced directly from SSLCOMMERZ gateway container nodes.
               </p>
             </div>

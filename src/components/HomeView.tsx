@@ -716,6 +716,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
                       alt={c.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                       referrerPolicy="no-referrer"
+                      loading="lazy"
                       onError={(e) => {
                         e.currentTarget.onerror = null;
                         e.currentTarget.src = "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&q=80&w=600";
@@ -976,6 +977,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
                   alt={t.name}
                   className="w-12 h-12 rounded-full object-cover shadow-inner border border-slate-200"
                   referrerPolicy="no-referrer"
+                  loading="lazy"
                   onError={(e) => {
                     e.currentTarget.onerror = null;
                     e.currentTarget.src = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=200";
@@ -1021,6 +1023,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
                     alt={v.name} 
                     className="w-full h-full object-cover blur-[0.5px] opacity-75 group-hover:scale-105 transition-transform duration-500"
                     referrerPolicy="no-referrer"
+                    loading="lazy"
                     onError={(e) => {
                       e.currentTarget.onerror = null;
                       e.currentTarget.src = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=200";
@@ -1130,6 +1133,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
                     alt={b.title} 
                     className="w-full h-full object-cover" 
                     referrerPolicy="no-referrer"
+                    loading="lazy"
                     onError={(e) => {
                       e.currentTarget.onerror = null;
                       e.currentTarget.src = "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&q=80&w=400";
