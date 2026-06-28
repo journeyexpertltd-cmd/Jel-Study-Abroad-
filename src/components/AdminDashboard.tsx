@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Users, Filter, CheckCircle, Search, Edit3, MoreHorizontal, UserCheck, Plus, Trash2, Calendar, FileText, ChevronRight, Activity, ClipboardList, Coins } from "lucide-react";
+import { Users, Filter, CheckCircle, Search, Edit3, MoreHorizontal, UserCheck, Plus, Trash2, Calendar, FileText, ChevronRight, Activity, ClipboardList, Coins, Lock } from "lucide-react";
 import { Lead } from "../types";
 
 const INITIAL_LEADS: Lead[] = [
@@ -65,7 +65,12 @@ const INITIAL_LEADS: Lead[] = [
   }
 ];
 
-export function AdminDashboard() {
+interface AdminDashboardProps {
+  setActiveTab?: (tab: string) => void;
+}
+
+export function AdminDashboard({ setActiveTab }: AdminDashboardProps = {}) {
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("All");
@@ -78,6 +83,18 @@ export function AdminDashboard() {
   const [crmView, setCrmView] = useState<"leads" | "payments">("leads");
   const [txList, setTxList] = useState<any[]>([]);
   const [isTxLoading, setIsTxLoading] = useState(false);
+
+  // Read session on mount to verify role-based authorization
+  useEffect(() => {
+    const localSession = localStorage.getItem("jel_portal_user");
+    if (localSession) {
+      try {
+        setCurrentUser(JSON.parse(localSession));
+      } catch (e) {
+        setCurrentUser(null);
+      }
+    }
+  }, []);
   const [txWarning, setTxWarning] = useState<string | null>(null);
 
   const fetchTxList = async () => {
@@ -325,6 +342,36 @@ export function AdminDashboard() {
   const newCount = leads.filter(l => l.status === "New").length;
   const inProgressCount = leads.filter(l => ["In Assessment", "Uni Approved", "Visa Pending"].includes(l.status)).length;
   const approvedCount = leads.filter(l => l.status === "Visa Approved" || l.status === "Completed").length;
+
+  if (currentUser && currentUser.role === "student") {
+    return (
+      <div className="max-w-xl mx-auto py-16 px-6 text-center space-y-6 bg-white border border-slate-100 rounded-[32px] shadow-xl my-8">
+        <div className="h-16 w-16 bg-red-50 border border-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto shadow-xs">
+          <Lock className="h-8 w-8" />
+        </div>
+        <h3 className="font-display font-black text-slate-900 text-xl uppercase tracking-wider">
+          Access Restricted to Counselors
+        </h3>
+        <p className="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
+          Your current student profile does not have administrator or counselor clearance to access the JEL CRM Terminal.
+        </p>
+        <div className="pt-2">
+          <button
+            onClick={() => {
+              if (setActiveTab) {
+                setActiveTab("portal");
+              } else {
+                window.location.reload();
+              }
+            }}
+            className="bg-[#0B5D3B] hover:bg-[#074028] text-white text-xs font-black py-3 px-6 rounded-xl uppercase tracking-wider transition cursor-pointer"
+          >
+            Return to Student Portal
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="font-sans space-y-6" id="admin-crm-dashboard">

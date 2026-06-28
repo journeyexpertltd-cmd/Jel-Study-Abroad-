@@ -12,6 +12,7 @@ import { ConsultationBooking } from "./components/ConsultationBooking";
 import { HomeView } from "./components/HomeView";
 import { AboutView, ServicesView, CountriesView, UniversitiesView, ScholarshipsView, BlogView, ContactView } from "./components/InfoViews";
 import { SearchModal } from "./components/SearchModal";
+import { StudentPortal } from "./components/StudentPortal";
 
 const jelLogo = new URL("./assets/images/jel_circular_logo_1782372441429.jpg", import.meta.url).href;
 
@@ -224,6 +225,7 @@ export default function App() {
     { id: "universities", label: "Partners" },
     { id: "scholarships", label: "Scholarships" },
     { id: "blog", label: "Guides & Blogs" },
+    { id: "portal", label: "Student Portal" },
     { id: "contact", label: "Contact Us" }
   ];
 
@@ -469,7 +471,10 @@ export default function App() {
             setActiveTab={setActiveTab}
           />
         )}
-        {activeTab === "admin" && <AdminDashboard />}
+        {activeTab === "portal" && (
+          <StudentPortal setActiveTab={setActiveTab} onPreSelectCountry={handlePreSelectCountry} />
+        )}
+        {activeTab === "admin" && <AdminDashboard setActiveTab={setActiveTab} />}
       </main>
 
       {/* 5. Persistent Companion AI Chat widget, Sticky Book Consultation & Floating WhatsApp */}
