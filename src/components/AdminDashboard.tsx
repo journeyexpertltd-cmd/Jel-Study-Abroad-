@@ -142,7 +142,7 @@ export function AdminDashboard({ setActiveTab }: AdminDashboardProps = {}) {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   
   // Sidebar navigation and sub-views
-  const [activeMenu, setActiveMenu] = useState<"dashboard" | "leads" | "documents" | "chat" | "payments" | "supabase">("dashboard");
+  const [activeMenu, setActiveMenu] = useState<"dashboard" | "leads" | "documents" | "chat" | "payments" | "supabase" | "whatsapp" | "scoring">("dashboard");
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
@@ -173,6 +173,96 @@ export function AdminDashboard({ setActiveTab }: AdminDashboardProps = {}) {
   const [supabaseErrorMessage, setSupabaseErrorMessage] = useState("");
   const [supabaseConfig, setSupabaseConfig] = useState<any>(null);
   const [isSyncing, setIsSyncing] = useState(false);
+
+  // WhatsApp state variables
+  const [whatsAppTemplates, setWhatsAppTemplates] = useState([
+    { id: "t1", name: "Consultation Welcome", text: "Hello {{fullName}}, thank you for choosing JEL Study Abroad. Your booking for study in {{preferredCountry}} is confirmed. Our Tejgaon team will call you soon! Hotline: +8801926400400" },
+    { id: "t2", name: "SOP Document Reminder", text: "Dear {{fullName}}, your counselor noticed a pending Statement of Purpose (SOP) file in your locker. Please log into your JEL Student Portal to complete the generation." },
+    { id: "t3", name: "Offer Letter Issued", text: "Congratulations {{fullName}}! Your offer letter for {{preferredCountry}} study has been processed successfully. Please review the tuition deposit." },
+    { id: "t4", name: "Visa Stamped Alert", text: "Great news {{fullName}}! Your visa passport stamp for {{preferredCountry}} has been secured! Please contact your counselor Tashfeen Ahmed for a pre-departure briefing." }
+  ]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState("t1");
+  const [whatsAppLogs, setWhatsAppLogs] = useState<any[]>([
+    { id: "wl-1", recipient: "Sayed Al-Mamun", phone: "+8801712345678", templateName: "Consultation Welcome", text: "Hello Sayed Al-Mamun, thank you for choosing JEL Study Abroad. Your booking for study in Canada is confirmed...", status: "Delivered", time: "2026-06-19 14:35" },
+    { id: "wl-2", recipient: "Tasnia Rahman", phone: "+8801912445566", templateName: "SOP Document Reminder", text: "Dear Tasnia Rahman, your counselor noticed a pending Statement of Purpose (SOP) file in your locker...", status: "Delivered", time: "2026-06-21 09:15" }
+  ]);
+  const [isWhatsAppAutoEnabled, setIsWhatsAppAutoEnabled] = useState(true);
+  const [isWhatsAppStatusTriggerEnabled, setIsWhatsAppStatusTriggerEnabled] = useState(true);
+  const [manualWhatsAppStudentId, setManualWhatsAppStudentId] = useState("");
+  const [manualWhatsAppTemplateId, setManualWhatsAppTemplateId] = useState("t1");
+
+  // Scoring Weights state variables
+  const [scoringWeights, setScoringWeights] = useState({
+    academic: 25,
+    language: 25,
+    budget: 20,
+    destination: 15,
+    studyGap: 15
+  });
+
+  // Dynamic Lead Score Evaluator
+  const computeLeadScore = (lead: Lead) => {
+    let academicScore = 12; 
+    const edu = (lead.educationLevel || "").toLowerCase();
+    if (edu.includes("bachelor") || edu.includes("master")) {
+      academicScore = 25;
+    } else if (edu.includes("hsc") || edu.includes("higher secondary") || edu.includes("diploma")) {
+      academicScore = 20;
+    } else {
+      academicScore = 15;
+    }
+
+    let languageScore = 15; 
+    const msg = (lead.message || "").toLowerCase();
+    if (msg.includes("7.5") || msg.includes("7.0") || msg.includes("8.0") || msg.includes("8.5") || msg.includes("9.0")) {
+      languageScore = 25;
+    } else if (msg.includes("6.5") || msg.includes("6.0")) {
+      languageScore = 20;
+    } else if (msg.includes("5.5") || msg.includes("5.0")) {
+      languageScore = 12;
+    }
+
+    let budgetScore = 12; 
+    if (msg.includes("25,000") || msg.includes("30,000") || msg.includes("35,000") || msg.includes("high budget") || msg.includes("financial backing") || msg.includes("25k") || msg.includes("30k")) {
+      budgetScore = 25;
+    } else if (msg.includes("12,000") || msg.includes("15,000") || msg.includes("18,000") || msg.includes("20,000") || msg.includes("15k") || msg.includes("20k")) {
+      budgetScore = 18;
+    } else if (msg.includes("5,000") || msg.includes("8,000")) {
+      budgetScore = 8;
+    }
+
+    let destScore = 10;
+    const dest = (lead.preferredCountry || "").toLowerCase();
+    if (["canada", "united kingdom", "uk", "australia", "united states", "usa"].includes(dest)) {
+      destScore = 25;
+    } else if (["germany", "ireland"].includes(dest)) {
+      destScore = 18;
+    }
+
+    let gapScore = 25; 
+    if (msg.includes("gap") || msg.includes("study gap")) {
+      if (msg.includes("5 years") || msg.includes("6 years") || msg.includes("7 years") || msg.includes("gap: 5") || msg.includes("gap: 6")) {
+        gapScore = 5;
+      } else if (msg.includes("2 years") || msg.includes("3 years") || msg.includes("gap: 2") || msg.includes("gap: 3")) {
+        gapScore = 15;
+      } else {
+        gapScore = 10;
+      }
+    }
+
+    const weightTotal = scoringWeights.academic + scoringWeights.language + scoringWeights.budget + scoringWeights.destination + scoringWeights.studyGap;
+    const norm = weightTotal > 0 ? weightTotal : 100;
+
+    const rawVal = 
+      (academicScore * (scoringWeights.academic / 25) * 25 + 
+       languageScore * (scoringWeights.language / 25) * 25 + 
+       budgetScore * (scoringWeights.budget / 25) * 25 + 
+       destScore * (scoringWeights.destination / 25) * 25 + 
+       gapScore * (scoringWeights.studyGap / 25) * 25);
+
+    const finalWeighted = (rawVal / 125) * 100;
+    return Math.round(Math.min(100, Math.max(15, finalWeighted)));
+  };
 
   // Active counselors/agents for assignment dropdowns
   const JEL_COUNSELORS = ["Tashfeen Ahmed", "Sayed Al-Mamun", "Sultana Razia"];
@@ -365,6 +455,21 @@ export function AdminDashboard({ setActiveTab }: AdminDashboardProps = {}) {
     const updated = [newLead, ...leads];
     saveLeadsToStorage(updated);
     showToast(`🔔 Simulated Lead Ingested: ${newLead.fullName}!`);
+
+    // Dynamic WhatsApp Welcome Automation Trigger
+    if (isWhatsAppAutoEnabled) {
+      const whatsAppLogId = `wl-auto-${Date.now()}`;
+      const logMsg = {
+        id: whatsAppLogId,
+        recipient: newLead.fullName,
+        phone: newLead.mobileNumber,
+        templateName: "Consultation Welcome",
+        text: `Hello ${newLead.fullName}, thank you for choosing JEL Study Abroad. Your booking for study in ${newLead.preferredCountry} is confirmed. Our Tejgaon team will call you soon! Hotline: +8801926400400`,
+        status: "Delivered",
+        time: new Date().toISOString().replace('T', ' ').substring(0, 16)
+      };
+      setWhatsAppLogs(prev => [logMsg, ...prev]);
+    }
 
     // Write real-time simulated lead to Supabase
     fetch("/api/supabase/booking", {
@@ -632,6 +737,32 @@ export function AdminDashboard({ setActiveTab }: AdminDashboardProps = {}) {
       assignedAgent: editingAgent
     };
 
+    // Automated WhatsApp Notification Trigger on Status Change
+    if (isWhatsAppStatusTriggerEnabled && selectedLead.status !== editingStatus) {
+      let templateSelected = whatsAppTemplates.find(t => t.id === "t3") || whatsAppTemplates[2]; // offer letter
+      if (editingStatus === "Visa Approved" || editingStatus === "Completed") {
+        templateSelected = whatsAppTemplates.find(t => t.id === "t4") || whatsAppTemplates[3]; // visa
+      } else if (editingStatus === "In Assessment") {
+        templateSelected = whatsAppTemplates.find(t => t.id === "t2") || whatsAppTemplates[1]; // sop
+      }
+      
+      const parsedText = templateSelected.text
+        .replace("{{fullName}}", selectedLead.fullName)
+        .replace("{{preferredCountry}}", selectedLead.preferredCountry);
+
+      const whatsAppLogId = `wl-status-${Date.now()}`;
+      const logMsg = {
+        id: whatsAppLogId,
+        recipient: selectedLead.fullName,
+        phone: selectedLead.mobileNumber,
+        templateName: templateSelected.name,
+        text: parsedText,
+        status: "Delivered",
+        time: new Date().toISOString().replace('T', ' ').substring(0, 16)
+      };
+      setWhatsAppLogs(prev => [logMsg, ...prev]);
+    }
+
     const updated = leads.map(l => l.id === selectedLead.id ? updatedLead : l);
     saveLeadsToStorage(updated);
     setSelectedLead(updatedLead);
@@ -846,6 +977,26 @@ export function AdminDashboard({ setActiveTab }: AdminDashboardProps = {}) {
               <Activity className="h-4 w-4" />
               <span>Supabase Sync Hub</span>
             </button>
+
+            <button
+              onClick={() => { setActiveMenu("scoring"); setSelectedLead(null); }}
+              className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-bold transition duration-150 cursor-pointer ${
+                activeMenu === "scoring" ? "bg-[#D4AF37] text-slate-950 shadow-md shadow-amber-500/10" : "text-slate-200 hover:bg-white/5"
+              }`}
+            >
+              <ClipboardList className="h-4 w-4" />
+              <span>Lead Scoring Engine</span>
+            </button>
+
+            <button
+              onClick={() => { setActiveMenu("whatsapp"); setSelectedLead(null); }}
+              className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-bold transition duration-150 cursor-pointer ${
+                activeMenu === "whatsapp" ? "bg-[#D4AF37] text-slate-950 shadow-md shadow-amber-500/10" : "text-slate-200 hover:bg-white/5"
+              }`}
+            >
+              <Send className="h-4 w-4" />
+              <span>WhatsApp Automation</span>
+            </button>
           </div>
         </div>
 
@@ -879,6 +1030,8 @@ export function AdminDashboard({ setActiveTab }: AdminDashboardProps = {}) {
               {activeMenu === "chat" && "Intelligent Student Chat Hub"}
               {activeMenu === "payments" && "SSLCOMMERZ Financial Receipts"}
               {activeMenu === "supabase" && "Supabase Live Synchronization"}
+              {activeMenu === "scoring" && "Dynamic Lead Scoring Engine"}
+              {activeMenu === "whatsapp" && "WhatsApp Automation System"}
             </h3>
             <span className="hidden lg:inline-flex items-center space-x-1.5 bg-[#0B5D3B]/10 text-[#0B5D3B] px-3 py-1 rounded-full text-xs font-bold border border-[#0B5D3B]/20">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -1754,6 +1907,395 @@ export function AdminDashboard({ setActiveTab }: AdminDashboardProps = {}) {
                     </div>
                   </div>
 
+                </div>
+              </div>
+
+            </div>
+          )}
+
+          {/* VIEW 7: LEAD SCORING ENGINE */}
+          {activeMenu === "scoring" && (
+            <div className="space-y-6 animate-in fade-in duration-300 text-left">
+              
+              {/* Scoring Hero Card */}
+              <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white p-6 rounded-[24px] shadow-sm flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+                <div className="space-y-1.5 max-w-xl">
+                  <span className="text-[10px] bg-[#D4AF37] text-slate-950 font-black px-2 py-0.5 rounded uppercase tracking-wider">
+                    SaaS Decision Intelligence
+                  </span>
+                  <h2 className="text-xl md:text-2xl font-display font-black">
+                    Weighted Vetting & Prioritization Engine
+                  </h2>
+                  <p className="text-slate-400 text-xs leading-relaxed font-light">
+                    Analyze, rank, and segment prospects using custom-weighted multipliers for Academics, Language scores, financial backing, and visa gap policies.
+                  </p>
+                </div>
+                
+                <div className="bg-white/5 border border-white/10 p-3 rounded-xl flex items-center space-x-2.5">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping"></span>
+                  <div className="text-right">
+                    <span className="text-[9px] uppercase tracking-widest text-slate-400 block">Dynamic Re-indexing</span>
+                    <span className="text-[11px] font-mono font-bold text-emerald-400">Scores Computed Live</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Slider Panel & Weight Tuning */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                {/* Tuning sliders */}
+                <div className="lg:col-span-4 bg-white border border-slate-200 p-5 rounded-3xl shadow-xs space-y-4">
+                  <div>
+                    <h4 className="font-display font-bold text-slate-900 text-sm uppercase tracking-wider">
+                      Parameter Weight Tuner
+                    </h4>
+                    <p className="text-[11px] text-slate-500">Configure core parameters based on current visa application trends.</p>
+                  </div>
+
+                  <div className="space-y-4 pt-2">
+                    {[
+                      { key: "academic", label: "Academic Profile (GPA / Level)", color: "accent-emerald-600" },
+                      { key: "language", label: "Language Proficiency (IELTS / PTE)", color: "accent-blue-600" },
+                      { key: "budget", label: "Financial Budget (Tuition Limit)", color: "accent-amber-600" },
+                      { key: "destination", label: "Destination Country Fit", color: "accent-indigo-600" },
+                      { key: "studyGap", label: "Study Gap Mitigation Score", color: "accent-rose-600" }
+                    ].map((item) => (
+                      <div key={item.key} className="space-y-1.5">
+                        <div className="flex justify-between text-xs font-semibold">
+                          <span className="text-slate-600">{item.label}</span>
+                          <span className="font-mono text-slate-900 font-extrabold bg-slate-100 px-2 py-0.5 rounded">
+                            {scoringWeights[item.key as keyof typeof scoringWeights]}%
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="40"
+                          step="5"
+                          value={scoringWeights[item.key as keyof typeof scoringWeights]}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value);
+                            setScoringWeights(prev => ({
+                              ...prev,
+                              [item.key]: val
+                            }));
+                          }}
+                          className={`w-full h-1.5 rounded-lg bg-slate-100 appearance-none cursor-pointer ${item.color}`}
+                        />
+                      </div>
+                    ))}
+                    
+                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-[10px] text-slate-500 leading-normal select-none">
+                      💡 **Calculation Model Vetting**: Adjusting these percentages instantly shifts priority tags on the core database without modifying physical profiles.
+                    </div>
+                  </div>
+                </div>
+
+                {/* Score Leaderboard Grid */}
+                <div className="lg:col-span-8 bg-white border border-slate-200 p-5 rounded-3xl shadow-xs space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-display font-bold text-slate-900 text-sm uppercase tracking-wider">
+                        Ranked Ingestion Pipeline
+                      </h4>
+                      <p className="text-[11px] text-slate-500">Student list ordered dynamically by conversion probability and visa compliance rating.</p>
+                    </div>
+                    <span className="text-[10px] font-mono bg-slate-100 text-slate-600 font-black px-2.5 py-1 rounded">
+                      {leads.length} Evaluated
+                    </span>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="border-b border-slate-150 text-[10px] uppercase font-bold text-slate-400 select-none">
+                          <th className="py-2.5">Student & Country</th>
+                          <th className="py-2.5">Core Credentials Vetted</th>
+                          <th className="py-2.5 text-center">Score</th>
+                          <th className="py-2.5 text-right">Clearance Rating</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {leads.map((lead) => {
+                          const score = computeLeadScore(lead);
+                          let badgeBg = "bg-rose-50 text-rose-700 border-rose-100";
+                          let rating = "Low Priority (Cold)";
+                          if (score >= 75) {
+                            badgeBg = "bg-emerald-50 text-emerald-800 border-emerald-100";
+                            rating = "Hot Prospect (High)";
+                          } else if (score >= 50) {
+                            badgeBg = "bg-amber-50 text-amber-700 border-amber-100";
+                            rating = "Warm Contact (Medium)";
+                          }
+
+                          return (
+                            <tr key={lead.id} className="text-xs hover:bg-slate-50/80 transition">
+                              <td className="py-3">
+                                <div className="font-bold text-slate-800">{lead.fullName}</div>
+                                <div className="text-[10px] text-slate-500 mt-0.5 font-semibold">
+                                  🛫 Destination: {lead.preferredCountry}
+                                </div>
+                              </td>
+                              <td className="py-3 max-w-[240px]">
+                                <div className="truncate text-slate-700" title={lead.message}>
+                                  {lead.message}
+                                </div>
+                                <div className="text-[9px] text-slate-400 font-mono mt-0.5">
+                                  {lead.educationLevel}
+                                </div>
+                              </td>
+                              <td className="py-3 text-center">
+                                <span className={`px-2.5 py-1 rounded-full text-xs font-black font-mono border ${badgeBg}`}>
+                                  {score}%
+                                </span>
+                              </td>
+                              <td className="py-3 text-right">
+                                <span className="font-bold text-slate-700 block">{rating}</span>
+                                <span className="text-[9px] text-slate-400 font-light">Assigned: {lead.assignedCounselor || "Unassigned"}</span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          )}
+
+          {/* VIEW 8: WHATSAPP AUTOMATION */}
+          {activeMenu === "whatsapp" && (
+            <div className="space-y-6 animate-in fade-in duration-300 text-left">
+              
+              {/* WhatsApp Hero Card */}
+              <div className="bg-gradient-to-r from-emerald-900 to-[#0B5D3B] text-white p-6 rounded-[24px] shadow-sm flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+                <div className="space-y-1.5 max-w-xl">
+                  <span className="text-[10px] bg-[#D4AF37] text-slate-950 font-black px-2 py-0.5 rounded uppercase tracking-wider">
+                    Direct Messenger Sandbox
+                  </span>
+                  <h2 className="text-xl md:text-2xl font-display font-black">
+                    Official WhatsApp Integration Hub
+                  </h2>
+                  <p className="text-slate-300 text-xs leading-relaxed font-light">
+                    Dispatch triggers on application state transitions, prompt students for missing Statement of Purpose files, or broadcast success stories securely.
+                  </p>
+                </div>
+                
+                <div className="bg-white/5 border border-white/10 p-3 rounded-xl flex items-center space-x-2.5">
+                  <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <div className="text-right">
+                    <span className="text-[9px] uppercase tracking-widest text-slate-300 block">Webhook Stream</span>
+                    <span className="text-[11px] font-mono font-bold text-amber-300">API Broker Active</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Webhook and Automation Toggles */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                
+                <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-xs space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-800 uppercase tracking-wider block">
+                      Welcome Message
+                    </span>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={isWhatsAppAutoEnabled} 
+                        onChange={(e) => setIsWhatsAppAutoEnabled(e.target.checked)}
+                        className="sr-only peer" 
+                      />
+                      <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#0B5D3B]"></div>
+                    </label>
+                  </div>
+                  <p className="text-[11px] text-slate-500 leading-normal">
+                    Instantly broadcast consultation confirmation templates when a student profile gets ingested via webforms or campaigns.
+                  </p>
+                </div>
+
+                <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-xs space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-800 uppercase tracking-wider block">
+                      Stage Update Trigger
+                    </span>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={isWhatsAppStatusTriggerEnabled} 
+                        onChange={(e) => setIsWhatsAppStatusTriggerEnabled(e.target.checked)}
+                        className="sr-only peer" 
+                      />
+                      <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#0B5D3B]"></div>
+                    </label>
+                  </div>
+                  <p className="text-[11px] text-slate-500 leading-normal">
+                    Trigger templates automated on status shifts: missing SOP reminders for "In Assessment", deposit warnings, and stamped collection instructions.
+                  </p>
+                </div>
+
+                <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-xs space-y-3">
+                  <span className="text-xs font-bold text-slate-800 uppercase tracking-wider block">
+                    Cloud API Authentication
+                  </span>
+                  <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 font-mono text-[10px] text-slate-500 space-y-1">
+                    <p className="truncate">🔑 TOKEN: meta_wa_v21_prod_99...</p>
+                    <p className="truncate">🔗 CALLBACK: https://jel-wa.api/v1</p>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Template Manager and Manual Send */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                {/* Templates list */}
+                <div className="lg:col-span-8 bg-white border border-slate-200 p-5 rounded-3xl shadow-xs space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-display font-bold text-slate-900 text-sm uppercase tracking-wider">
+                        Approved WhatsApp Business Templates
+                      </h4>
+                      <p className="text-[11px] text-slate-500 font-light">Meta compliance audited variables pre-linked to core candidate variables.</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {whatsAppTemplates.map((tmpl) => (
+                      <div key={tmpl.id} className="border border-slate-200 p-4 rounded-2xl bg-slate-50/50 space-y-2 hover:border-slate-300 transition">
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs font-bold text-slate-800">{tmpl.name}</span>
+                          <span className="text-[9px] font-mono bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded font-bold">
+                            {tmpl.id}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-600 leading-relaxed font-sans italic bg-white p-2.5 border border-slate-150 rounded-xl">
+                          "{tmpl.text}"
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Manual dispatcher trigger */}
+                <div className="lg:col-span-4 bg-white border border-slate-200 p-5 rounded-3xl shadow-xs space-y-4">
+                  <div>
+                    <h4 className="font-display font-bold text-slate-900 text-sm uppercase tracking-wider">
+                      API Interactive Sandbox
+                    </h4>
+                    <p className="text-[11px] text-slate-500">Select a student and send a WhatsApp notice to test response logic.</p>
+                  </div>
+
+                  <form 
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      const targetLead = leads.find(l => l.id === manualWhatsAppStudentId);
+                      if (!targetLead) {
+                        showToast("⚠️ Select a valid candidate before dispatching.");
+                        return;
+                      }
+                      const tmpl = whatsAppTemplates.find(t => t.id === manualWhatsAppTemplateId) || whatsAppTemplates[0];
+                      const parsedText = tmpl.text
+                        .replace("{{fullName}}", targetLead.fullName)
+                        .replace("{{preferredCountry}}", targetLead.preferredCountry);
+
+                      const logMsg = {
+                        id: `wl-manual-${Date.now()}`,
+                        recipient: targetLead.fullName,
+                        phone: targetLead.mobileNumber,
+                        templateName: tmpl.name,
+                        text: parsedText,
+                        status: "Delivered",
+                        time: new Date().toISOString().replace('T', ' ').substring(0, 16)
+                      };
+                      setWhatsAppLogs(prev => [logMsg, ...prev]);
+                      showToast(`🚀 Dispatched WhatsApp Template "${tmpl.name}" to ${targetLead.fullName}!`);
+                    }}
+                    className="space-y-4"
+                  >
+                    <div className="space-y-1">
+                      <label className="text-[10px] uppercase font-bold text-slate-400 font-mono block">Select Student</label>
+                      <select
+                        value={manualWhatsAppStudentId}
+                        onChange={(e) => setManualWhatsAppStudentId(e.target.value)}
+                        required
+                        className="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-xs focus:outline-none focus:bg-white"
+                      >
+                        <option value="">-- Choose Candidate --</option>
+                        {leads.map(l => (
+                          <option key={l.id} value={l.id}>{l.fullName} ({l.mobileNumber})</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[10px] uppercase font-bold text-slate-400 font-mono block">Select Template</label>
+                      <select
+                        value={manualWhatsAppTemplateId}
+                        onChange={(e) => setManualWhatsAppTemplateId(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-xs focus:outline-none focus:bg-white"
+                      >
+                        {whatsAppTemplates.map(t => (
+                          <option key={t.id} value={t.id}>{t.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition"
+                    >
+                      Execute Secure API Dispatch &rarr;
+                    </button>
+                  </form>
+                </div>
+
+              </div>
+
+              {/* Dispatch logs stream */}
+              <div className="bg-white border border-slate-200 p-5 rounded-3xl shadow-xs space-y-4">
+                <div>
+                  <h4 className="font-display font-bold text-slate-900 text-sm uppercase tracking-wider">
+                    Live Broadcast Ledger Log
+                  </h4>
+                  <p className="text-[11px] text-slate-500">Real-time meta webhook delivery and double-checkmark status records.</p>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-150 text-[10px] uppercase font-bold text-slate-400 select-none">
+                        <th className="py-2.5">Delivered Time</th>
+                        <th className="py-2.5">Recipient</th>
+                        <th className="py-2.5">Mobile Number</th>
+                        <th className="py-2.5">Template Name</th>
+                        <th className="py-2.5">Message Content</th>
+                        <th className="py-2.5 text-right">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
+                      {whatsAppLogs.map((log) => (
+                        <tr key={log.id} className="hover:bg-slate-50/80 transition">
+                          <td className="py-3 font-mono text-[10px] text-slate-400 font-bold">{log.time}</td>
+                          <td className="py-3 font-bold text-slate-800">{log.recipient}</td>
+                          <td className="py-3 font-mono text-[10px] text-slate-500">{log.phone}</td>
+                          <td className="py-3">
+                            <span className="bg-emerald-50 text-emerald-800 border border-emerald-100 font-bold px-2 py-0.5 rounded text-[10px]">
+                              {log.templateName}
+                            </span>
+                          </td>
+                          <td className="py-3 max-w-xs truncate italic" title={log.text}>"{log.text}"</td>
+                          <td className="py-3 text-right">
+                            <span className="inline-flex items-center space-x-1 text-emerald-600 font-bold font-mono text-[10px]">
+                              <span>✓✓</span>
+                              <span className="uppercase tracking-widest text-[9px] font-bold">{log.status}</span>
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
 

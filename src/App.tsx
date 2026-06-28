@@ -13,6 +13,11 @@ import { HomeView } from "./components/HomeView";
 import { AboutView, ServicesView, CountriesView, UniversitiesView, ScholarshipsView, BlogView, ContactView } from "./components/InfoViews";
 import { SearchModal } from "./components/SearchModal";
 import { StudentPortal } from "./components/StudentPortal";
+import { MultiAgentFranchise } from "./components/MultiAgentFranchise";
+import { UniversityIntegration } from "./components/UniversityIntegration";
+import { ScholarshipMatching } from "./components/ScholarshipMatching";
+import { AdmissionPrediction } from "./components/AdmissionPrediction";
+import { GlobalMarketplace } from "./components/GlobalMarketplace";
 
 const jelLogo = new URL("./assets/images/jel_circular_logo_1782372441429.jpg", import.meta.url).href;
 
@@ -233,7 +238,12 @@ export default function App() {
     { id: "finder", label: "Smart Course Finder", icon: Brain, desc: "AI Matcher" },
     { id: "checker", label: "GTE Visa Eligibility", icon: ShieldCheck, desc: "Visa Simulator" },
     { id: "booking", label: "Book Consultation", icon: Calendar, desc: "Free seat" },
-    { id: "admin", label: "Counselors CRM", icon: Users, desc: "Lead Board" }
+    { id: "admin", label: "Counselors CRM", icon: Users, desc: "Lead Board" },
+    { id: "franchise", label: "Franchise Hub", icon: Users, desc: "Multi-Agent" },
+    { id: "partnerSync", label: "Partner API Sync", icon: Globe, desc: "Uni Indexer" },
+    { id: "scholarshipMatcher", label: "Scholarship Matcher", icon: Sparkles, desc: "Funding AI" },
+    { id: "admissionPredictor", label: "Admission Predictor", icon: Brain, desc: "Visa Prob" },
+    { id: "globalMarketplace", label: "Global Marketplace", icon: Globe, desc: "B2B Market" }
   ];
 
   return (
@@ -475,6 +485,11 @@ export default function App() {
           <StudentPortal setActiveTab={setActiveTab} onPreSelectCountry={handlePreSelectCountry} />
         )}
         {activeTab === "admin" && <AdminDashboard setActiveTab={setActiveTab} />}
+        {activeTab === "franchise" && <MultiAgentFranchise />}
+        {activeTab === "partnerSync" && <UniversityIntegration />}
+        {activeTab === "scholarshipMatcher" && <ScholarshipMatching />}
+        {activeTab === "admissionPredictor" && <AdmissionPrediction />}
+        {activeTab === "globalMarketplace" && <GlobalMarketplace />}
       </main>
 
       {/* 5. Persistent Companion AI Chat widget, Sticky Book Consultation & Floating WhatsApp */}
