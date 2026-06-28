@@ -2,9 +2,13 @@ import React, { useState, useEffect } from "react";
 import { 
   GraduationCap, ShieldCheck, Calendar, Users, Phone, MessageSquare, Mail, 
   MapPin, Globe, ArrowRight, ShieldAlert, Check, Sparkles, Lock, FileText, 
-  Info, AlertCircle, LogOut, CheckCircle, Clock, BookOpen, Send, User, ChevronRight, Award, Trophy
+  Info, AlertCircle, LogOut, CheckCircle, Clock, BookOpen, Send, User, ChevronRight, Award, Trophy,
+  CreditCard, Compass
 } from "lucide-react";
 import { supabase, isSandboxCredentials } from "../lib/supabase";
+import { SOPGenerator } from "./SOPGenerator";
+import { VisaChecklist } from "./VisaChecklist";
+import { StudentInvoices } from "./StudentInvoices";
 
 interface StudentPortalProps {
   setActiveTab: (tab: string) => void;
@@ -46,6 +50,7 @@ export function StudentPortal({ setActiveTab, onPreSelectCountry }: StudentPorta
   // Logged-in session profile state
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [isSandboxMode, setIsSandboxMode] = useState<boolean>(false);
+  const [subTab, setSubTab] = useState<"overview" | "sop" | "visa" | "billing">("overview");
 
   // Messages log within Student Workspace
   const [workspaceMsg, setWorkspaceMsg] = useState("");
@@ -56,6 +61,11 @@ export function StudentPortal({ setActiveTab, onPreSelectCountry }: StudentPorta
   // Read current session on mount
   useEffect(() => {
     checkSession();
+    const params = new URLSearchParams(window.location.search);
+    const payStatus = params.get("pay_status");
+    if (payStatus) {
+      setSubTab("billing");
+    }
   }, []);
 
   const checkSession = async () => {
@@ -251,6 +261,7 @@ export function StudentPortal({ setActiveTab, onPreSelectCountry }: StudentPorta
     const builtInAccounts = [
       { id: "usr-student", email: "student@jel.com", password: "student123", fullName: "Ahsan Kabir", role: "student", mobileNumber: "+8801911223344", preferredCountry: "Canada", educationLevel: "Bachelor's Degree", gpa: "5.00", englishTest: "IELTS", englishScore: "7.0", appStatus: "Uni Approved" },
       { id: "usr-counselor", email: "counselor@jel.com", password: "counselor123", fullName: "Tashfeen Ahmed", role: "counselor" },
+      { id: "usr-agent", email: "agent@jel.com", password: "agent123", fullName: "Moinul Islam", role: "agent" },
       { id: "usr-admin", email: "admin@jel.com", password: "admin123", fullName: "Sayed Al-Mamun", role: "admin" }
     ];
 
@@ -856,159 +867,204 @@ export function StudentPortal({ setActiveTab, onPreSelectCountry }: StudentPorta
 
           {/* Render dashboard segments based on roles */}
           {currentUser.role === "student" ? (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            <div className="space-y-8 animate-in fade-in duration-300">
               
-              {/* Timeline application tracker column */}
-              <div className="lg:col-span-8 space-y-8">
-                
-                {/* Visual Application tracker timeline */}
-                <div className="bg-white border border-slate-100 rounded-3xl p-6 sm:p-8 shadow-xs">
-                  <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
-                    <div className="space-y-0.5">
-                      <h3 className="font-display font-black text-slate-900 text-base uppercase tracking-wider">Application Track Registry</h3>
-                      <p className="text-xs text-slate-500">Official timeline authorized by Journey Expert Ltd.</p>
-                    </div>
-                    <span className="text-xs font-bold bg-[#0B5D3B]/10 text-[#0B5D3B] px-3 py-1 rounded-full border border-[#0B5D3B]/20 font-mono">
-                      Current: {currentUser.appStatus || "Documentation"}
-                    </span>
-                  </div>
-
-                  {/* Horizontal / Vertical Timeline stages */}
-                  <div className="space-y-6 pt-2">
-                    
-                    {[
-                      { title: "Stage 1: Profile Counselling & Evaluation", desc: "Verifying secondary certifications, IELTS scorecard standards, and course scope goals.", status: "completed", date: "June 24, 2026" },
-                      { title: "Stage 2: University Application & Documents", desc: "Drafting Statement of Purpose (SOP) blueprints and lodging registries with partner institutions.", status: "active", date: "In Progress" },
-                      { title: "Stage 3: Conditional / Unconditional Offer Letter", desc: "Handing university letters from college registrar departments to secure tuition invoice deposits.", status: "pending", date: "Awaiting Stage 2" },
-                      { title: "Stage 4: Bank Funds Sponsoring & CA Valuation", desc: "Checking required 28-day holding periods, CA valuations, and source of funds compliance proofs.", status: "pending", date: "Awaiting Offer" },
-                      { title: "Stage 5: Biometrics Appointment & Embassy Decision", desc: "Submitting visa packets, booking VFS Global biometrics appointments in Dhaka, and awaiting results.", status: "pending", date: "Awaiting CAS/COE" }
-                    ].map((step, idx) => (
-                      <div key={idx} className="flex space-x-4 text-left group">
-                        <div className="flex flex-col items-center">
-                          <div className={`h-8 w-8 rounded-full flex items-center justify-center border-2 shrink-0 ${
-                            step.status === "completed" 
-                              ? "bg-[#0B5D3B] border-[#0B5D3B] text-white" 
-                              : step.status === "active"
-                              ? "bg-amber-100 border-[#D4AF37] text-[#0B5D3B] animate-pulse"
-                              : "bg-slate-50 border-slate-200 text-slate-400"
-                          }`}>
-                            {step.status === "completed" ? (
-                              <Check className="h-4.5 w-4.5" />
-                            ) : (
-                              <span className="text-xs font-mono font-bold">{idx + 1}</span>
-                            )}
-                          </div>
-                          {idx < 4 && (
-                            <div className={`w-0.5 h-12 my-1 ${
-                              step.status === "completed" ? "bg-[#0B5D3B]" : "bg-slate-100"
-                            }`} />
-                          )}
-                        </div>
-
-                        <div className="pt-0.5 space-y-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <h4 className={`text-sm font-bold tracking-tight ${
-                              step.status === "completed" 
-                                ? "text-slate-800" 
-                                : step.status === "active"
-                                ? "text-[#0B5D3B]"
-                                : "text-slate-400"
-                            }`}>
-                              {step.title}
-                            </h4>
-                            <span className={`text-[10px] font-mono px-2 py-0.5 rounded-md ${
-                              step.status === "completed"
-                                ? "bg-emerald-50 text-emerald-700"
-                                : step.status === "active"
-                                ? "bg-amber-50 text-amber-800 border border-amber-200/50"
-                                : "bg-slate-100 text-slate-400"
-                            }`}>
-                              {step.date}
-                            </span>
-                          </div>
-                          <p className={`text-xs leading-relaxed font-light ${
-                            step.status === "pending" ? "text-slate-400" : "text-slate-600"
-                          }`}>
-                            {step.desc}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-
-                  </div>
-                </div>
-
-                {/* Eligibility Index widget */}
-                <div className="bg-slate-50 border border-slate-200/80 rounded-3xl p-6 sm:p-8 grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
-                  <div className="md:col-span-8 space-y-3">
-                    <div className="inline-flex items-center space-x-1.5 bg-[#0B5D3B]/10 text-[#0B5D3B] px-3 py-1 rounded-full text-[11px] font-bold">
-                      <ShieldCheck className="h-4 w-4" />
-                      <span>Certified JEL Profile Evaluation</span>
-                    </div>
-                    <h3 className="font-display font-black text-slate-900 text-lg">
-                      Explore Your Visa Eligibility Score
-                    </h3>
-                    <p className="text-xs text-slate-650 leading-relaxed font-light">
-                      Your registered qualifications point to a strong likelihood of selection. Complete our comprehensive 12-factor assessment simulator to view recommendations.
-                    </p>
+              {/* Internal Sub-navigation Tabs */}
+              <div className="flex flex-wrap border-b border-slate-200 pb-px gap-6 select-none">
+                {[
+                  { id: "overview", label: "Overview & Tracking", icon: GraduationCap },
+                  { id: "sop", label: "AI SOP Generator", icon: Sparkles },
+                  { id: "visa", label: "Visa Checklist", icon: Compass },
+                  { id: "billing", label: "Fees & Payments", icon: CreditCard }
+                ].map((tab) => {
+                  const Icon = tab.icon;
+                  return (
                     <button
-                      onClick={() => {
-                        setActiveTab("checker");
-                        window.scrollTo({ top: 0, behavior: "smooth" });
-                      }}
-                      className="bg-[#0B5D3B] hover:bg-[#074028] text-white text-[11px] font-extrabold uppercase tracking-wider py-2.5 px-4 rounded-xl transition cursor-pointer"
+                      key={tab.id}
+                      onClick={() => setSubTab(tab.id as any)}
+                      className={`flex items-center space-x-2 pb-3 text-xs font-bold uppercase tracking-wider relative transition-all duration-300 cursor-pointer ${
+                        subTab === tab.id 
+                          ? "text-[#0B5D3B]" 
+                          : "text-slate-400 hover:text-slate-600"
+                      }`}
                     >
-                      Run Visa Simulator &rarr;
+                      <Icon className={`h-4.5 w-4.5 ${subTab === tab.id ? "text-[#0B5D3B]" : "text-slate-400"}`} />
+                      <span>{tab.label}</span>
+                      {subTab === tab.id && (
+                        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#D4AF37] rounded-full animate-in fade-in" />
+                      )}
                     </button>
-                  </div>
+                  );
+                })}
+              </div>
 
-                  <div className="md:col-span-4 bg-white border border-slate-100 p-5 rounded-2xl flex flex-col items-center justify-center text-center shadow-xs">
-                    <span className="text-[10px] font-mono uppercase text-slate-400 font-bold tracking-widest block mb-1">Success Score</span>
-                    <div className="h-24 w-24 rounded-full border-4 border-[#0B5D3B] flex flex-col items-center justify-center text-[#0B5D3B] relative">
-                      <span className="text-3xl font-display font-black tracking-tight">85%</span>
-                      <span className="text-[9px] font-mono leading-none text-slate-400 uppercase mt-0.5">High Prob</span>
-                    </div>
-                    <p className="text-[10px] text-slate-500 font-medium mt-3">Ready for Monash, Greenwich, and Coventry programs</p>
-                  </div>
-                </div>
+              {/* Dynamic Inner Panel View Rendering */}
+              {subTab === "sop" && (
+                <SOPGenerator currentUser={currentUser} />
+              )}
 
-                {/* Exclusive student downloads */}
-                <div className="bg-white border border-slate-100 rounded-3xl p-6 sm:p-8 space-y-4 shadow-xs">
-                  <div className="space-y-0.5 border-b border-slate-100 pb-4">
-                    <h3 className="font-display font-black text-slate-900 text-base uppercase tracking-wider">Document Blueprint Pack</h3>
-                    <p className="text-xs text-slate-500">Premium guidelines to download and build your compliance records.</p>
-                  </div>
+              {subTab === "visa" && (
+                <VisaChecklist currentUser={currentUser} />
+              )}
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {[
-                      { title: "SOP Success Blueprint", type: "PDF Guide", size: "2.4 MB", desc: "Contains paragraph layout grids, career milestone maps, and gap descriptions." },
-                      { title: "GTE Funding Ledger Grid", type: "XLS Template", size: "1.1 MB", desc: "Format structures for family assets, source explanations, and tax file records." },
-                      { title: "CA Audit Sample Form", type: "PDF Template", size: "1.8 MB", desc: "Authorized Chartered Accountant evaluation format acceptable by embassies." },
-                      { title: "Biometric Prep Checklist", type: "PDF Checklist", size: "940 KB", desc: "Complete documents ledger to carry for VFS Dhaka appointments." }
-                    ].map((doc, idx) => (
-                      <div key={idx} className="border border-slate-100 p-4 rounded-2xl flex flex-col justify-between hover:border-[#0B5D3B] transition duration-200">
-                        <div className="space-y-1">
-                          <div className="flex justify-between items-start">
-                            <span className="text-[10px] font-mono font-bold bg-[#0B5D3B]/10 text-[#0B5D3B] px-2 py-0.5 rounded-md">
-                              {doc.type}
-                            </span>
-                            <span className="text-[10px] text-slate-400 font-mono">{doc.size}</span>
-                          </div>
-                          <h4 className="text-xs font-bold text-slate-800 pt-1.5">{doc.title}</h4>
-                          <p className="text-[11px] text-slate-500 font-light leading-relaxed">{doc.desc}</p>
+              {subTab === "billing" && (
+                <StudentInvoices currentUser={currentUser} />
+              )}
+
+              {subTab === "overview" && (
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                  
+                  {/* Timeline application tracker column */}
+                  <div className="lg:col-span-8 space-y-8">
+                    
+                    {/* Visual Application tracker timeline */}
+                    <div className="bg-white border border-slate-100 rounded-3xl p-6 sm:p-8 shadow-xs">
+                      <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
+                        <div className="space-y-0.5">
+                          <h3 className="font-display font-black text-slate-900 text-base uppercase tracking-wider">Application Track Registry</h3>
+                          <p className="text-xs text-slate-500">Official timeline authorized by Journey Expert Ltd.</p>
                         </div>
-                        <button 
-                          onClick={() => alert(`Your resource "${doc.title}" has been added to downloads successfully!`)}
-                          className="text-[#0B5D3B] hover:text-[#074028] text-[11px] font-bold text-left mt-3 pt-2 border-t border-slate-50 flex items-center space-x-1 cursor-pointer"
+                        <span className="text-xs font-bold bg-[#0B5D3B]/10 text-[#0B5D3B] px-3 py-1 rounded-full border border-[#0B5D3B]/20 font-mono">
+                          Current: {currentUser.appStatus || "Documentation"}
+                        </span>
+                      </div>
+
+                      {/* Horizontal / Vertical Timeline stages */}
+                      <div className="space-y-6 pt-2">
+                        
+                        {[
+                          { title: "Stage 1: Profile Counselling & Evaluation", desc: "Verifying secondary certifications, IELTS scorecard standards, and course scope goals.", status: "completed", date: "June 24, 2026" },
+                          { title: "Stage 2: University Application & Documents", desc: "Drafting Statement of Purpose (SOP) blueprints and lodging registries with partner institutions.", status: "active", date: "In Progress" },
+                          { title: "Stage 3: Conditional / Unconditional Offer Letter", desc: "Handing university letters from college registrar departments to secure tuition invoice deposits.", status: "pending", date: "Awaiting Stage 2" },
+                          { title: "Stage 4: Bank Funds Sponsoring & CA Valuation", desc: "Checking required 28-day holding periods, CA valuations, and source of funds compliance proofs.", status: "pending", date: "Awaiting Offer" },
+                          { title: "Stage 5: Biometrics Appointment & Embassy Decision", desc: "Submitting visa packets, booking VFS Global biometrics appointments in Dhaka, and awaiting results.", status: "pending", date: "Awaiting CAS/COE" }
+                        ].map((step, idx) => (
+                          <div key={idx} className="flex space-x-4 text-left group">
+                            <div className="flex flex-col items-center">
+                              <div className={`h-8 w-8 rounded-full flex items-center justify-center border-2 shrink-0 ${
+                                step.status === "completed" 
+                                  ? "bg-[#0B5D3B] border-[#0B5D3B] text-white" 
+                                  : step.status === "active"
+                                  ? "bg-amber-100 border-[#D4AF37] text-[#0B5D3B] animate-pulse"
+                                  : "bg-slate-50 border-slate-200 text-slate-400"
+                              }`}>
+                                {step.status === "completed" ? (
+                                  <Check className="h-4.5 w-4.5" />
+                                ) : (
+                                  <span className="text-xs font-mono font-bold">{idx + 1}</span>
+                                )}
+                              </div>
+                              {idx < 4 && (
+                                <div className={`w-0.5 h-12 my-1 ${
+                                  step.status === "completed" ? "bg-[#0B5D3B]" : "bg-slate-100"
+                                }`} />
+                              )}
+                            </div>
+
+                            <div className="pt-0.5 space-y-1">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <h4 className={`text-sm font-bold tracking-tight ${
+                                  step.status === "completed" 
+                                    ? "text-slate-800" 
+                                    : step.status === "active"
+                                    ? "text-[#0B5D3B]"
+                                    : "text-slate-400"
+                                }`}>
+                                  {step.title}
+                                </h4>
+                                <span className={`text-[10px] font-mono px-2 py-0.5 rounded-md ${
+                                  step.status === "completed"
+                                    ? "bg-emerald-50 text-emerald-700"
+                                    : step.status === "active"
+                                    ? "bg-amber-50 text-amber-800 border border-amber-200/50"
+                                    : "bg-slate-100 text-slate-400"
+                                }`}>
+                                  {step.date}
+                                </span>
+                              </div>
+                              <p className={`text-xs leading-relaxed font-light ${
+                                step.status === "pending" ? "text-slate-400" : "text-slate-600"
+                              }`}>
+                                {step.desc}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+
+                      </div>
+                    </div>
+
+                    {/* Eligibility Index widget */}
+                    <div className="bg-slate-50 border border-slate-200/80 rounded-3xl p-6 sm:p-8 grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+                      <div className="md:col-span-8 space-y-3">
+                        <div className="inline-flex items-center space-x-1.5 bg-[#0B5D3B]/10 text-[#0B5D3B] px-3 py-1 rounded-full text-[11px] font-bold">
+                          <ShieldCheck className="h-4 w-4" />
+                          <span>Certified JEL Profile Evaluation</span>
+                        </div>
+                        <h3 className="font-display font-black text-slate-900 text-lg">
+                          Explore Your Visa Eligibility Score
+                        </h3>
+                        <p className="text-xs text-slate-650 leading-relaxed font-light">
+                          Your registered qualifications point to a strong likelihood of selection. Complete our comprehensive 12-factor assessment simulator to view recommendations.
+                        </p>
+                        <button
+                          onClick={() => {
+                            setActiveTab("checker");
+                            window.scrollTo({ top: 0, behavior: "smooth" });
+                          }}
+                          className="bg-[#0B5D3B] hover:bg-[#074028] text-white text-[11px] font-extrabold uppercase tracking-wider py-2.5 px-4 rounded-xl transition cursor-pointer"
                         >
-                          <span>Secure Download &darr;</span>
+                          Run Visa Simulator &rarr;
                         </button>
                       </div>
-                    ))}
-                  </div>
-                </div>
 
-              </div>
+                      <div className="md:col-span-4 bg-white border border-slate-100 p-5 rounded-2xl flex flex-col items-center justify-center text-center shadow-xs">
+                        <span className="text-[10px] font-mono uppercase text-slate-400 font-bold tracking-widest block mb-1">Success Score</span>
+                        <div className="h-24 w-24 rounded-full border-4 border-[#0B5D3B] flex flex-col items-center justify-center text-[#0B5D3B] relative">
+                          <span className="text-3xl font-display font-black tracking-tight">85%</span>
+                          <span className="text-[9px] font-mono leading-none text-slate-400 uppercase mt-0.5">High Prob</span>
+                        </div>
+                        <p className="text-[10px] text-slate-500 font-medium mt-3">Ready for Monash, Greenwich, and Coventry programs</p>
+                      </div>
+                    </div>
+
+                    {/* Exclusive student downloads */}
+                    <div className="bg-white border border-slate-100 rounded-3xl p-6 sm:p-8 space-y-4 shadow-xs">
+                      <div className="space-y-0.5 border-b border-slate-100 pb-4">
+                        <h3 className="font-display font-black text-slate-900 text-base uppercase tracking-wider">Document Blueprint Pack</h3>
+                        <p className="text-xs text-slate-500">Premium guidelines to download and build your compliance records.</p>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {[
+                          { title: "SOP Success Blueprint", type: "PDF Guide", size: "2.4 MB", desc: "Contains paragraph layout grids, career milestone maps, and gap descriptions." },
+                          { title: "GTE Funding Ledger Grid", type: "XLS Template", size: "1.1 MB", desc: "Format structures for family assets, source explanations, and tax file records." },
+                          { title: "CA Audit Sample Form", type: "PDF Template", size: "1.8 MB", desc: "Authorized Chartered Accountant evaluation format acceptable by embassies." },
+                          { title: "Biometric Prep Checklist", type: "PDF Checklist", size: "940 KB", desc: "Complete documents ledger to carry for VFS Dhaka appointments." }
+                        ].map((doc, idx) => (
+                          <div key={idx} className="border border-slate-100 p-4 rounded-2xl flex flex-col justify-between hover:border-[#0B5D3B] transition duration-200">
+                            <div className="space-y-1">
+                              <div className="flex justify-between items-start">
+                                <span className="text-[10px] font-mono font-bold bg-[#0B5D3B]/10 text-[#0B5D3B] px-2 py-0.5 rounded-md">
+                                  {doc.type}
+                                </span>
+                                <span className="text-[10px] text-slate-400 font-mono">{doc.size}</span>
+                              </div>
+                              <h4 className="text-xs font-bold text-slate-800 pt-1.5">{doc.title}</h4>
+                              <p className="text-[11px] text-slate-500 font-light leading-relaxed">{doc.desc}</p>
+                            </div>
+                            <button 
+                              onClick={() => alert(`Your resource "${doc.title}" has been added to downloads successfully!`)}
+                              className="text-[#0B5D3B] hover:text-[#074028] text-[11px] font-bold text-left mt-3 pt-2 border-t border-slate-50 flex items-center space-x-1 cursor-pointer"
+                            >
+                              <span>Secure Download &darr;</span>
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                  </div>
 
               {/* Sidebar messages/counselor and edit details column */}
               <div className="lg:col-span-4 space-y-8">
@@ -1153,6 +1209,8 @@ export function StudentPortal({ setActiveTab, onPreSelectCountry }: StudentPorta
               </div>
 
             </div>
+          )}
+        </div>
           ) : (
             // Counselor / Admin dashboard screen summary
             <div className="max-w-4xl mx-auto space-y-6 bg-white border border-slate-100 p-8 rounded-[32px] text-center shadow-xs">

@@ -9,6 +9,11 @@ export interface Lead {
   status: "New" | "Contacted" | "In Assessment" | "Uni Approved" | "Visa Pending" | "Visa Approved" | "Completed" | "No Response";
   notes?: string;
   createdAt: string;
+  assignedCounselor?: string; // name or email of assigned counselor
+  assignedAgent?: string;      // name or email of assigned agent
+  notesHistory?: Array<{ id: string; author: string; text: string; date: string }>;
+  documents?: Array<{ id: string; name: string; size: string; uploadedBy: string; date: string; fileType?: string }>;
+  chats?: Array<{ id: string; sender: "student" | "counselor" | "admin" | "agent"; text: string; date: string }>;
 }
 
 export interface Scholarship {

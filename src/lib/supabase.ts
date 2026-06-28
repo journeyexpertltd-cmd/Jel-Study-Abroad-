@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import { createClient } from "@supabase/supabase-js";
 
 // Expose same default keys that server.ts uses for seamless out-of-the-box local sandbox operation
