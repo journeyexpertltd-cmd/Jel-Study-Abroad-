@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { COUNTRIES, SCHOLARSHIPS, TESTIMONIALS, UNIVERSITY_PARTNERS, BLOGS } from "../data";
 
-const brandLogoImg = new URL("../assets/images/jel_study_abroad_logo_1782110469815.jpg", import.meta.url).href;
+const brandLogoImg = new URL("../assets/images/jel_circular_logo_1782372441429.jpg", import.meta.url).href;
 
 interface HomeViewProps {
   setActiveTab: (tab: string) => void;
@@ -367,11 +367,11 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
                 />
                 
                 <div className="relative z-10 flex flex-col items-center justify-center space-y-4">
-                  <div className="bg-white px-6 py-4 rounded-2xl shadow-xl max-w-xs flex items-center justify-center">
+                  <div className="bg-white p-4 rounded-full shadow-xl">
                     <img
                       src={brandLogoImg}
-                      alt="JEL Study Abroad Logo"
-                      className="object-contain h-14 sm:h-16 w-auto"
+                      alt="JEL Logo"
+                      className="object-contain h-24 w-24 sm:h-28 sm:w-28 rounded-full"
                       onError={(e) => {
                         e.currentTarget.onerror = null;
                         e.currentTarget.src = "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&q=80&w=200";
