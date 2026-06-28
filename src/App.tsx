@@ -12,8 +12,14 @@ import { ConsultationBooking } from "./components/ConsultationBooking";
 import { HomeView } from "./components/HomeView";
 import { AboutView, ServicesView, CountriesView, UniversitiesView, ScholarshipsView, BlogView, ContactView } from "./components/InfoViews";
 import { SearchModal } from "./components/SearchModal";
+import { StudentPortal } from "./components/StudentPortal";
+import { MultiAgentFranchise } from "./components/MultiAgentFranchise";
+import { UniversityIntegration } from "./components/UniversityIntegration";
+import { ScholarshipMatching } from "./components/ScholarshipMatching";
+import { AdmissionPrediction } from "./components/AdmissionPrediction";
+import { GlobalMarketplace } from "./components/GlobalMarketplace";
 
-const jelLogo = new URL("./assets/images/jel_circular_logo_1782372441429.jpg", import.meta.url).href;
+const jelLogo = new URL("./assets/images/jel_study_abroad_logo_1782110469815.jpg", import.meta.url).href;
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>("home");
@@ -224,6 +230,7 @@ export default function App() {
     { id: "universities", label: "Partners" },
     { id: "scholarships", label: "Scholarships" },
     { id: "blog", label: "Guides & Blogs" },
+    { id: "portal", label: "Student Portal" },
     { id: "contact", label: "Contact Us" }
   ];
 
@@ -231,7 +238,12 @@ export default function App() {
     { id: "finder", label: "Smart Course Finder", icon: Brain, desc: "AI Matcher" },
     { id: "checker", label: "GTE Visa Eligibility", icon: ShieldCheck, desc: "Visa Simulator" },
     { id: "booking", label: "Book Consultation", icon: Calendar, desc: "Free seat" },
-    { id: "admin", label: "Counselors CRM", icon: Users, desc: "Lead Board" }
+    { id: "admin", label: "Counselors CRM", icon: Users, desc: "Lead Board" },
+    { id: "franchise", label: "Franchise Hub", icon: Users, desc: "Multi-Agent" },
+    { id: "partnerSync", label: "Partner API Sync", icon: Globe, desc: "Uni Indexer" },
+    { id: "scholarshipMatcher", label: "Scholarship Matcher", icon: Sparkles, desc: "Funding AI" },
+    { id: "admissionPredictor", label: "Admission Predictor", icon: Brain, desc: "Visa Prob" },
+    { id: "globalMarketplace", label: "Global Marketplace", icon: Globe, desc: "B2B Market" }
   ];
 
   return (
@@ -271,23 +283,18 @@ export default function App() {
           {/* Logo Brand Segment */}
           <div 
             onClick={() => { setActiveTab("home"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-            className="flex flex-col cursor-pointer group text-left select-none"
+            className="flex items-center cursor-pointer group text-left select-none animate-fade-in"
           >
-            <div className="flex items-center justify-start">
-              <img 
-                src={jelLogo} 
-                alt="JEL Study Abroad" 
-                className="h-11 md:h-13 lg:h-15 w-auto object-contain transition-all duration-300 group-hover:scale-105 filter group-hover:drop-shadow-sm bg-white rounded-full p-0.5 shadow-xs"
-                referrerPolicy="no-referrer"
-                onError={(e) => {
-                  e.currentTarget.onerror = null;
-                  e.currentTarget.style.display = "none";
-                }}
-              />
-            </div>
-            <span className="text-[7px] md:text-[8px] tracking-[0.14em] uppercase text-[#0B5D3B] font-extrabold mt-1 text-left block group-hover:text-[#D4AF37] transition-colors duration-300">
-              A BRAND OF JOURNEY EXPERT LTD.
-            </span>
+            <img 
+              src={jelLogo} 
+              alt="JEL Study Abroad" 
+              className="h-10 md:h-12 lg:h-14 w-auto object-contain transition-all duration-300 group-hover:scale-105"
+              referrerPolicy="no-referrer"
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.style.display = "none";
+              }}
+            />
           </div>
 
           {/* Desktop Sitemap Menu */}
@@ -469,7 +476,15 @@ export default function App() {
             setActiveTab={setActiveTab}
           />
         )}
-        {activeTab === "admin" && <AdminDashboard />}
+        {activeTab === "portal" && (
+          <StudentPortal setActiveTab={setActiveTab} onPreSelectCountry={handlePreSelectCountry} />
+        )}
+        {activeTab === "admin" && <AdminDashboard setActiveTab={setActiveTab} />}
+        {activeTab === "franchise" && <MultiAgentFranchise />}
+        {activeTab === "partnerSync" && <UniversityIntegration />}
+        {activeTab === "scholarshipMatcher" && <ScholarshipMatching />}
+        {activeTab === "admissionPredictor" && <AdmissionPrediction />}
+        {activeTab === "globalMarketplace" && <GlobalMarketplace />}
       </main>
 
       {/* 5. Persistent Companion AI Chat widget, Sticky Book Consultation & Floating WhatsApp */}
@@ -513,7 +528,7 @@ export default function App() {
            {/* Brand Col */}
           <div className="space-y-4">
             <div className="flex flex-col items-start group select-none">
-              <div className="bg-white p-2 md:p-2.5 rounded-xl flex items-center justify-center shadow-sm transition-all duration-300 hover:scale-105">
+              <div className="bg-white px-4 py-2.5 rounded-xl flex items-center justify-center shadow-sm transition-all duration-300 hover:scale-105">
                 <img 
                   src={jelLogo} 
                   alt="JEL Study Abroad" 
@@ -525,9 +540,6 @@ export default function App() {
                   }}
                 />
               </div>
-              <span className="text-[8px] tracking-[0.14em] uppercase text-[#0B5D3B] font-extrabold mt-3 block group-hover:text-amber-500 transition-colors duration-300">
-                A BRAND OF JOURNEY EXPERT LTD.
-              </span>
             </div>
             <p className="text-xs text-slate-400 leading-relaxed">
               JEL Study Abroad is a premium division of Journey Expert Ltd (Govt Trade License: TRAD/DNCC/008823/2022). Authorised consultants helping students study in top world colleges.
