@@ -599,7 +599,7 @@ Thank you for executing smart payments.
                     
                     <button
                       onClick={() => setActiveSubTab("history")}
-                      className="text-indigo-600 hover:text-indigo-805 text-xs font-bold font-sans"
+                      className="text-indigo-600 hover:text-indigo-800 text-xs font-bold font-sans"
                     >
                       View Live Transactions &rarr;
                     </button>
@@ -621,8 +621,8 @@ Thank you for executing smart payments.
               </div>
 
               {payError && (
-                <div className="bg-rose-50 border border-rose-250 text-rose-955 text-xs p-3.5 rounded-xl mb-4 text-left flex items-start space-x-2">
-                  <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-rose-550" />
+                <div className="bg-rose-50 border border-rose-200 text-rose-900 text-xs p-3.5 rounded-xl mb-4 text-left flex items-start space-x-2">
+                  <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-rose-600" />
                   <span>{payError}</span>
                 </div>
               )}
@@ -722,7 +722,7 @@ Thank you for executing smart payments.
                   <button
                     type="submit"
                     disabled={isPayInitiating}
-                    className="bg-amber-500 hover:bg-amber-600 disabled:bg-slate-205 text-white text-xs font-extrabold py-3.5 px-6 rounded-xl uppercase tracking-wider transition-all duration-300 shadow-md flex items-center space-x-1.5 active:scale-95 shrink-0 cursor-pointer font-sans"
+                    className="bg-amber-500 hover:bg-amber-600 disabled:bg-slate-200 text-white text-xs font-extrabold py-3.5 px-6 rounded-xl uppercase tracking-wider transition-all duration-300 shadow-md flex items-center space-x-1.5 active:scale-95 shrink-0 cursor-pointer font-sans"
                   >
                     {isPayInitiating ? (
                       <>
@@ -826,7 +826,7 @@ Thank you for executing smart payments.
                             tx.status.toLowerCase() === "success"
                               ? "bg-emerald-100 text-emerald-800"
                               : tx.status.toLowerCase() === "pending"
-                              ? "bg-amber-100 text-amber-805 animate-pulse"
+                              ? "bg-amber-100 text-amber-800 animate-pulse"
                               : tx.status.toLowerCase() === "cancelled"
                               ? "bg-slate-200 text-slate-700"
                               : "bg-rose-100 text-rose-800"
@@ -834,7 +834,7 @@ Thank you for executing smart payments.
                             {tx.status}
                           </span>
                           
-                          <span className="text-[10px] text-slate-505 font-mono">
+                          <span className="text-[10px] text-slate-500 font-mono">
                             🎴 {tx.cardType || "N/A"}
                           </span>
                         </div>

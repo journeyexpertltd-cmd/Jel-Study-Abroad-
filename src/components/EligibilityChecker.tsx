@@ -88,7 +88,7 @@ export function EligibilityChecker() {
   const getProbabilityBadge = (prob: "High" | "Medium" | "Low") => {
     const styles: Record<string, string> = {
       High: "bg-green-100 text-green-800 border-green-200",
-      Medium: "bg-yellow-101 bg-amber-100 text-amber-800 border-amber-200",
+      Medium: "bg-amber-100 text-amber-800 border-amber-200",
       Low: "bg-red-100 text-red-800 border-red-200"
     };
     return `text-xs font-bold px-2.5 py-1 rounded-full border ${styles[prob] || styles["Medium"]}`;

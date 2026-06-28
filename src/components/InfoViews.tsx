@@ -10,7 +10,7 @@ export function AboutView() {
       <div className="bg-[#0B5D3B] text-white p-8 md:p-12 rounded-3xl text-center space-y-3 relative overflow-hidden">
         <span className="text-xs bg-[#00AEEF] text-slate-900 font-bold px-3 py-1 rounded uppercase tracking-wider">Meet the Brand</span>
         <h2 className="text-3xl font-display font-black">A Brand of Journey Expert Ltd.</h2>
-        <p className="text-slate-300 text-sm max-w-xl mx-autoLeading-relaxed">
+        <p className="text-slate-300 text-sm max-w-xl mx-auto leading-relaxed">
           Establishing transparent guidance, professional mock interviewing, and high visa conversions for Bangladeshi students aiming at world heights.
         </p>
       </div>
@@ -146,7 +146,7 @@ export function ServicesView() {
             <h3 className="font-display font-bold text-slate-900 text-lg sm:text-xl">{ser.title}</h3>
             <p className="text-slate-650 text-xs sm:text-sm leading-relaxed">{ser.desc}</p>
             
-            <div className="space-y-2 pt-3 border-t border-slate-205/30">
+            <div className="space-y-2 pt-3 border-t border-slate-200/30">
               <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider block">Key Processes Included:</span>
               <ul className="grid grid-cols-1 gap-2">
                 {ser.items.map((item, i) => (
@@ -582,7 +582,7 @@ export function BlogView({ initialSearchTerm = "", initialBlogId = null, onClear
           <div
             key={b.id}
             onClick={() => setExpandedBlog(b)}
-            className="bg-white border border-slate-100 rounded-3xl overflow-hidden hover:shadow-xl hover:border-[#0B5D3B] transitionduration-300 cursor-pointer text-left flex flex-col md:flex-row"
+            className="bg-white border border-slate-100 rounded-3xl overflow-hidden hover:shadow-xl hover:border-[#0B5D3B] transition duration-300 cursor-pointer text-left flex flex-col md:flex-row"
           >
             <div className="md:w-1/3 relative h-40 md:h-auto bg-slate-100">
               <img 

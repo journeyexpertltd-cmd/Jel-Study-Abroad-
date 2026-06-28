@@ -167,12 +167,12 @@ export function AdminDashboard() {
         await fetchSupabaseData(); // Refresh indicators
       } else if (result.tableNotFound) {
         setSupabaseStatus("missing_table");
-        alert("SETUP SCRIPT REQUIRED:\nYour Supabase database is connected, but the 'leads' table does not exist yet. Please scroll down to the Supabase Database Setup section below, copy the SQL, and run it in your Supabase SQL Editor!");
+        showToast("⚠️ leads table does not exist in Supabase yet. Run the SQL setup below!");
       } else {
-        alert(`Sync failed: ${result.error}`);
+        showToast(`Sync failed: ${result.error}`);
       }
     } catch (err: any) {
-      alert(`Sync failed with error: ${err.message}`);
+      showToast(`Sync failed with error: ${err.message}`);
     } finally {
       setIsSyncing(false);
     }

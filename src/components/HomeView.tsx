@@ -1384,12 +1384,12 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
                   value={aiModalInput}
                   onChange={(e) => setAiModalInput(e.target.value)}
                   placeholder="e.g., HSC GPA 5.00, IELTS 6.5, interested in Computer Science, Canada."
-                  className="w-full border border-slate-220 rounded-xl p-3.5 text-xs text-slate-700 focus:ring-1 focus:ring-[#0B5D3B] focus:border-[#0B5D3B] outline-none h-24 resize-none"
+                  className="w-full border border-slate-200 rounded-xl p-3.5 text-xs text-slate-700 focus:ring-1 focus:ring-[#0B5D3B] focus:border-[#0B5D3B] outline-none h-24 resize-none"
                 />
               </div>
 
               {aiModalResponse && (
-                <div className="bg-slate-50 border border-slate-150 rounded-xl p-4.5 text-left space-y-2 h-44 overflow-y-auto">
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4.5 text-left space-y-2 h-44 overflow-y-auto">
                   <span className="text-[9px] font-mono font-bold text-[#0B5D3B] tracking-wider uppercase block">
                     Advisory Feedback
                   </span>
