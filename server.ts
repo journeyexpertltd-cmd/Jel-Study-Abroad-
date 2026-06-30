@@ -827,37 +827,6 @@ Return details strictly as JSON format matching this schema:
   }
 });
 
-// Explicitly serve sitemap.xml and robots.txt with proper content-types
-app.get("/sitemap.xml", (req, res) => {
-  const prodPath = path.join(process.cwd(), "dist", "sitemap.xml");
-  const devPath = path.join(process.cwd(), "public", "sitemap.xml");
-  res.header("Content-Type", "application/xml; charset=utf-8");
-  res.sendFile(prodPath, (err) => {
-    if (err) {
-      res.sendFile(devPath, (devErr) => {
-        if (devErr) {
-          res.status(404).send("Sitemap not found");
-        }
-      });
-    }
-  });
-});
-
-app.get("/robots.txt", (req, res) => {
-  const prodPath = path.join(process.cwd(), "dist", "robots.txt");
-  const devPath = path.join(process.cwd(), "public", "robots.txt");
-  res.header("Content-Type", "text/plain; charset=utf-8");
-  res.sendFile(prodPath, (err) => {
-    if (err) {
-      res.sendFile(devPath, (devErr) => {
-        if (devErr) {
-          res.status(404).send("Robots.txt not found");
-        }
-      });
-    }
-  });
-});
-
 // Setup Vite Dev server integration / Static files build paths
 async function bootServer() {
   if (process.env.NODE_ENV !== "production") {

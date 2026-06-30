@@ -22,8 +22,89 @@ import { GlobalMarketplace } from "./components/GlobalMarketplace";
 const jelLogo = new URL("./assets/images/jel_study_abroad_logo_1782110469815.jpg", import.meta.url).href;
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<string>("home");
+  // Helper to parse clean paths or activeTab query param
+  const getInitialTab = (): string => {
+    const path = window.location.pathname.replace(/^\/|\/$/g, "").toLowerCase();
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get("activeTab") || params.get("tab");
+
+    const validTabs: Record<string, string> = {
+      "": "home",
+      "home": "home",
+      "about": "about",
+      "services": "services",
+      "countries": "countries",
+      "destinations": "countries",
+      "universities": "universities",
+      "partners": "universities",
+      "scholarships": "scholarships",
+      "blog": "blog",
+      "blogs": "blog",
+      "portal": "portal",
+      "student-portal": "portal",
+      "contact": "contact",
+      "finder": "finder",
+      "checker": "checker",
+      "booking": "booking",
+      "admin": "admin",
+      "franchise": "franchise",
+      "partnersync": "partnerSync",
+      "scholarshipmatcher": "scholarshipMatcher",
+      "admissionpredictor": "admissionPredictor",
+      "globalmarketplace": "globalMarketplace"
+    };
+
+    if (tabParam && validTabs[tabParam.toLowerCase()]) {
+      return validTabs[tabParam.toLowerCase()];
+    }
+    if (path && validTabs[path]) {
+      return validTabs[path];
+    }
+    return "home";
+  };
+
+  const [activeTab, setActiveTab] = useState<string>(getInitialTab);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
+  
+  // Sync activeTab to clean URL pathnames
+  useEffect(() => {
+    const pathMap: Record<string, string> = {
+      "home": "/",
+      "about": "/about",
+      "services": "/services",
+      "countries": "/destinations",
+      "universities": "/partners",
+      "scholarships": "/scholarships",
+      "blog": "/blogs",
+      "portal": "/student-portal",
+      "contact": "/contact",
+      "finder": "/finder",
+      "checker": "/checker",
+      "booking": "/booking",
+      "admin": "/admin",
+      "franchise": "/franchise",
+      "partnerSync": "/partnersync",
+      "scholarshipMatcher": "/scholarshipmatcher",
+      "admissionPredictor": "/admissionpredictor",
+      "globalMarketplace": "/globalmarketplace"
+    };
+
+    const currentPath = window.location.pathname;
+    const targetPath = pathMap[activeTab] || "/";
+
+    if (currentPath !== targetPath) {
+      window.history.pushState(null, "", targetPath);
+    }
+  }, [activeTab]);
+
+  // Handle popstate for browser back/forward navigation
+  useEffect(() => {
+    const handlePopState = () => {
+      setActiveTab(getInitialTab());
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
   
   // Search parameters targeting specific sub-screens
   const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
