@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Compass, Shield, Award, Users, Search, GraduationCap, MapPin, CheckCircle, Mail, Phone, Clock, MessageSquare, ExternalLink, Calendar, Facebook, Send, Map } from "lucide-react";
+import { Compass, Shield, Award, Users, Search, GraduationCap, MapPin, CheckCircle, Mail, Phone, Clock, MessageSquare, ExternalLink, Calendar, Facebook, Send, Map, FileText } from "lucide-react";
 import { COUNTRIES, SCHOLARSHIPS, BLOGS, UNIVERSITY_PARTNERS, TEAM_MEMBERS } from "../data";
 import { BlogItem, PartnerUniversity } from "../types";
 
@@ -43,6 +43,104 @@ export function AboutView() {
           ))}
         </div>
       </div>
+
+      {/* Corporate Certifications & Official Licensing Section */}
+      <section className="bg-slate-50 rounded-3xl p-8 border border-slate-200/60 text-left space-y-6 animate-in fade-in duration-300" id="about-certifications">
+        <div className="space-y-2">
+          <span className="text-xs text-[#0B5D3B] font-extrabold uppercase tracking-widest font-mono bg-[#0B5D3B]/5 px-3.5 py-1.5 rounded-full">
+            Verified Credentials
+          </span>
+          <h3 className="text-2xl font-display font-black text-[#0B5D3B]">
+            Government Registrations & Official Licensing
+          </h3>
+          <p className="text-slate-500 text-xs sm:text-sm leading-relaxed max-w-2xl font-light">
+            Journey Expert Ltd. operates under strict compliance with the laws of the People's Republic of Bangladesh. Our credentials guarantee ethical and authorized counsel for our students.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Certificate of Incorporation */}
+          <div className="bg-white border border-slate-200/60 rounded-2xl p-6 shadow-sm flex flex-col justify-between space-y-4 hover:border-[#0B5D3B] transition-all">
+            <div className="space-y-3">
+              <div className="h-10 w-10 rounded-xl bg-[#0B5D3B]/5 flex items-center justify-center text-[#0B5D3B]">
+                <FileText className="h-5 w-5" />
+              </div>
+              <h4 className="font-display font-bold text-slate-900 text-sm">Certificate of Incorporation</h4>
+              <p className="text-slate-500 text-[11px] leading-relaxed font-light">
+                Registered under the Companies Act (Act XVIII) of 1994 as a Private Limited Company.
+              </p>
+            </div>
+            <div className="pt-3 border-t border-slate-100 space-y-1">
+              <div className="flex justify-between text-[11px] font-mono">
+                <span className="text-slate-400">Reg No:</span>
+                <span className="text-slate-900 font-bold">C-200004/2025</span>
+              </div>
+              <div className="flex justify-between text-[11px] font-mono">
+                <span className="text-slate-400">Authority:</span>
+                <span className="text-slate-900">RJSC Bangladesh</span>
+              </div>
+              <div className="flex justify-between text-[11px] font-mono">
+                <span className="text-slate-400">Incorporation Date:</span>
+                <span className="text-slate-900">20-Jan-2025</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Travel Agency Registration Certificate */}
+          <div className="bg-white border border-slate-200/60 rounded-2xl p-6 shadow-sm flex flex-col justify-between space-y-4 hover:border-[#0B5D3B] transition-all">
+            <div className="space-y-3">
+              <div className="h-10 w-10 rounded-xl bg-[#0B5D3B]/5 flex items-center justify-center text-[#0B5D3B]">
+                <Shield className="h-5 w-5" />
+              </div>
+              <h4 className="font-display font-bold text-slate-900 text-sm">Travel Agency Certificate</h4>
+              <p className="text-slate-500 text-[11px] leading-relaxed font-light">
+                Officially registered under the Civil Aviation Ministry to handle international transit and student routing.
+              </p>
+            </div>
+            <div className="pt-3 border-t border-slate-100 space-y-1">
+              <div className="flex justify-between text-[11px] font-mono">
+                <span className="text-slate-400">Certificate No:</span>
+                <span className="text-slate-900 font-bold">0017180</span>
+              </div>
+              <div className="flex justify-between text-[11px] font-mono">
+                <span className="text-slate-400">Authority:</span>
+                <span className="text-slate-900">Ministry of Civil Aviation</span>
+              </div>
+              <div className="flex justify-between text-[11px] font-mono">
+                <span className="text-slate-400">Validity Period:</span>
+                <span className="text-slate-900">2026 – 2029</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Govt Trade License */}
+          <div className="bg-white border border-slate-200/60 rounded-2xl p-6 shadow-sm flex flex-col justify-between space-y-4 hover:border-[#0B5D3B] transition-all">
+            <div className="space-y-3">
+              <div className="h-10 w-10 rounded-xl bg-[#0B5D3B]/5 flex items-center justify-center text-[#0B5D3B]">
+                <Award className="h-5 w-5" />
+              </div>
+              <h4 className="font-display font-bold text-slate-900 text-sm">Government Trade License</h4>
+              <p className="text-slate-500 text-[11px] leading-relaxed font-light">
+                Holding a commercial trade license authorized for education consulting and international logistics.
+              </p>
+            </div>
+            <div className="pt-3 border-t border-slate-100 space-y-1">
+              <div className="flex justify-between text-[11px] font-mono">
+                <span className="text-slate-400">License No:</span>
+                <span className="text-slate-900 font-bold">TRAD/DNCC/008823/2022</span>
+              </div>
+              <div className="flex justify-between text-[11px] font-mono">
+                <span className="text-slate-400">Authority:</span>
+                <span className="text-slate-900">DNCC, Dhaka</span>
+              </div>
+              <div className="flex justify-between text-[11px] font-mono">
+                <span className="text-slate-400">Status:</span>
+                <span className="text-green-600 font-bold">Active & Compliant</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Team section */}
       <section className="space-y-8" id="about-team">

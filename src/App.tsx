@@ -623,7 +623,7 @@ export default function App() {
               </div>
             </div>
             <p className="text-xs text-slate-400 leading-relaxed">
-              JEL Study Abroad is a premium division of Journey Expert Ltd (Govt Trade License: TRAD/DNCC/008823/2022). Authorised consultants helping students study in top world colleges.
+              JEL Study Abroad is a premium division of <strong>Journey Expert Ltd.</strong> (Govt Trade License: TRAD/DNCC/008823/2022). Incorporated under the Companies Act (Reg: C-200004/2025). Registered Travel Agency (No: 0017180) under the Ministry of Civil Aviation and Tourism, Government of Bangladesh.
             </p>
             <div className="flex items-center space-x-3 text-xs text-[#D4AF37]">
               <span className="h-2 w-2 bg-green-400 rounded-full animate-ping"></span>
@@ -714,8 +714,12 @@ export default function App() {
         {/* Footer Legal credits */}
         <div className="max-w-[1600px] w-full mx-auto border-t border-slate-900 pt-6 flex flex-col md:flex-row items-center justify-between text-[11px] text-slate-500 gap-4">
           <p>© {new Date().getFullYear()} JEL Study Abroad. All Rights Reserved. A concern of Journey Expert Ltd.</p>
-          <div className="flex items-center space-x-4 font-mono font-bold text-[#D4AF37]">
+          <div className="flex flex-wrap items-center justify-center md:justify-end gap-x-4 gap-y-1 font-mono font-bold text-[#D4AF37]">
             <span>LIC: TRAD/DNCC/008823/2022</span>
+            <span>•</span>
+            <span>INC: C-200004/2025</span>
+            <span>•</span>
+            <span>TA REG: 0017180</span>
             <span>•</span>
             <span>SSL Secured Connection</span>
           </div>
