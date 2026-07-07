@@ -23,6 +23,106 @@
   status = 200
 
 [[redirects]]
-  from = "/*"
+  from = "/about"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/services"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/countries"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/destinations"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/universities"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/partners"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/scholarships"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/blog"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/blogs"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/portal"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/student-portal"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/contact"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/finder"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/checker"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/booking"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/admin"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/franchise"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/partnersync"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/scholarshipmatcher"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/admissionpredictor"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/globalmarketplace"
   to = "/index.html"
   status = 200
