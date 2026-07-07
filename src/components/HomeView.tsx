@@ -694,7 +694,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {COUNTRIES.filter(c => ["uk", "australia", "canada", "usa", "germany", "ireland"].includes(c.id)).map((c) => {
+          {COUNTRIES.filter(c => ["uk", "australia", "canada", "usa", "germany", "ireland", "newzealand"].includes(c.id)).map((c) => {
             const extra = countryMappers[c.name] || {
               scholarship: "Up to 50% bursaries",
               intake: "September, January intakes",

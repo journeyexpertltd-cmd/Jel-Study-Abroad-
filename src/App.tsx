@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { 
   GraduationCap, Brain, ShieldCheck, Calendar, Users, Phone, MessageSquare, 
   Star, Mail, MapPin, Globe, Menu, X, ArrowRight, Eye, ShieldAlert, Search, 
-  Check, Sparkles 
+  Check, Sparkles, Sun, Moon 
 } from "lucide-react";
 import { AIChatAssistant } from "./components/AIChatAssistant";
 import { SmartCourseFinder } from "./components/SmartCourseFinder";
@@ -65,6 +65,22 @@ export default function App() {
 
   const [activeTab, setActiveTab] = useState<string>(getInitialTab);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
+  
+  const [darkMode, setDarkMode] = useState<boolean>(() => {
+    return localStorage.getItem("jel_theme") === "dark" || 
+      (!localStorage.getItem("jel_theme") && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  });
+
+  // Sync dark class with document element
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("jel_theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("jel_theme", "light");
+    }
+  }, [darkMode]);
   
   // Sync activeTab to clean URL pathnames
   useEffect(() => {
@@ -193,34 +209,7 @@ export default function App() {
     };
   }, []);
 
-  // Exit Intent Event Listener
-  useEffect(() => {
-    const hasSeen = localStorage.getItem("jel_exit_intent_seen");
-    if (hasSeen) return;
-
-    const handleMouseLeave = (e: MouseEvent) => {
-      if (e.clientY < 20) {
-        setShowExitIntent(true);
-        localStorage.setItem("jel_exit_intent_seen", "true");
-      }
-    };
-
-    document.addEventListener("mouseleave", handleMouseLeave);
-
-    // Mobile fallback timer (45 seconds)
-    const timer = setTimeout(() => {
-      const hasSeenMobile = localStorage.getItem("jel_exit_intent_seen");
-      if (!hasSeenMobile) {
-        setShowExitIntent(true);
-        localStorage.setItem("jel_exit_intent_seen", "true");
-      }
-    }, 45000);
-
-    return () => {
-      document.removeEventListener("mouseleave", handleMouseLeave);
-      clearTimeout(timer);
-    };
-  }, []);
+  // Exit Intent Event Listener removed to avoid annoying popups on load. Handled strictly via Floating button click.
   
   // Transfers between AI finder, country explore, and booking forms
   const [courseFinderUni, setCourseFinderUni] = useState<string>("");
@@ -328,7 +317,7 @@ export default function App() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] text-[#1F2937] flex flex-col font-sans selection:bg-[#0B5D3B] selection:text-white" id="jel-root-app">
+    <div className={`min-h-screen bg-[#F8F9FA] dark:bg-slate-950 text-[#1F2937] dark:text-slate-100 flex flex-col font-sans selection:bg-[#0B5D3B] selection:text-white ${darkMode ? "dark" : ""}`} id="jel-root-app">
       
       {/* 1. Header Premium Contact Bar */}
       <header className="bg-[#0B5D3B] text-white text-[11px] py-2 relative z-40 font-medium border-b border-white/10">
@@ -398,16 +387,29 @@ export default function App() {
             ))}
           </div>
 
-          {/* Search trigger and Mobile trigger container */}
+          {/* Search trigger, Dark Mode, and Mobile trigger container */}
           <div className="flex items-center space-x-3">
             <button
               onClick={() => setIsSearchOpen(true)}
-              className="bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 h-9 px-3 rounded-lg flex items-center space-x-2 text-xs transition cursor-pointer font-mono font-bold"
+              className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 h-9 px-3 rounded-lg flex items-center space-x-2 text-xs transition cursor-pointer font-mono font-bold"
               title="Global Registry Search (Ctrl+K)"
             >
               <Search className="h-4 w-4" />
               <span className="hidden sm:inline">Search...</span>
-              <kbd className="hidden md:inline-block text-[9px] bg-white border border-slate-200 px-1 rounded shadow-xs text-slate-400">Ctrl+K</kbd>
+              <kbd className="hidden md:inline-block text-[9px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-1 rounded shadow-xs text-slate-400">Ctrl+K</kbd>
+            </button>
+
+            {/* Dark Mode Toggle */}
+            <button
+              onClick={() => setDarkMode(!darkMode)}
+              className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-amber-400 h-9 w-9 rounded-lg flex items-center justify-center transition cursor-pointer"
+              title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            >
+              {darkMode ? (
+                <Sun className="h-4 w-4" />
+              ) : (
+                <Moon className="h-4 w-4" />
+              )}
             </button>
 
             {/* Mobile menu trigger */}
@@ -841,6 +843,61 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* 8. JEL Floating Premium Conversion Bar */}
+      <div className="fixed bottom-6 right-6 flex flex-col items-end space-y-3.5 z-40" id="floating-conversion-widget">
+        {/* Floating "Get Free Guide" Button */}
+        <button
+          onClick={() => setShowExitIntent(true)}
+          className="bg-gradient-to-r from-[#0B5D3B] to-[#D4AF37] hover:from-[#074028] hover:to-yellow-500 text-white font-extrabold px-5 py-3 rounded-full text-[11px] uppercase tracking-wider transition-all duration-300 shadow-2xl flex items-center space-x-2 animate-bounce cursor-pointer border border-[#D4AF37]/30"
+          title="Get Free Study Abroad Guide"
+        >
+          <Sparkles className="h-4 w-4 text-yellow-300 animate-spin" style={{ animationDuration: '4s' }} />
+          <span>Get Free Guide</span>
+        </button>
+
+        <div className="flex flex-row md:flex-col items-center gap-2.5 bg-white/90 dark:bg-slate-900/95 backdrop-blur-md p-2.5 rounded-full shadow-2xl border border-slate-100 dark:border-slate-800">
+          {/* WhatsApp Action */}
+          <a
+            href="https://wa.me/8801926400400"
+            target="_blank"
+            rel="noreferrer"
+            title="Chat on WhatsApp"
+            className="h-11 w-11 bg-[#25D366] hover:bg-[#1ebd53] text-white rounded-full flex items-center justify-center transition-transform hover:scale-110 shadow-md"
+          >
+            <Phone className="h-4.5 w-4.5" />
+          </a>
+
+          {/* Messenger Action */}
+          <a
+            href="https://m.me/JourneyExpert"
+            target="_blank"
+            rel="noreferrer"
+            title="Chat on Messenger"
+            className="h-11 w-11 bg-[#0084FF] hover:bg-[#0076e4] text-white rounded-full flex items-center justify-center transition-transform hover:scale-110 shadow-md"
+          >
+            <MessageSquare className="h-4.5 w-4.5 fill-white" />
+          </a>
+
+          {/* Hotline Action */}
+          <a
+            href="tel:+8801926400400"
+            title="Call helpline"
+            className="h-11 w-11 bg-[#0B5D3B] hover:bg-[#074028] text-white rounded-full flex items-center justify-center transition-transform hover:scale-110 shadow-md"
+          >
+            <Phone className="h-4.5 w-4.5 fill-white" />
+          </a>
+
+          {/* Back To Top Action */}
+          <button
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            title="Back to Top"
+            className="h-11 w-11 bg-slate-900 dark:bg-slate-700 hover:bg-slate-800 dark:hover:bg-slate-600 text-white rounded-full flex items-center justify-center transition-transform hover:scale-110 shadow-md cursor-pointer"
+          >
+            ▲
+          </button>
+        </div>
+      </div>
 
     </div>
   );
