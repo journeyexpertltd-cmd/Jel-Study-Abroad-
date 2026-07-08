@@ -19,7 +19,7 @@ import { ScholarshipMatching } from "./components/ScholarshipMatching";
 import { AdmissionPrediction } from "./components/AdmissionPrediction";
 import { GlobalMarketplace } from "./components/GlobalMarketplace";
 
-const jelLogo = new URL("./assets/images/jel_study_abroad_logo_1782110469815.jpg", import.meta.url).href;
+const jelLogo = new URL("./assets/images/jel_circular_logo_1782372441429.jpg", import.meta.url).href;
 
 export default function App() {
   // Helper to parse clean paths or activeTab query param
@@ -358,7 +358,7 @@ export default function App() {
             <img 
               src={jelLogo} 
               alt="JEL Study Abroad" 
-              className="h-10 md:h-12 lg:h-14 w-auto object-contain transition-all duration-300 group-hover:scale-105"
+              className="h-10 md:h-12 lg:h-14 w-auto object-contain transition-all duration-300 group-hover:scale-105 rounded-full border border-slate-100/60 shadow-sm"
               referrerPolicy="no-referrer"
               onError={(e) => {
                 e.currentTarget.onerror = null;
