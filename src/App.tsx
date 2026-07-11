@@ -387,31 +387,8 @@ export default function App() {
             ))}
           </div>
 
-          {/* Search trigger, Dark Mode, and Mobile trigger container */}
+          {/* Mobile menu trigger and container */}
           <div className="flex items-center space-x-3">
-            <button
-              onClick={() => setIsSearchOpen(true)}
-              className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 h-9 px-3 rounded-lg flex items-center space-x-2 text-xs transition cursor-pointer font-mono font-bold"
-              title="Global Registry Search (Ctrl+K)"
-            >
-              <Search className="h-4 w-4" />
-              <span className="hidden sm:inline">Search...</span>
-              <kbd className="hidden md:inline-block text-[9px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-1 rounded shadow-xs text-slate-400">Ctrl+K</kbd>
-            </button>
-
-            {/* Dark Mode Toggle */}
-            <button
-              onClick={() => setDarkMode(!darkMode)}
-              className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-amber-400 h-9 w-9 rounded-lg flex items-center justify-center transition cursor-pointer"
-              title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
-            >
-              {darkMode ? (
-                <Sun className="h-4 w-4" />
-              ) : (
-                <Moon className="h-4 w-4" />
-              )}
-            </button>
-
             {/* Mobile menu trigger */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
