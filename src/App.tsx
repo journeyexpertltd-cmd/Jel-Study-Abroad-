@@ -19,7 +19,7 @@ import { ScholarshipMatching } from "./components/ScholarshipMatching";
 import { AdmissionPrediction } from "./components/AdmissionPrediction";
 import { GlobalMarketplace } from "./components/GlobalMarketplace";
 
-const jelLogo = new URL("./assets/images/jel_logo_transparent_1782275669330.jpg", import.meta.url).href;
+const jelLogo = new URL("./assets/images/jel_study_abroad_logo_1782110469815.jpg", import.meta.url).href;
 
 export default function App() {
   // Helper to parse clean paths or activeTab query param
