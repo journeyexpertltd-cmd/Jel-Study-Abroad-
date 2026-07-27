@@ -847,7 +847,7 @@ export default function App() {
       )}
 
       {/* 8. JEL Floating Premium Conversion Bar */}
-      <div className="fixed bottom-6 right-6 flex flex-col items-end space-y-3.5 z-40" id="floating-conversion-widget">
+      <div className="fixed bottom-6 right-6 flex flex-col items-end space-y-3.5 z-40 fade-in" id="floating-conversion-widget">
         {/* Floating "Get Free Guide" Button */}
         <button
           onClick={() => setShowExitIntent(true)}
