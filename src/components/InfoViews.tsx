@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Compass, Shield, Award, Users, Search, GraduationCap, MapPin, CheckCircle, Mail, Phone, Clock, MessageSquare, ExternalLink, Calendar, Facebook, Send, Map, FileText } from "lucide-react";
+import { Compass, Shield, Award, Users, Search, GraduationCap, MapPin, CheckCircle, Mail, Phone, Clock, MessageSquare, ExternalLink, Calendar, Facebook, Send, Map, FileText, Globe } from "lucide-react";
 import { COUNTRIES, SCHOLARSHIPS, BLOGS, UNIVERSITY_PARTNERS, TEAM_MEMBERS } from "../data";
 import { BlogItem, PartnerUniversity } from "../types";
 
@@ -768,6 +768,16 @@ export function ContactView() {
                 <div>
                   <p className="font-bold text-slate-800">Official Inboxes:</p>
                   <p className="text-slate-500 mt-0.5 leading-normal">journeyexpertbd@gmail.com</p>
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-3">
+                <Globe className="h-5 w-5 text-[#00AEEF]" />
+                <div>
+                  <p className="font-bold text-slate-800">Official Portal & Domain:</p>
+                  <a href="https://journeyexpertbd.com" target="_blank" rel="noreferrer" className="text-[#0B5D3B] hover:underline font-semibold mt-0.5 block leading-normal">
+                    www.journeyexpertbd.com
+                  </a>
                 </div>
               </div>
 

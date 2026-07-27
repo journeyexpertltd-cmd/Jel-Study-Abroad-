@@ -162,8 +162,8 @@ export default function App() {
         "@context": "https://schema.org",
         "@type": "Organization",
         "name": "JEL Study Abroad",
-        "url": "https://jelstudyabroad.com",
-        "logo": "https://jelstudyabroad.com/assets/images/jel_circular_logo_1782372441429.jpg",
+        "url": "https://journeyexpertbd.com",
+        "logo": "https://journeyexpertbd.com/assets/images/jel_circular_logo_1782372441429.jpg",
         "contactPoint": {
           "@type": "ContactPoint",
           "telephone": "+8801926400400",
@@ -685,6 +685,9 @@ export default function App() {
             <div className="text-xs text-slate-400 space-y-1.5 pt-1">
               <p className="leading-relaxed font-light">📍 Abdul Motin Complex, 189/A, Nabisco Mor, Tejgaon, Dhaka, Bangladesh.</p>
               <p className="font-mono text-[10px] text-slate-500">📞 Hotline: +8801926400400</p>
+              <p className="font-mono text-[10px] text-[#D4AF37]">
+                🌐 Web: <a href="https://journeyexpertbd.com" target="_blank" rel="noreferrer" className="hover:underline">www.journeyexpertbd.com</a>
+              </p>
             </div>
           </div>
 
