@@ -851,10 +851,10 @@ export default function App() {
         {/* Floating "Get Free Guide" Button */}
         <button
           onClick={() => setShowExitIntent(true)}
-          className="bg-gradient-to-r from-[#0B5D3B] to-[#D4AF37] hover:from-[#074028] hover:to-yellow-500 text-white font-extrabold px-5 py-3 rounded-full text-[11px] uppercase tracking-wider transition-all duration-300 shadow-2xl flex items-center space-x-2 animate-bounce cursor-pointer border border-[#D4AF37]/30"
+          className="group bg-gradient-to-r from-[#0B5D3B] to-[#D4AF37] hover:from-[#074028] hover:to-yellow-500 text-white font-extrabold px-5 py-3 rounded-full text-[11px] uppercase tracking-wider transition-all duration-300 hover:scale-105 shadow-2xl flex items-center space-x-2 animate-bounce cursor-pointer border border-[#D4AF37]/30"
           title="Get Free Study Abroad Guide"
         >
-          <Sparkles className="h-4 w-4 text-yellow-300 animate-spin" style={{ animationDuration: '4s' }} />
+          <Sparkles className="h-4 w-4 text-yellow-300 animate-spin group-hover:scale-125 transition-transform duration-300" style={{ animationDuration: '4s' }} />
           <span>Get Free Guide</span>
         </button>
 
@@ -864,10 +864,14 @@ export default function App() {
             href="https://wa.me/8801926400400"
             target="_blank"
             rel="noreferrer"
-            title="Chat on WhatsApp"
-            className="h-11 w-11 bg-[#25D366] hover:bg-[#1ebd53] text-white rounded-full flex items-center justify-center transition-transform hover:scale-110 shadow-md"
+            title="WhatsApp Support"
+            aria-label="WhatsApp Support"
+            className="group relative h-11 w-11 bg-[#25D366] hover:bg-[#1ebd53] text-white rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-md"
           >
-            <Phone className="h-4.5 w-4.5" />
+            <Phone className="h-4.5 w-4.5 transition-transform duration-300 group-hover:scale-125" />
+            <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 hidden md:group-hover:block px-2.5 py-1 text-[11px] font-medium text-white bg-slate-900 dark:bg-slate-800 rounded-md whitespace-nowrap shadow-lg pointer-events-none transition-opacity duration-200 z-50">
+              WhatsApp Support
+            </span>
           </a>
 
           {/* Messenger Action */}
@@ -875,28 +879,40 @@ export default function App() {
             href="https://m.me/JourneyExpert"
             target="_blank"
             rel="noreferrer"
-            title="Chat on Messenger"
-            className="h-11 w-11 bg-[#0084FF] hover:bg-[#0076e4] text-white rounded-full flex items-center justify-center transition-transform hover:scale-110 shadow-md"
+            title="Messenger Chat"
+            aria-label="Messenger Chat"
+            className="group relative h-11 w-11 bg-[#0084FF] hover:bg-[#0076e4] text-white rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-md"
           >
-            <MessageSquare className="h-4.5 w-4.5 fill-white" />
+            <MessageSquare className="h-4.5 w-4.5 fill-white transition-transform duration-300 group-hover:scale-125" />
+            <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 hidden md:group-hover:block px-2.5 py-1 text-[11px] font-medium text-white bg-slate-900 dark:bg-slate-800 rounded-md whitespace-nowrap shadow-lg pointer-events-none transition-opacity duration-200 z-50">
+              Messenger Chat
+            </span>
           </a>
 
           {/* Hotline Action */}
           <a
             href="tel:+8801926400400"
-            title="Call helpline"
-            className="h-11 w-11 bg-[#0B5D3B] hover:bg-[#074028] text-white rounded-full flex items-center justify-center transition-transform hover:scale-110 shadow-md"
+            title="Helpline"
+            aria-label="Helpline"
+            className="group relative h-11 w-11 bg-[#0B5D3B] hover:bg-[#074028] text-white rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-md"
           >
-            <Phone className="h-4.5 w-4.5 fill-white" />
+            <Phone className="h-4.5 w-4.5 fill-white transition-transform duration-300 group-hover:scale-125" />
+            <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 hidden md:group-hover:block px-2.5 py-1 text-[11px] font-medium text-white bg-slate-900 dark:bg-slate-800 rounded-md whitespace-nowrap shadow-lg pointer-events-none transition-opacity duration-200 z-50">
+              Helpline
+            </span>
           </a>
 
           {/* Back To Top Action */}
           <button
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-            title="Back to Top"
-            className="h-11 w-11 bg-slate-900 dark:bg-slate-700 hover:bg-slate-800 dark:hover:bg-slate-600 text-white rounded-full flex items-center justify-center transition-transform hover:scale-110 shadow-md cursor-pointer"
+            title="Scroll to top"
+            aria-label="Scroll to top"
+            className="group relative h-11 w-11 bg-slate-900 dark:bg-slate-700 hover:bg-slate-800 dark:hover:bg-slate-600 text-white rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-md cursor-pointer"
           >
-            ▲
+            <span className="transition-transform duration-300 group-hover:scale-125 inline-block text-xs">▲</span>
+            <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 hidden md:group-hover:block px-2.5 py-1 text-[11px] font-medium text-white bg-slate-900 dark:bg-slate-800 rounded-md whitespace-nowrap shadow-lg pointer-events-none transition-opacity duration-200 z-50">
+              Scroll to top
+            </span>
           </button>
         </div>
       </div>
