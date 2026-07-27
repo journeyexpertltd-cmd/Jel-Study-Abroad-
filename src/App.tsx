@@ -177,6 +177,28 @@ export default function App() {
       },
       {
         "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "JEL Study Abroad",
+        "url": "https://journeyexpertbd.com"
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "LocalBusiness",
+        "name": "JEL Study Abroad (Journey Expert Ltd.)",
+        "image": "https://journeyexpertbd.com/assets/images/jel_circular_logo_1782372441429.jpg",
+        "url": "https://journeyexpertbd.com",
+        "telephone": "+8801926400400",
+        "email": "journeyexpertbd@gmail.com",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "189/A, Abdul Motin Complex, Nabisco Mor, Tejgaon",
+          "addressLocality": "Dhaka",
+          "postalCode": "1208",
+          "addressCountry": "BD"
+        }
+      },
+      {
+        "@context": "https://schema.org",
         "@type": "FAQPage",
         "mainEntity": [
           {
