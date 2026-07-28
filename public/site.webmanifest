@@ -3,12 +3,12 @@
   "short_name": "JEL Study Abroad",
   "icons": [
     {
-      "src": "/src/assets/images/jel_circular_logo_1782372441429.jpg",
+      "src": "/assets/images/jel_circular_logo_1782372441429.jpg",
       "sizes": "192x192",
       "type": "image/jpeg"
     },
     {
-      "src": "/src/assets/images/jel_circular_logo_1782372441429.jpg",
+      "src": "/assets/images/jel_circular_logo_1782372441429.jpg",
       "sizes": "512x512",
       "type": "image/jpeg"
     }
