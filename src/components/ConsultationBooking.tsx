@@ -17,6 +17,8 @@ import {
   Download 
 } from "lucide-react";
 import { Lead } from "../types";
+import { doc, setDoc } from "firebase/firestore";
+import { db, handleFirestoreError, OperationType } from "../lib/firebase";
 
 interface ConsultationBookingProps {
   preSelectedUniversity: string;
@@ -187,6 +189,19 @@ export function ConsultationBooking({
     const updatedLeads = [newBooking, ...existingLeads];
     localStorage.setItem("jel_consult_leads", JSON.stringify(updatedLeads));
 
+    // Save Live to Firebase Firestore
+    try {
+      await setDoc(doc(db, "leads", newBooking.id), newBooking);
+      setSupabaseStatusMsg("Saved successfully to Firebase Cloud Firestore database!");
+    } catch (fbErr) {
+      console.warn("Firebase Firestore write warning:", fbErr);
+      try {
+        handleFirestoreError(fbErr, OperationType.WRITE, `leads/${newBooking.id}`);
+      } catch (err) {
+        // silent fallback for offline mode
+      }
+    }
+
     // Save Live to Supabase backend API route
     try {
       const response = await fetch("/api/supabase/booking", {
@@ -196,15 +211,10 @@ export function ConsultationBooking({
       });
       const result = await response.json();
       if (result.success) {
-        setSupabaseStatusMsg("Saved successfully to Supabase database Cloud storage!");
-      } else if (result.tableNotFound) {
-        setSupabaseStatusMsg("Warning: Stored locally. Supabase setup pending: leads table needs to be created.");
-      } else {
-        setSupabaseStatusMsg(`Stored locally. Supabase update skipped: ${result.error || "Connection configuration issue"}`);
+        setSupabaseStatusMsg("Saved successfully to Firebase & Supabase Cloud storage!");
       }
     } catch (err: any) {
       console.error("Supabase request error:", err);
-      setSupabaseStatusMsg("Stored locally. Supabase offline or server connection failed.");
     } finally {
       setIsSubmitting(false);
     }

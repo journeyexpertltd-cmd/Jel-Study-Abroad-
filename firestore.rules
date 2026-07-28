@@ -1,0 +1,41 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // User Profiles
+    match /userProfiles/{userId} {
+      allow read: if isSignedIn();
+      allow create, update: if isOwner(userId);
+      allow delete: if false;
+    }
+
+    // Leads Collection (public creation allowed for lead capture, read/update for signed in users)
+    match /leads/{leadId} {
+      allow create: if true;
+      allow read, update, delete: if isSignedIn();
+    }
+
+    // Consultations Collection
+    match /consultations/{consultationId} {
+      allow create: if true;
+      allow read, update, delete: if isSignedIn();
+    }
+  }
+}

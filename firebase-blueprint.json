@@ -1,0 +1,183 @@
+{
+  "entities": {
+    "Lead": {
+      "title": "Lead",
+      "description": "Student application or consultation inquiry lead",
+      "type": "object",
+      "properties": {
+        "fullName": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "email": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "mobileNumber": {
+          "type": "string",
+          "maxLength": 30
+        },
+        "preferredCountry": {
+          "type": "string",
+          "maxLength": 50
+        },
+        "educationLevel": {
+          "type": "string",
+          "maxLength": 50
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "New",
+            "Contacted",
+            "In Assessment",
+            "Uni Approved",
+            "Visa Pending",
+            "Visa Approved",
+            "Completed",
+            "No Response"
+          ]
+        },
+        "createdAt": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "userId": {
+          "type": "string",
+          "maxLength": 128
+        }
+      },
+      "required": [
+        "fullName",
+        "email",
+        "mobileNumber",
+        "preferredCountry",
+        "educationLevel",
+        "status"
+      ]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Authenticated user profile",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "email": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "displayName": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "photoURL": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "role": {
+          "type": "string",
+          "enum": [
+            "student",
+            "counselor",
+            "admin"
+          ]
+        },
+        "createdAt": {
+          "type": "string",
+          "maxLength": 40
+        }
+      },
+      "required": [
+        "uid",
+        "email"
+      ]
+    },
+    "Consultation": {
+      "title": "Consultation",
+      "description": "Booked consultation appointment",
+      "type": "object",
+      "properties": {
+        "studentName": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "email": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "phone": {
+          "type": "string",
+          "maxLength": 30
+        },
+        "preferredDate": {
+          "type": "string",
+          "maxLength": 30
+        },
+        "preferredTime": {
+          "type": "string",
+          "maxLength": 30
+        },
+        "destination": {
+          "type": "string",
+          "maxLength": 50
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "Pending",
+            "Confirmed",
+            "Completed",
+            "Cancelled"
+          ]
+        },
+        "createdAt": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "userId": {
+          "type": "string",
+          "maxLength": 128
+        }
+      },
+      "required": [
+        "studentName",
+        "email",
+        "phone",
+        "preferredDate",
+        "destination",
+        "status"
+      ]
+    }
+  },
+  "firestore": {
+    "/leads/{leadId}": {
+      "schema": {
+        "$ref": "#/entities/Lead"
+      },
+      "description": "Collection of student consultation leads"
+    },
+    "/userProfiles/{userId}": {
+      "schema": {
+        "$ref": "#/entities/UserProfile"
+      },
+      "description": "User account profiles"
+    },
+    "/consultations/{consultationId}": {
+      "schema": {
+        "$ref": "#/entities/Consultation"
+      },
+      "description": "Scheduled student consultation bookings"
+    }
+  }
+}
