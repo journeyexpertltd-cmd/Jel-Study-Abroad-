@@ -157,6 +157,72 @@ export default function App() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
+  // Dynamic Document Title and Meta Description for SEO & Accessibility
+  useEffect(() => {
+    const titleMap: Record<string, { title: string; desc: string }> = {
+      home: {
+        title: "JEL Study Abroad - Journey Expert Ltd. | Premium Student Visa Consultancy",
+        desc: "Official partner for top universities across the UK, Canada, Australia, USA, Germany, and Ireland. 98% audited visa success rate in Tejgaon, Dhaka."
+      },
+      booking: {
+        title: "Book Free Counseling Session | JEL Study Abroad Tejgaon Dhaka",
+        desc: "Book a 1-on-1 expert study abroad counseling seat with JEL senior counselors. Zero processing fees for initial assessment."
+      },
+      finder: {
+        title: "AI Course Finder & University Search | JEL Study Abroad",
+        desc: "Search thousands of courses across top universities in UK, USA, Canada, Australia, and Germany with smart tuition & entry criteria filters."
+      },
+      checker: {
+        title: "Student Visa Eligibility & Financial Checker | JEL Study Abroad",
+        desc: "Instant eligibility analysis for UK, Canada, Australia, and USA student visas. Evaluate academic gap, GPA, and bank solvency requirements."
+      },
+      scholarships: {
+        title: "100% Study Abroad Scholarships 2026/2027 | JEL Study Abroad",
+        desc: "Explore full and partial merit scholarships for Bangladeshi students across UK, USA, Canada, Australia, and European partner universities."
+      },
+      admission: {
+        title: "AI University Admission Chance Predictor | JEL Study Abroad",
+        desc: "Calculate your admission probability for global universities based on your GPA, IELTS/PTE score, and work experience."
+      },
+      sop: {
+        title: "AI Statement of Purpose (SOP) Writer & Auditor | JEL Study Abroad",
+        desc: "Generate and refine high-converting Statements of Purpose (SOP) tailored for UK CAS, US Embassy interviews, and Canadian study permits."
+      },
+      visa: {
+        title: "Student Visa Document Checklist & Verification | JEL Study Abroad",
+        desc: "Comprehensive visa document checklists for UK Student Visa, Canada Study Permit, Australian Subclass 500, and US F-1 Visa."
+      },
+      franchise: {
+        title: "Franchise & Partner Network | Journey Expert Ltd.",
+        desc: "Join Bangladesh's leading student counseling franchise network. Partner with JEL Study Abroad to empower students across district centers."
+      },
+      marketplace: {
+        title: "Global B2B Education Marketplace & University Sync | JEL",
+        desc: "Connect directly with university admissions officers and official study abroad representatives through JEL B2B marketplace."
+      },
+      invoices: {
+        title: "Student Fee Invoice & Payment Portal | Journey Expert Ltd.",
+        desc: "Secure online tuition fee and service deposit payment gateway for JEL Study Abroad students."
+      },
+      portal: {
+        title: "Student Application Tracking Portal | JEL Study Abroad",
+        desc: "Track your university offer letters, CAS issuance, visa application status, and document upload progress in real-time."
+      },
+      admin: {
+        title: "Counselor CRM & Lead Board | JEL Study Abroad",
+        desc: "Internal CRM workspace for JEL counselors to manage student applications, consultation schedules, and university sync."
+      }
+    };
+
+    const currentMeta = titleMap[activeTab] || titleMap.home;
+    document.title = currentMeta.title;
+
+    let metaDescEl = document.querySelector('meta[name="description"]');
+    if (metaDescEl) {
+      metaDescEl.setAttribute("content", currentMeta.desc);
+    }
+  }, [activeTab]);
+
   // SEO Schema.org Ingestion
   useEffect(() => {
     const schemas = [
