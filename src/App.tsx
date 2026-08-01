@@ -4,7 +4,7 @@ import { db, handleFirestoreError, OperationType } from "./lib/firebase";
 import { 
   GraduationCap, Brain, ShieldCheck, Calendar, Users, Phone, MessageSquare, 
   Star, Mail, MapPin, Globe, Menu, X, ArrowRight, Eye, ShieldAlert, Search, 
-  Check, Sparkles, Sun, Moon 
+  Check, Sparkles, Sun, Moon, Calculator 
 } from "lucide-react";
 import { AIChatAssistant } from "./components/AIChatAssistant";
 import { SmartCourseFinder } from "./components/SmartCourseFinder";
@@ -20,6 +20,7 @@ import { UniversityIntegration } from "./components/UniversityIntegration";
 import { ScholarshipMatching } from "./components/ScholarshipMatching";
 import { AdmissionPrediction } from "./components/AdmissionPrediction";
 import { GlobalMarketplace } from "./components/GlobalMarketplace";
+import { EctsCalculator } from "./components/EctsCalculator";
 
 const jelLogo = new URL("./assets/images/jel_study_abroad_logo_1782110469815.jpg", import.meta.url).href;
 
@@ -53,7 +54,10 @@ export default function App() {
       "partnersync": "partnerSync",
       "scholarshipmatcher": "scholarshipMatcher",
       "admissionpredictor": "admissionPredictor",
-      "globalmarketplace": "globalMarketplace"
+      "globalmarketplace": "globalMarketplace",
+      "ects": "ects",
+      "ects-calculator": "ects",
+      "ectscalculator": "ects"
     };
 
     if (tabParam && validTabs[tabParam.toLowerCase()]) {
@@ -104,7 +108,8 @@ export default function App() {
       "partnerSync": "/partnersync",
       "scholarshipMatcher": "/scholarshipmatcher",
       "admissionPredictor": "/admissionpredictor",
-      "globalMarketplace": "/globalmarketplace"
+      "globalMarketplace": "/globalmarketplace",
+      "ects": "/ects-calculator"
     };
 
     const currentPath = window.location.pathname;
@@ -211,6 +216,10 @@ export default function App() {
       admin: {
         title: "Counselor CRM & Lead Board | JEL Study Abroad",
         desc: "Internal CRM workspace for JEL counselors to manage student applications, consultation schedules, and university sync."
+      },
+      ects: {
+        title: "ECTS Calculator | Estimate Your ECTS Credits | JEL Study Abroad",
+        desc: "Use the JEL Study Abroad ECTS Calculator to estimate your academic credits in ECTS and understand your potential study-abroad options in Europe and beyond."
       }
     };
 
@@ -408,6 +417,7 @@ export default function App() {
 
   const aiToolsItems = [
     { id: "finder", label: "Smart Course Finder", icon: Brain, desc: "AI Matcher" },
+    { id: "ects", label: "ECTS Calculator", icon: Calculator, desc: "Credit Conversion" },
     { id: "checker", label: "GTE Visa Eligibility", icon: ShieldCheck, desc: "Visa Simulator" },
     { id: "booking", label: "Book Consultation", icon: Calendar, desc: "Free seat" },
     { id: "admin", label: "Counselors CRM", icon: Users, desc: "Lead Board" },
@@ -647,6 +657,12 @@ export default function App() {
         {activeTab === "scholarshipMatcher" && <ScholarshipMatching />}
         {activeTab === "admissionPredictor" && <AdmissionPrediction />}
         {activeTab === "globalMarketplace" && <GlobalMarketplace />}
+        {activeTab === "ects" && (
+          <EctsCalculator 
+            setActiveTab={setActiveTab} 
+            onPreSelectCountry={handlePreSelectCountry} 
+          />
+        )}
       </main>
 
       {/* 5. Persistent Companion AI Chat widget, Sticky Book Consultation & Floating WhatsApp */}
