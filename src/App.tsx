@@ -515,6 +515,17 @@ export default function App() {
         {/* Mobile menu panel */}
         {isMobileMenuOpen && (
           <div className="lg:hidden border-t border-slate-100 bg-white/95 backdrop-blur-md py-4 px-6 space-y-4 shadow-inner text-left animate-in slide-in-from-top duration-300">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <img 
+                src={jelLogo} 
+                alt="JEL Study Abroad" 
+                className="h-9 w-auto object-contain"
+                referrerPolicy="no-referrer"
+              />
+              <span className="text-[10px] font-bold text-[#0B5D3B] bg-[#0B5D3B]/10 px-2 py-0.5 rounded-full">
+                Tejgaon, Dhaka
+              </span>
+            </div>
             <div className="flex flex-col space-y-3">
               {menuItems.map((item) => (
                 <button

@@ -8,6 +8,8 @@ import {
 import { doc, setDoc } from "firebase/firestore";
 import { db, handleFirestoreError, OperationType } from "../lib/firebase";
 
+const jelLogo = new URL("../assets/images/jel_study_abroad_logo_1782110469815.jpg", import.meta.url).href;
+
 export interface EctsCalculatorProps {
   setActiveTab: (tab: string) => void;
   onPreSelectCountry?: (country: string) => void;
@@ -381,30 +383,43 @@ export const EctsCalculator: React.FC<EctsCalculatorProps> = ({
       {/* 1. Header Hero Banner */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#0F172A] via-[#0B5D3B] to-[#0A4B30] text-white p-8 md:p-12 border border-white/10 shadow-2xl">
         <div className="absolute -right-12 -bottom-12 w-96 h-96 bg-[#D4AF37]/15 rounded-full blur-3xl pointer-events-none"></div>
-        <div className="relative z-10 space-y-4 max-w-3xl">
-          <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/15 text-xs font-semibold text-[#D4AF37]">
-            <Sparkles className="w-4 h-4 text-[#D4AF37]" />
-            <span>Official European Credit Guidance Engine</span>
+        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
+          <div className="space-y-4 max-w-2xl">
+            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/15 text-xs font-semibold text-[#D4AF37]">
+              <Sparkles className="w-4 h-4 text-[#D4AF37]" />
+              <span>Official European Credit Guidance Engine</span>
+            </div>
+
+            <h1 className="text-3xl md:text-5xl font-black font-display tracking-tight text-white leading-tight">
+              ECTS Calculator
+            </h1>
+
+            <p className="text-sm md:text-base text-slate-200 leading-relaxed font-normal">
+              Estimate your academic credits in ECTS and get a clearer understanding of how your previous studies compare with the European Credit Transfer and Accumulation System for study in Europe, UK, Canada, Australia, and worldwide.
+            </p>
+
+            <div className="pt-2 flex flex-wrap items-center gap-3 text-xs font-medium text-slate-300">
+              <span className="flex items-center gap-1.5 bg-black/20 px-3 py-1.5 rounded-lg border border-white/10">
+                <ShieldCheck className="w-4 h-4 text-emerald-400" /> EHEA Standard Matrix
+              </span>
+              <span className="flex items-center gap-1.5 bg-black/20 px-3 py-1.5 rounded-lg border border-white/10">
+                <Globe className="w-4 h-4 text-[#D4AF37]" /> Global Recognition
+              </span>
+              <span className="flex items-center gap-1.5 bg-black/20 px-3 py-1.5 rounded-lg border border-white/10">
+                <Award className="w-4 h-4 text-yellow-400" /> Free Profile Mapping
+              </span>
+            </div>
           </div>
 
-          <h1 className="text-3xl md:text-5xl font-black font-display tracking-tight text-white leading-tight">
-            ECTS Calculator
-          </h1>
-
-          <p className="text-sm md:text-base text-slate-200 leading-relaxed font-normal">
-            Estimate your academic credits in ECTS and get a clearer understanding of how your previous studies compare with the European Credit Transfer and Accumulation System for study in Europe, UK, Canada, Australia, and worldwide.
-          </p>
-
-          <div className="pt-2 flex flex-wrap items-center gap-4 text-xs font-medium text-slate-300">
-            <span className="flex items-center gap-1.5 bg-black/20 px-3 py-1.5 rounded-lg border border-white/10">
-              <ShieldCheck className="w-4 h-4 text-emerald-400" /> EHEA Standard Matrix
-            </span>
-            <span className="flex items-center gap-1.5 bg-black/20 px-3 py-1.5 rounded-lg border border-white/10">
-              <Globe className="w-4 h-4 text-[#D4AF37]" /> Global University Recognition
-            </span>
-            <span className="flex items-center gap-1.5 bg-black/20 px-3 py-1.5 rounded-lg border border-white/10">
-              <Award className="w-4 h-4 text-yellow-400" /> Free Profile Mapping
-            </span>
+          {/* JEL Brand Logo Badge */}
+          <div className="shrink-0 bg-white p-4 md:p-5 rounded-2xl shadow-xl border border-white/20 flex flex-col items-center justify-center space-y-2 group hover:scale-105 transition-transform duration-300">
+            <img 
+              src={jelLogo} 
+              alt="JEL Study Abroad - A Brand Of Journey Expert Ltd." 
+              className="h-16 md:h-20 w-auto object-contain"
+              referrerPolicy="no-referrer"
+            />
+            <span className="text-[10px] font-bold text-slate-600 tracking-wider uppercase">Official Education Consultancy</span>
           </div>
         </div>
       </div>
