@@ -54,8 +54,10 @@ async function testConnection() {
   try {
     await getDocFromServer(doc(db, 'test', 'connection'));
   } catch (error) {
-    if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.error('Please check your Firebase configuration.');
+    if (error instanceof Error && (error.message.includes('the client is offline') || error.message.includes('Could not reach Cloud Firestore backend'))) {
+      console.warn('Firebase status notice (Operating in client-side / offline mode):', error.message);
+    } else {
+      console.warn('Firebase initial health check:', error);
     }
   }
 }

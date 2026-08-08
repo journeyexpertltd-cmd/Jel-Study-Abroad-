@@ -19,6 +19,11 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Health check test path
+    match /test/{document=**} {
+      allow read: if true;
+    }
+
     // User Profiles
     match /userProfiles/{userId} {
       allow read: if isSignedIn();

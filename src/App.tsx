@@ -465,16 +465,22 @@ export default function App() {
           {/* Logo Brand Segment */}
           <div 
             onClick={() => { setActiveTab("home"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-            className="flex items-center cursor-pointer group text-left select-none animate-fade-in"
+            className="flex items-center gap-3 cursor-pointer group text-left select-none animate-fade-in"
           >
             <img 
               src={jelLogo} 
-              alt="JEL Study Abroad" 
-              className="h-10 md:h-12 lg:h-14 w-auto object-contain transition-all duration-300 group-hover:scale-105"
+              alt="JEL Study Abroad - A Brand Of Journey Expert Ltd." 
+              className="h-10 md:h-12 lg:h-14 w-auto object-contain transition-all duration-300 group-hover:scale-105 filter drop-shadow-sm"
               referrerPolicy="no-referrer"
               onError={(e) => {
-                e.currentTarget.onerror = null;
                 e.currentTarget.style.display = "none";
+                const parent = e.currentTarget.parentElement;
+                if (parent && !parent.querySelector(".logo-fallback")) {
+                  const fallback = document.createElement("div");
+                  fallback.className = "logo-fallback text-left";
+                  fallback.innerHTML = '<span className="text-lg font-black text-[#0B5D3B] tracking-tight">JEL <span className="text-[#D4AF37]">Study Abroad</span></span><span className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest">Journey Expert Ltd.</span>';
+                  parent.appendChild(fallback);
+                }
               }}
             />
           </div>
