@@ -10,6 +10,7 @@ import {
 import { COUNTRIES, SCHOLARSHIPS, TESTIMONIALS, UNIVERSITY_PARTNERS, BLOGS } from "../data";
 
 const brandLogoImg = new URL("../assets/images/jel_circular_logo_1782372441429.jpg", import.meta.url).href;
+const mbmGradeLogo = "/assets/images/mbm_grade_logo.png";
 
 interface HomeViewProps {
   setActiveTab: (tab: string) => void;
@@ -291,6 +292,20 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
           
           {/* Hero Information */}
           <div className="lg:col-span-7 space-y-6 md:space-y-8 text-left">
+            <div className="inline-flex items-center gap-3 rounded-2xl border border-white/15 bg-white/10 px-3 py-2 backdrop-blur-md shadow-lg">
+              <img
+                src={mbmGradeLogo}
+                alt="MBM Grade logo"
+                className="h-12 w-14 sm:h-14 sm:w-16 object-contain"
+                loading="eager"
+                decoding="async"
+              />
+              <div className="border-l border-white/20 pl-3">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#D4AF37]">MBM Grade</p>
+                <p className="mt-0.5 text-[10px] text-slate-200">Featured in our global education network</p>
+              </div>
+            </div>
+
             <span className="inline-flex items-center space-x-2 bg-white/10 border border-white/10 backdrop-blur-md text-[#D4AF37] py-2 px-4 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider shadow-md max-w-full">
               <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#D4AF37] shrink-0 animate-pulse" />
               <span className="truncate font-mono">Bangladesh's Premium AI-Powered Global Education Group</span>
