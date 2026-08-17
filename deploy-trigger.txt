@@ -1,0 +1,2 @@
+Cloudflare Pages deployment trigger
+This file is intentionally inert and exists only to trigger a production rebuild after environment configuration.
