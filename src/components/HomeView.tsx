@@ -300,7 +300,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
                 decoding="async"
               />
               <div className="border-l border-white/20 pl-3">
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#D4AF37]">MBM Grade</p>
+                
                 <p className="mt-0.5 text-[10px] text-slate-200">Featured in our global education network</p>
               </div>
             </div>
