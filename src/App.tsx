@@ -21,6 +21,7 @@ import { ScholarshipMatching } from "./components/ScholarshipMatching";
 import { AdmissionPrediction } from "./components/AdmissionPrediction";
 import { GlobalMarketplace } from "./components/GlobalMarketplace";
 import { EctsCalculator } from "./components/EctsCalculator";
+import { PublicStudentApplication } from "./components/PublicStudentApplication";
 
 const jelLogo = new URL("./assets/images/jel_study_abroad_logo_1782110469815.jpg", import.meta.url).href;
 
@@ -45,6 +46,8 @@ export default function App() {
       "blogs": "blog",
       "portal": "portal",
       "student-portal": "portal",
+      "study-abroad/apply": "apply",
+      "apply": "apply",
       "contact": "contact",
       "finder": "finder",
       "checker": "checker",
@@ -99,6 +102,7 @@ export default function App() {
       "scholarships": "/scholarships",
       "blog": "/blogs",
       "portal": "/student-portal",
+      "apply": "/study-abroad/apply",
       "contact": "/contact",
       "finder": "/finder",
       "checker": "/checker",
@@ -212,6 +216,10 @@ export default function App() {
       portal: {
         title: "Student Application Tracking Portal | JEL Study Abroad",
         desc: "Track your university offer letters, CAS issuance, visa application status, and document upload progress in real-time."
+      },
+      apply: {
+        title: "Apply to Study Abroad | JEL Study Abroad",
+        desc: "Start your secure JEL Study Abroad application for UK, Canada, Australia, USA, Germany, and Ireland destinations."
       },
       admin: {
         title: "Counselor CRM & Lead Board | JEL Study Abroad",
@@ -668,6 +676,7 @@ export default function App() {
         {activeTab === "portal" && (
           <StudentPortal setActiveTab={setActiveTab} onPreSelectCountry={handlePreSelectCountry} />
         )}
+        {activeTab === "apply" && <PublicStudentApplication />}
         {activeTab === "admin" && <AdminDashboard setActiveTab={setActiveTab} />}
         {activeTab === "franchise" && <MultiAgentFranchise />}
         {activeTab === "partnerSync" && <UniversityIntegration />}
