@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { COUNTRIES, SCHOLARSHIPS, TESTIMONIALS, UNIVERSITY_PARTNERS, BLOGS } from "../data";
 
-const brandLogoImg = new URL("../assets/images/jel_circular_logo_1782372441429.jpg", import.meta.url).href;
+
 
 interface HomeViewProps {
   setActiveTab: (tab: string) => void;
