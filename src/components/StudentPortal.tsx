@@ -95,18 +95,10 @@ export function StudentPortal({ setActiveTab, onPreSelectCountry }: StudentPorta
       console.warn("Supabase Auth not initialized or offline. Switched to local mode.");
     }
 
-    // 2. Fallback to LocalStorage Mock Session check
-    const localSession = localStorage.getItem("jel_portal_user");
-    if (localSession) {
-      try {
-        const parsed = JSON.parse(localSession);
-        setCurrentUser(parsed);
-        setIsSandboxMode(true);
-        setView("dashboard");
-      } catch (e) {
-        localStorage.removeItem("jel_portal_user");
-      }
-    }
+    // No local/demo session is accepted in production. Supabase Auth is the only source of truth.
+    localStorage.removeItem("jel_portal_user");
+    setIsSandboxMode(false);
+    setView("login");
   };
 
   // Sign up handling
@@ -148,17 +140,6 @@ export function StudentPortal({ setActiveTab, onPreSelectCountry }: StudentPorta
       appStatus: "Profile Evaluation"
     };
 
-    // First, always save locally to ensure 100% immediate usability
-    const localAccounts = JSON.parse(localStorage.getItem("jel_portal_accounts") || "[]");
-    // Prevent duplicate email registrations in local memory
-    if (localAccounts.some((acc: any) => acc.email === email)) {
-      setLoading(false);
-      setErrorMsg("This email address is already registered.");
-      return;
-    }
-    localAccounts.push({ ...profile, password });
-    localStorage.setItem("jel_portal_accounts", JSON.stringify(localAccounts));
-
     try {
       // Try live Supabase signup
       const { data, error } = await supabase.auth.signUp({
@@ -169,40 +150,14 @@ export function StudentPortal({ setActiveTab, onPreSelectCountry }: StudentPorta
         }
       });
 
-      if (error) {
-        console.warn("Supabase SignUp threw error, continuing in local sandbox mode:", error.message);
-        // Fallback to local login session
-        localStorage.setItem("jel_portal_user", JSON.stringify(profile));
-        setCurrentUser(profile);
-        setIsSandboxMode(true);
-        setSuccessMsg("Welcome! Your secure account has been created in Sandbox Mode.");
-        setTimeout(() => {
-          setView("dashboard");
-          setLoading(false);
-        }, 1200);
-        return;
-      }
+      if (error) throw error;
 
-      // If success, store session
-      localStorage.setItem("jel_portal_user", JSON.stringify(profile));
-      setCurrentUser(profile);
-      setIsSandboxMode(false);
-      setSuccessMsg("Account registered successfully on Supabase Secure Authenticator!");
-      setTimeout(() => {
-        setView("dashboard");
-        setLoading(false);
-      }, 1200);
-
+      setSuccessMsg("Account created securely. Check your email to confirm the account, then sign in.");
+      setView("login");
     } catch (err: any) {
-      // Seamless local fallback
-      localStorage.setItem("jel_portal_user", JSON.stringify(profile));
-      setCurrentUser(profile);
-      setIsSandboxMode(true);
-      setSuccessMsg("Welcome! Registered successfully in Local Sandbox mode.");
-      setTimeout(() => {
-        setView("dashboard");
-        setLoading(false);
-      }, 1200);
+      setErrorMsg(err?.message || "Unable to create the account. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -240,7 +195,6 @@ export function StudentPortal({ setActiveTab, onPreSelectCountry }: StudentPorta
           englishScore: metadata?.englishScore || "6.5",
           appStatus: metadata?.appStatus || "Documentation"
         };
-        localStorage.setItem("jel_portal_user", JSON.stringify(profile));
         setCurrentUser(profile);
         setIsSandboxMode(false);
         setSuccessMsg("Successfully signed in with Supabase Authentication!");
@@ -251,50 +205,12 @@ export function StudentPortal({ setActiveTab, onPreSelectCountry }: StudentPorta
         return;
       }
     } catch (err) {
-      console.warn("Supabase authentication connection skipped, trying sandbox accounts...");
+      // Keep the user-facing error generic while preserving provider diagnostics in the browser console.
+      console.warn("Supabase authentication request failed", err);
     }
 
-    // 2. Try Local Mock accounts lookup
-    const localAccounts = JSON.parse(localStorage.getItem("jel_portal_accounts") || "[]");
-    
-    // Add built-in pre-configured test accounts to ensure instant functionality out-of-the-box
-    const builtInAccounts = [
-      { id: "usr-student", email: "student@jel.com", password: "student123", fullName: "Ahsan Kabir", role: "student", mobileNumber: "+8801911223344", preferredCountry: "Canada", educationLevel: "Bachelor's Degree", gpa: "5.00", englishTest: "IELTS", englishScore: "7.0", appStatus: "Uni Approved" },
-      { id: "usr-counselor", email: "counselor@jel.com", password: "counselor123", fullName: "Tashfeen Ahmed", role: "counselor" },
-      { id: "usr-agent", email: "agent@jel.com", password: "agent123", fullName: "Moinul Islam", role: "agent" },
-      { id: "usr-admin", email: "admin@jel.com", password: "admin123", fullName: "Sayed Al-Mamun", role: "admin" }
-    ];
-
-    const allAccounts = [...builtInAccounts, ...localAccounts];
-    const match = allAccounts.find(acc => acc.email.toLowerCase() === email.toLowerCase() && acc.password === password);
-
-    if (match) {
-      const profile: UserProfile = {
-        id: match.id,
-        email: match.email,
-        fullName: match.fullName,
-        role: match.role as any,
-        mobileNumber: match.mobileNumber,
-        preferredCountry: match.preferredCountry,
-        educationLevel: match.educationLevel,
-        gpa: match.gpa,
-        englishTest: match.englishTest,
-        englishScore: match.englishScore,
-        appStatus: match.appStatus || "Documentation"
-      };
-      
-      localStorage.setItem("jel_portal_user", JSON.stringify(profile));
-      setCurrentUser(profile);
-      setIsSandboxMode(true);
-      setSuccessMsg(`Welcome back, ${profile.fullName}! Signed in in Sandbox Mode.`);
-      setTimeout(() => {
-        setView("dashboard");
-        setLoading(false);
-      }, 1000);
-    } else {
-      setLoading(false);
-      setErrorMsg("Invalid credentials. Please verify your email and password.");
-    }
+    setLoading(false);
+    setErrorMsg("Invalid credentials or the account has not been confirmed. Please verify your email and password.");
   };
 
   // Password reset handling
@@ -335,6 +251,7 @@ export function StudentPortal({ setActiveTab, onPreSelectCountry }: StudentPorta
       console.warn("Supabase signout failed, clearing local memory.");
     }
     localStorage.removeItem("jel_portal_user");
+    localStorage.removeItem("jel_portal_accounts");
     setCurrentUser(null);
     setIsSandboxMode(false);
     setView("login");
@@ -360,30 +277,22 @@ export function StudentPortal({ setActiveTab, onPreSelectCountry }: StudentPorta
       englishScore
     };
 
-    // 1. Update localStorage
-    localStorage.setItem("jel_portal_user", JSON.stringify(updatedProfile));
-    setCurrentUser(updatedProfile);
-
-    // 2. Update Supabase User Metadata if live
-    if (!isSandboxMode) {
-      try {
-        const { error } = await supabase.auth.updateUser({
-          data: {
-            mobileNumber,
-            preferredCountry,
-            educationLevel,
-            gpa,
-            englishTest,
-            englishScore
-          }
-        });
-        if (error) throw error;
-        setSuccessMsg("Profile saved securely in Supabase Cloud backend!");
-      } catch (err: any) {
-        setSuccessMsg("Profile changes saved locally (Supabase write deferred).");
-      }
-    } else {
-      setSuccessMsg("Profile updated and synced successfully with local storage!");
+    try {
+      const { error } = await supabase.auth.updateUser({
+        data: {
+          mobileNumber,
+          preferredCountry,
+          educationLevel,
+          gpa,
+          englishTest,
+          englishScore
+        }
+      });
+      if (error) throw error;
+      setCurrentUser(updatedProfile);
+      setSuccessMsg("Profile saved securely in Supabase Cloud backend!");
+    } catch (err: any) {
+      setErrorMsg(err?.message || "Profile changes could not be saved. Please try again.");
     }
 
     setLoading(false);
@@ -426,19 +335,6 @@ export function StudentPortal({ setActiveTab, onPreSelectCountry }: StudentPorta
     }, 1500);
   };
 
-  // Pre-fill fields helper for evaluation
-  const fillTestCredentials = (roleType: "student" | "counselor" | "admin") => {
-    if (roleType === "student") {
-      setEmail("student@jel.com");
-      setPassword("student123");
-    } else if (roleType === "counselor") {
-      setEmail("counselor@jel.com");
-      setPassword("counselor123");
-    } else {
-      setEmail("admin@jel.com");
-      setPassword("admin123");
-    }
-  };
 
   return (
     <div className="w-full py-8 md:py-12" id="jel-student-portal-section">
@@ -495,37 +391,13 @@ export function StudentPortal({ setActiveTab, onPreSelectCountry }: StudentPorta
               </div>
             </div>
 
-            {/* Sandbox Quick Access Panel */}
-            <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-5 text-left space-y-3 shadow-xs">
-              <div className="flex items-center space-x-2 text-[#D4AF37]">
-                <ShieldCheck className="h-4 w-4 shrink-0 text-[#0B5D3B]" />
-                <span className="text-xs font-bold uppercase tracking-wider font-mono text-[#0B5D3B]">Evaluator Sandbox Console</span>
+            <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-5 text-left space-y-2 shadow-xs">
+              <div className="flex items-center space-x-2 text-[#0B5D3B]">
+                <ShieldCheck className="h-4 w-4 shrink-0" />
+                <span className="text-xs font-bold uppercase tracking-wider font-mono">Secure Supabase Access</span>
               </div>
-              <p className="text-[11px] text-slate-500 leading-normal">
-                No setup required! Click any key below to populate built-in accounts for easy exploration:
-              </p>
-              <div className="flex flex-wrap gap-2 pt-1">
-                <button 
-                  onClick={() => fillTestCredentials("student")}
-                  className="bg-white border border-slate-200 hover:border-[#D4AF37] hover:bg-[#D4AF37]/5 text-slate-700 text-[10px] font-bold py-1.5 px-3 rounded-lg transition"
-                >
-                  🎓 Student Profile
-                </button>
-                <button 
-                  onClick={() => fillTestCredentials("counselor")}
-                  className="bg-white border border-slate-200 hover:border-[#D4AF37] hover:bg-[#D4AF37]/5 text-slate-700 text-[10px] font-bold py-1.5 px-3 rounded-lg transition"
-                >
-                  💼 Counselor Profile
-                </button>
-                <button 
-                  onClick={() => fillTestCredentials("admin")}
-                  className="bg-white border border-slate-200 hover:border-[#D4AF37] hover:bg-[#D4AF37]/5 text-slate-700 text-[10px] font-bold py-1.5 px-3 rounded-lg transition"
-                >
-                  🔑 Administrator
-                </button>
-              </div>
-              <p className="text-[9px] text-slate-400 font-mono">
-                Passwords are: student123, counselor123, admin123
+              <p className="text-[11px] text-slate-600 leading-normal">
+                Create your own verified account or sign in with credentials issued by JEL. Demo passwords are disabled in production.
               </p>
             </div>
           </div>
