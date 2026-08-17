@@ -10,7 +10,6 @@ import {
 import { COUNTRIES, SCHOLARSHIPS, TESTIMONIALS, UNIVERSITY_PARTNERS, BLOGS } from "../data";
 
 const brandLogoImg = new URL("../assets/images/jel_circular_logo_1782372441429.jpg", import.meta.url).href;
-const mbmGradeLogo = "/assets/images/mbm_grade_logo.png";
 
 interface HomeViewProps {
   setActiveTab: (tab: string) => void;
@@ -294,7 +293,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
           <div className="lg:col-span-7 space-y-6 md:space-y-8 text-left">
             <div className="inline-flex items-center gap-3 rounded-2xl border border-white/15 bg-white/10 px-3 py-2 backdrop-blur-md shadow-lg">
               <img
-                src={mbmGradeLogo}
+                src={brandLogoImg}
                 alt="MBM Grade logo"
                 className="h-12 w-14 sm:h-14 sm:w-16 object-contain"
                 loading="eager"
