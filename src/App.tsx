@@ -170,8 +170,8 @@ export default function App() {
   useEffect(() => {
     const titleMap: Record<string, { title: string; desc: string }> = {
       home: {
-        title: "JEL Study Abroad - Journey Expert Ltd. | Premium Student Visa Consultancy",
-        desc: "Official partner for top universities across the UK, Canada, Australia, USA, Germany, and Ireland. 98% audited visa success rate in Tejgaon, Dhaka."
+        title: "JEL Study Abroad × MBM Grade | Global Education & Student Visa Guidance",
+        desc: "JEL Study Abroad by Journey Expert Ltd., featuring MBM Grade branding, connects students with university admissions, scholarships, and ethical student visa guidance worldwide."
       },
       booking: {
         title: "Book Free Counseling Session | JEL Study Abroad Tejgaon Dhaka",
@@ -234,10 +234,17 @@ export default function App() {
     const currentMeta = titleMap[activeTab] || titleMap.home;
     document.title = currentMeta.title;
 
-    let metaDescEl = document.querySelector('meta[name="description"]');
-    if (metaDescEl) {
-      metaDescEl.setAttribute("content", currentMeta.desc);
-    }
+    const metaUpdates: Array<[string, string]> = [
+      ['meta[name="description"]', currentMeta.desc],
+      ['meta[property="og:title"]', currentMeta.title],
+      ['meta[property="og:description"]', currentMeta.desc],
+      ['meta[name="twitter:title"]', currentMeta.title],
+      ['meta[name="twitter:description"]', currentMeta.desc]
+    ];
+    metaUpdates.forEach(([selector, content]) => {
+      const element = document.querySelector(selector);
+      if (element) element.setAttribute("content", content);
+    });
   }, [activeTab]);
 
   // SEO Schema.org Ingestion
