@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { doc, setDoc } from "firebase/firestore";
-import { db, handleFirestoreError, OperationType } from "./lib/firebase";
 import { 
   GraduationCap, Brain, ShieldCheck, Calendar, Users, Phone, MessageSquare, 
   Star, Mail, MapPin, Globe, Menu, X, ArrowRight, Eye, ShieldAlert, Search, 
@@ -362,18 +360,6 @@ export default function App() {
       }
     }
     localStorage.setItem("jel_consult_leads", JSON.stringify([newLead, ...existingLeads]));
-
-    // Save lead to Firebase Firestore
-    try {
-      await setDoc(doc(db, "leads", newLead.id), newLead);
-    } catch (fbErr) {
-      console.warn("Firebase lead write warning:", fbErr);
-      try {
-        handleFirestoreError(fbErr, OperationType.WRITE, `leads/${newLead.id}`);
-      } catch (err) {
-        // Fallback
-      }
-    }
 
     // Attempt sync
     try {
