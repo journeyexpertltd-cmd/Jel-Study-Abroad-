@@ -1,6 +1,4 @@
 import React, { useState } from "react";
-import { doc, setDoc } from "firebase/firestore";
-import { db, handleFirestoreError, OperationType } from "../lib/firebase";
 import { 
   GraduationCap, Award, Compass, Search, Globe, Shield, Star, Users, 
   CheckCircle, HelpCircle, ArrowRight, BookOpen, ChevronRight, Play, 
@@ -84,18 +82,6 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
       }
     }
     localStorage.setItem("jel_consult_leads", JSON.stringify([newLead, ...existingLeads]));
-
-    // Save to Firebase Firestore
-    try {
-      await setDoc(doc(db, "leads", newLead.id), newLead);
-    } catch (fbErr) {
-      console.warn("Firebase lead write warning:", fbErr);
-      try {
-        handleFirestoreError(fbErr, OperationType.WRITE, `leads/${newLead.id}`);
-      } catch (err) {
-        // Fallback
-      }
-    }
 
     // Try posting to API
     try {
