@@ -21,9 +21,8 @@ import { ScholarshipMatching } from "./components/ScholarshipMatching";
 import { AdmissionPrediction } from "./components/AdmissionPrediction";
 import { GlobalMarketplace } from "./components/GlobalMarketplace";
 import { EctsCalculator } from "./components/EctsCalculator";
-import { PublicStudentApplication } from "./components/PublicStudentApplication";
 
-const jelLogo = new URL("./assets/images/jel_study_abroad_logo_1782110469815.jpg", import.meta.url).href;
+const jelLogo = new URL("./assets/images/jel_official_study_abroad_logo_1786971005178.jpg", import.meta.url).href;
 
 export default function App() {
   // Helper to parse clean paths or activeTab query param
@@ -46,8 +45,6 @@ export default function App() {
       "blogs": "blog",
       "portal": "portal",
       "student-portal": "portal",
-      "study-abroad/apply": "apply",
-      "apply": "apply",
       "contact": "contact",
       "finder": "finder",
       "checker": "checker",
@@ -102,7 +99,6 @@ export default function App() {
       "scholarships": "/scholarships",
       "blog": "/blogs",
       "portal": "/student-portal",
-      "apply": "/study-abroad/apply",
       "contact": "/contact",
       "finder": "/finder",
       "checker": "/checker",
@@ -170,8 +166,8 @@ export default function App() {
   useEffect(() => {
     const titleMap: Record<string, { title: string; desc: string }> = {
       home: {
-        title: "JEL Study Abroad × MBM Grade | Global Education & Student Visa Guidance",
-        desc: "JEL Study Abroad by Journey Expert Ltd., featuring MBM Grade branding, connects students with university admissions, scholarships, and ethical student visa guidance worldwide."
+        title: "JEL Study Abroad - Journey Expert Ltd. | Premium Student Visa Consultancy",
+        desc: "Official partner for top universities across the UK, Canada, Australia, USA, Germany, and Ireland. 98% audited visa success rate in Tejgaon, Dhaka."
       },
       booking: {
         title: "Book Free Counseling Session | JEL Study Abroad Tejgaon Dhaka",
@@ -217,10 +213,6 @@ export default function App() {
         title: "Student Application Tracking Portal | JEL Study Abroad",
         desc: "Track your university offer letters, CAS issuance, visa application status, and document upload progress in real-time."
       },
-      apply: {
-        title: "Apply to Study Abroad | JEL Study Abroad",
-        desc: "Start your secure JEL Study Abroad application for UK, Canada, Australia, USA, Germany, and Ireland destinations."
-      },
       admin: {
         title: "Counselor CRM & Lead Board | JEL Study Abroad",
         desc: "Internal CRM workspace for JEL counselors to manage student applications, consultation schedules, and university sync."
@@ -234,17 +226,10 @@ export default function App() {
     const currentMeta = titleMap[activeTab] || titleMap.home;
     document.title = currentMeta.title;
 
-    const metaUpdates: Array<[string, string]> = [
-      ['meta[name="description"]', currentMeta.desc],
-      ['meta[property="og:title"]', currentMeta.title],
-      ['meta[property="og:description"]', currentMeta.desc],
-      ['meta[name="twitter:title"]', currentMeta.title],
-      ['meta[name="twitter:description"]', currentMeta.desc]
-    ];
-    metaUpdates.forEach(([selector, content]) => {
-      const element = document.querySelector(selector);
-      if (element) element.setAttribute("content", content);
-    });
+    let metaDescEl = document.querySelector('meta[name="description"]');
+    if (metaDescEl) {
+      metaDescEl.setAttribute("content", currentMeta.desc);
+    }
   }, [activeTab]);
 
   // SEO Schema.org Ingestion
@@ -485,7 +470,7 @@ export default function App() {
             <img 
               src={jelLogo} 
               alt="JEL Study Abroad - A Brand Of Journey Expert Ltd." 
-              className="h-10 md:h-12 lg:h-14 w-auto object-contain transition-all duration-300 group-hover:scale-105 filter drop-shadow-sm"
+              className="h-10 md:h-12 lg:h-14 w-auto object-contain transition-all duration-300 group-hover:scale-105 filter drop-shadow-sm rounded-full"
               referrerPolicy="no-referrer"
               onError={(e) => {
                 e.currentTarget.style.display = "none";
@@ -498,6 +483,14 @@ export default function App() {
                 }
               }}
             />
+            <div className="flex flex-col">
+              <span className="text-lg md:text-xl font-black text-[#0B5D3B] tracking-tight leading-none">
+                JEL <span className="text-[#D4AF37]">Study Abroad</span>
+              </span>
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-tight mt-0.5">
+                Journey Expert Ltd.
+              </span>
+            </div>
           </div>
 
           {/* Desktop Sitemap Menu */}
@@ -683,7 +676,6 @@ export default function App() {
         {activeTab === "portal" && (
           <StudentPortal setActiveTab={setActiveTab} onPreSelectCountry={handlePreSelectCountry} />
         )}
-        {activeTab === "apply" && <PublicStudentApplication />}
         {activeTab === "admin" && <AdminDashboard setActiveTab={setActiveTab} />}
         {activeTab === "franchise" && <MultiAgentFranchise />}
         {activeTab === "partnerSync" && <UniversityIntegration />}

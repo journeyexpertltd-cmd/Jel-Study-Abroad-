@@ -8,7 +8,7 @@ import {
 import { doc, setDoc } from "firebase/firestore";
 import { db, handleFirestoreError, OperationType } from "../lib/firebase";
 
-const jelLogo = new URL("../assets/images/jel_study_abroad_logo_1782110469815.jpg", import.meta.url).href;
+const jelLogo = new URL("../assets/images/jel_official_study_abroad_logo_1786971005178.jpg", import.meta.url).href;
 
 export interface EctsCalculatorProps {
   setActiveTab: (tab: string) => void;
