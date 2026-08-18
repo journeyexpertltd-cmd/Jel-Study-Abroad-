@@ -5,8 +5,6 @@ import {
   Award, FileText, ChevronDown, ChevronUp, AlertCircle, RefreshCw, 
   Layers, Check, Phone, MessageSquare, ExternalLink, User, Mail
 } from "lucide-react";
-import { doc, setDoc } from "firebase/firestore";
-import { db, handleFirestoreError, OperationType } from "../lib/firebase";
 
 const jelLogo = new URL("../assets/images/jel_official_study_abroad_logo_1786971005178.jpg", import.meta.url).href;
 
@@ -311,18 +309,6 @@ export const EctsCalculator: React.FC<EctsCalculatorProps> = ({
       }
     }
     localStorage.setItem("jel_consult_leads", JSON.stringify([newLead, ...existingLeads]));
-
-    // Save lead to Firebase Firestore
-    try {
-      await setDoc(doc(db, "leads", newLead.id), newLead);
-    } catch (fbErr) {
-      console.warn("Firebase lead write notice:", fbErr);
-      try {
-        handleFirestoreError(fbErr, OperationType.WRITE, `leads/${newLead.id}`);
-      } catch (err) {
-        // Fallback
-      }
-    }
 
     // Attempt backend sync
     try {
