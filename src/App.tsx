@@ -20,7 +20,7 @@ import { AdmissionPrediction } from "./components/AdmissionPrediction";
 import { GlobalMarketplace } from "./components/GlobalMarketplace";
 import { EctsCalculator } from "./components/EctsCalculator";
 
-const jelLogo = new URL("./assets/images/jel_official_study_abroad_logo_1786971005178.jpg", import.meta.url).href;
+const jelLogo = new URL("./assets/images/jel_user_provided_logo.png", import.meta.url).href;
 
 export default function App() {
   // Helper to parse clean paths or activeTab query param
@@ -456,7 +456,7 @@ export default function App() {
             <img 
               src={jelLogo} 
               alt="JEL Study Abroad - A Brand Of Journey Expert Ltd." 
-              className="h-10 md:h-12 lg:h-14 w-auto object-contain transition-all duration-300 group-hover:scale-105 filter drop-shadow-sm rounded-full"
+              className="h-10 md:h-12 lg:h-14 max-w-[220px] w-auto object-contain object-center transition-all duration-300 group-hover:scale-105 filter drop-shadow-sm"
               referrerPolicy="no-referrer"
               onError={(e) => {
                 e.currentTarget.style.display = "none";
