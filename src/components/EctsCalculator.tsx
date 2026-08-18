@@ -314,7 +314,7 @@ export const EctsCalculator: React.FC<EctsCalculatorProps> = ({
 
     // Save lead to Firebase Firestore
     try {
-      await setDoc(doc(db, "leads", newLead.id), newLead);
+      
     } catch (fbErr) {
       console.warn("Firebase lead write notice:", fbErr);
       try {
