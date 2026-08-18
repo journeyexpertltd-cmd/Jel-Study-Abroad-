@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { doc, setDoc } from "firebase/firestore";
-import { db, handleFirestoreError, OperationType } from "./lib/firebase";
+
+
 import { 
   GraduationCap, Brain, ShieldCheck, Calendar, Users, Phone, MessageSquare, 
   Star, Mail, MapPin, Globe, Menu, X, ArrowRight, Eye, ShieldAlert, Search, 
