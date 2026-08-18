@@ -20,7 +20,7 @@ import { AdmissionPrediction } from "./components/AdmissionPrediction";
 import { GlobalMarketplace } from "./components/GlobalMarketplace";
 import { EctsCalculator } from "./components/EctsCalculator";
 
-const jelLogo = new URL("./assets/images/jel_user_provided_logo.png", import.meta.url).href;
+const jelLogo = "/jel_user_provided_logo.png";
 
 export default function App() {
   // Helper to parse clean paths or activeTab query param
