@@ -5,8 +5,8 @@ import {
   Award, FileText, ChevronDown, ChevronUp, AlertCircle, RefreshCw, 
   Layers, Check, Phone, MessageSquare, ExternalLink, User, Mail
 } from "lucide-react";
-import { doc, setDoc } from "firebase/firestore";
-import { db, handleFirestoreError, OperationType } from "../lib/firebase";
+
+
 
 const jelLogo = new URL("../assets/images/jel_official_study_abroad_logo_1786971005178.jpg", import.meta.url).href;
 
