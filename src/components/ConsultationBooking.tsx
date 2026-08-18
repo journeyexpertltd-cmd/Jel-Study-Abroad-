@@ -17,8 +17,8 @@ import {
   Download 
 } from "lucide-react";
 import { Lead } from "../types";
-
-
+import { doc, setDoc } from "firebase/firestore";
+import { db, handleFirestoreError, OperationType } from "../lib/firebase";
 
 interface ConsultationBookingProps {
   preSelectedUniversity: string;
