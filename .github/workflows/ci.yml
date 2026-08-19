@@ -1,0 +1,62 @@
+name: Study Abroad CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: study-abroad-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate, build, and audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Type-check application
+        run: npm run lint
+
+      - name: Run SEO and domain safety checks
+        run: npm run check:seo
+
+      - name: Build production artifacts
+        run: npm run build
+
+      - name: Verify build output
+        run: |
+          test -f dist/index.html
+          test -f dist/server.cjs
+          ! grep -RInE 'journeyexpertltd\.com|journeyexpertlimited\.com' dist index.html public
+
+      - name: Publish CI summary
+        if: always()
+        run: |
+          {
+            echo "## Study Abroad CI"
+            echo ""
+            echo "- Repository: \\`${{ github.repository }}\\`"
+            echo "- Commit: \\`${{ github.sha }}\\`"
+            echo "- Ref: \\`${{ github.ref_name }}\\`"
+            echo "- Build command: \\`npm run build\\`"
+            echo "- Production target: \\`https://journeyexpertbd.com\\`"
+            echo "- Cloudflare deployment: triggered by the connected Pages GitHub integration after a successful push to \\`main\\`."
+          } >> "$GITHUB_STEP_SUMMARY"
