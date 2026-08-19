@@ -164,8 +164,32 @@ export default function App() {
   useEffect(() => {
     const titleMap: Record<string, { title: string; desc: string }> = {
       home: {
-        title: "JEL Study Abroad - Journey Expert Ltd. | Premium Student Visa Consultancy",
-        desc: "Official partner for top universities across the UK, Canada, Australia, USA, Germany, and Ireland. 98% audited visa success rate in Tejgaon, Dhaka."
+        title: "Study Abroad Consultancy in Bangladesh | JEL Study Abroad",
+        desc: "JEL Study Abroad is a Dhaka-based consultancy helping Bangladeshi students with UK, Canada, Australia, USA, Germany and Ireland university admissions, scholarships and student visa guidance."
+      },
+      about: {
+        title: "About JEL Study Abroad | Dhaka Student Visa Consultants",
+        desc: "Learn about JEL Study Abroad, our Dhaka counseling team, university partnerships and ethical student visa guidance for Bangladeshi applicants."
+      },
+      services: {
+        title: "Study Abroad Services | Admissions, Scholarships & Student Visas",
+        desc: "Explore JEL Study Abroad services for university applications, scholarships, SOP review, IELTS guidance and student visa preparation from Bangladesh."
+      },
+      countries: {
+        title: "Study Destinations for Bangladeshi Students | UK, Canada & Australia",
+        desc: "Compare study destinations including the UK, Canada, Australia, USA, Germany and Ireland with JEL Study Abroad admission and visa guidance."
+      },
+      universities: {
+        title: "Partner Universities for Bangladeshi Students | JEL Study Abroad",
+        desc: "Explore JEL Study Abroad partner universities and admission pathways for Bangladeshi students seeking trusted international education options."
+      },
+      blog: {
+        title: "Study Abroad Guides & Student Visa Updates | JEL Study Abroad",
+        desc: "Read practical study abroad guides, scholarship updates, IELTS advice and student visa information for Bangladeshi applicants."
+      },
+      contact: {
+        title: "Contact JEL Study Abroad | Student Visa Consultancy in Dhaka",
+        desc: "Contact JEL Study Abroad at our Tejgaon, Dhaka office for university admissions, scholarships and student visa counseling."
       },
       booking: {
         title: "Book Free Counseling Session | JEL Study Abroad Tejgaon Dhaka",
@@ -222,12 +246,35 @@ export default function App() {
     };
 
     const currentMeta = titleMap[activeTab] || titleMap.home;
+    const pathMap: Record<string, string> = {
+      home: "/",
+      about: "/about",
+      services: "/services",
+      countries: "/destinations",
+      universities: "/partners",
+      scholarships: "/scholarships",
+      blog: "/blogs",
+      portal: "/student-portal",
+      contact: "/contact",
+      finder: "/finder",
+      checker: "/checker",
+      booking: "/booking",
+      ects: "/ects-calculator"
+    };
+    const canonicalUrl = `https://journeyexpertbd.com${pathMap[activeTab] || "/"}`;
     document.title = currentMeta.title;
 
-    let metaDescEl = document.querySelector('meta[name="description"]');
-    if (metaDescEl) {
-      metaDescEl.setAttribute("content", currentMeta.desc);
-    }
+    const setMeta = (selector: string, attribute: string, value: string) => {
+      const element = document.querySelector(selector);
+      if (element) element.setAttribute(attribute, value);
+    };
+    setMeta('meta[name="description"]', "content", currentMeta.desc);
+    setMeta('meta[property="og:title"]', "content", currentMeta.title);
+    setMeta('meta[property="og:description"]', "content", currentMeta.desc);
+    setMeta('meta[property="og:url"]', "content", canonicalUrl);
+    setMeta('meta[name="twitter:title"]', "content", currentMeta.title);
+    setMeta('meta[name="twitter:description"]', "content", currentMeta.desc);
+    setMeta('link[rel="canonical"]', "href", canonicalUrl);
   }, [activeTab]);
 
   // SEO Schema.org Ingestion
