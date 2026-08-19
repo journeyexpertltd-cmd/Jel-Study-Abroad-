@@ -27,7 +27,7 @@ const AdmissionPrediction = lazy(() => import("./components/AdmissionPrediction"
 const GlobalMarketplace = lazy(() => import("./components/GlobalMarketplace").then((m) => ({ default: m.GlobalMarketplace })));
 const EctsCalculator = lazy(() => import("./components/EctsCalculator").then((m) => ({ default: m.EctsCalculator })));
 
-const jelLogo = "/assets/images/jel-study-abroad-official.png";
+const jelLogo = "/assets/images/jel-study-abroad-official-v2.png";
 
 export default function App() {
   // Helper to parse clean paths or activeTab query param
@@ -295,7 +295,7 @@ export default function App() {
         "@type": "Organization",
         "name": "JEL Study Abroad",
         "url": "https://journeyexpertbd.com",
-        "logo": "https://journeyexpertbd.com/assets/images/jel-study-abroad-official.png",
+        "logo": "https://journeyexpertbd.com/assets/images/jel-study-abroad-official-v2.png",
         "contactPoint": {
           "@type": "ContactPoint",
           "telephone": "+8801926400400",
@@ -317,7 +317,7 @@ export default function App() {
         "@context": "https://schema.org",
         "@type": "LocalBusiness",
         "name": "JEL Study Abroad (Journey Expert Ltd.)",
-        "image": "https://journeyexpertbd.com/assets/images/jel-study-abroad-official.png",
+        "image": "https://journeyexpertbd.com/assets/images/jel-study-abroad-official-v2.png",
         "url": "https://journeyexpertbd.com",
         "telephone": "+8801926400400",
         "email": "journeyexpertbd@gmail.com",

@@ -24,7 +24,7 @@ const requiredHtml = [
   'rel="canonical" href="https://journeyexpertbd.com/"',
   'hreflang="en-BD"',
   'property="og:site_name" content="JEL Study Abroad"',
-  "/assets/images/jel-study-abroad-official.png",
+  "/assets/images/jel-study-abroad-official-v2.png",
 ];
 for (const value of requiredHtml) {
   if (!html.includes(value)) throw new Error(`Missing homepage SEO reference: ${value}`);
