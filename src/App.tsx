@@ -274,7 +274,10 @@ export default function App() {
     setMeta('meta[property="og:url"]', "content", canonicalUrl);
     setMeta('meta[name="twitter:title"]', "content", currentMeta.title);
     setMeta('meta[name="twitter:description"]', "content", currentMeta.desc);
+    setMeta('meta[name="twitter:url"]', "content", canonicalUrl);
     setMeta('link[rel="canonical"]', "href", canonicalUrl);
+    setMeta('link[rel="alternate"][hreflang="en-BD"]', "href", canonicalUrl);
+    setMeta('link[rel="alternate"][hreflang="x-default"]', "href", canonicalUrl);
   }, [activeTab]);
 
   // SEO Schema.org Ingestion
@@ -294,7 +297,7 @@ export default function App() {
           "availableLanguage": ["en", "bn"]
         },
         "sameAs": [
-          "https://facebook.com"
+          "https://m.me/JourneyExpert"
         ]
       },
       {
