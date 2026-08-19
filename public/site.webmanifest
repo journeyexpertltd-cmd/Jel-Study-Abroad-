@@ -3,18 +3,18 @@
   "short_name": "JEL Study Abroad",
   "icons": [
     {
-      "src": "/assets/images/jel_circular_logo_1782372441429.jpg",
+      "src": "/assets/images/jel-study-abroad-official.png",
       "sizes": "192x192",
-      "type": "image/jpeg"
+      "type": "image/png"
     },
     {
-      "src": "/assets/images/jel_circular_logo_1782372441429.jpg",
+      "src": "/assets/images/jel-study-abroad-official.png",
       "sizes": "512x512",
-      "type": "image/jpeg"
+      "type": "image/png"
     }
   ],
-  "start_url": "https://journeyexpertltd.com/",
-  "scope": "https://journeyexpertltd.com/",
+  "start_url": "https://journeyexpertbd.com/",
+  "scope": "https://journeyexpertbd.com/",
   "display": "standalone",
   "background_color": "#0B5D3B",
   "theme_color": "#0B5D3B",
