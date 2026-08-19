@@ -6,7 +6,7 @@ import {
   Layers, Check, Phone, MessageSquare, ExternalLink, User, Mail
 } from "lucide-react";
 
-const jelLogo = new URL("../assets/images/jel-study-abroad-official.png", import.meta.url).href;
+const jelLogo = new URL("../assets/images/jel-study-abroad-official.webp", import.meta.url).href;
 
 export interface EctsCalculatorProps {
   setActiveTab: (tab: string) => void;

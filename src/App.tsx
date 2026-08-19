@@ -1,24 +1,31 @@
-import React, { useState, useEffect } from "react";
+import React, { lazy, Suspense, useEffect, useState } from "react";
 import { 
   GraduationCap, Brain, ShieldCheck, Calendar, Users, Phone, MessageSquare, 
   Star, Mail, MapPin, Globe, Menu, X, ArrowRight, Eye, ShieldAlert, Search, 
   Check, Sparkles, Sun, Moon, Calculator 
 } from "lucide-react";
 import { AIChatAssistant } from "./components/AIChatAssistant";
-import { SmartCourseFinder } from "./components/SmartCourseFinder";
-import { EligibilityChecker } from "./components/EligibilityChecker";
-import { AdminDashboard } from "./components/AdminDashboard";
-import { ConsultationBooking } from "./components/ConsultationBooking";
-import { HomeView } from "./components/HomeView";
-import { AboutView, ServicesView, CountriesView, UniversitiesView, ScholarshipsView, BlogView, ContactView } from "./components/InfoViews";
 import { SearchModal } from "./components/SearchModal";
-import { StudentPortal } from "./components/StudentPortal";
-import { MultiAgentFranchise } from "./components/MultiAgentFranchise";
-import { UniversityIntegration } from "./components/UniversityIntegration";
-import { ScholarshipMatching } from "./components/ScholarshipMatching";
-import { AdmissionPrediction } from "./components/AdmissionPrediction";
-import { GlobalMarketplace } from "./components/GlobalMarketplace";
-import { EctsCalculator } from "./components/EctsCalculator";
+
+const SmartCourseFinder = lazy(() => import("./components/SmartCourseFinder").then((m) => ({ default: m.SmartCourseFinder })));
+const EligibilityChecker = lazy(() => import("./components/EligibilityChecker").then((m) => ({ default: m.EligibilityChecker })));
+const AdminDashboard = lazy(() => import("./components/AdminDashboard").then((m) => ({ default: m.AdminDashboard })));
+const ConsultationBooking = lazy(() => import("./components/ConsultationBooking").then((m) => ({ default: m.ConsultationBooking })));
+const HomeView = lazy(() => import("./components/HomeView").then((m) => ({ default: m.HomeView })));
+const AboutView = lazy(() => import("./components/InfoViews").then((m) => ({ default: m.AboutView })));
+const ServicesView = lazy(() => import("./components/InfoViews").then((m) => ({ default: m.ServicesView })));
+const CountriesView = lazy(() => import("./components/InfoViews").then((m) => ({ default: m.CountriesView })));
+const UniversitiesView = lazy(() => import("./components/InfoViews").then((m) => ({ default: m.UniversitiesView })));
+const ScholarshipsView = lazy(() => import("./components/InfoViews").then((m) => ({ default: m.ScholarshipsView })));
+const BlogView = lazy(() => import("./components/InfoViews").then((m) => ({ default: m.BlogView })));
+const ContactView = lazy(() => import("./components/InfoViews").then((m) => ({ default: m.ContactView })));
+const StudentPortal = lazy(() => import("./components/StudentPortal").then((m) => ({ default: m.StudentPortal })));
+const MultiAgentFranchise = lazy(() => import("./components/MultiAgentFranchise").then((m) => ({ default: m.MultiAgentFranchise })));
+const UniversityIntegration = lazy(() => import("./components/UniversityIntegration").then((m) => ({ default: m.UniversityIntegration })));
+const ScholarshipMatching = lazy(() => import("./components/ScholarshipMatching").then((m) => ({ default: m.ScholarshipMatching })));
+const AdmissionPrediction = lazy(() => import("./components/AdmissionPrediction").then((m) => ({ default: m.AdmissionPrediction })));
+const GlobalMarketplace = lazy(() => import("./components/GlobalMarketplace").then((m) => ({ default: m.GlobalMarketplace })));
+const EctsCalculator = lazy(() => import("./components/EctsCalculator").then((m) => ({ default: m.EctsCalculator })));
 
 const jelLogo = "/assets/images/jel-study-abroad-official.png";
 
@@ -662,6 +669,7 @@ export default function App() {
 
       {/* 4. Main Page View Render */}
       <main className="flex-1 w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pb-16 relative z-10" id="main-content-canvas">
+        <Suspense fallback={<div className="min-h-[40vh] flex items-center justify-center text-sm font-semibold text-[#0B5D3B]">Loading JEL Study Abroad…</div>}>
         {activeTab === "home" && (
           <HomeView 
             setActiveTab={setActiveTab} 
@@ -724,6 +732,7 @@ export default function App() {
             onPreSelectCountry={handlePreSelectCountry} 
           />
         )}
+        </Suspense>
       </main>
 
       {/* 5. Persistent Companion AI Chat widget, Sticky Book Consultation & Floating WhatsApp */}

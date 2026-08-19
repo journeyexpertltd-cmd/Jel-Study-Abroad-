@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { COUNTRIES, SCHOLARSHIPS, TESTIMONIALS, UNIVERSITY_PARTNERS, BLOGS } from "../data";
 
-const brandLogoImg = new URL("../assets/images/jel-study-abroad-official.png", import.meta.url).href;
+const brandLogoImg = new URL("../assets/images/jel-study-abroad-official.webp", import.meta.url).href;
 
 interface HomeViewProps {
   setActiveTab: (tab: string) => void;

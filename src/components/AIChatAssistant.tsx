@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { MessageSquare, X, Send, Sparkles, Phone, MessageCircle, HelpCircle } from "lucide-react";
 import { ChatMessage } from "../types";
 
-const jelBrandIcon = new URL("../assets/images/jel-study-abroad-official.png", import.meta.url).href;
+const jelBrandIcon = new URL("../assets/images/jel-study-abroad-official.webp", import.meta.url).href;
 
 export function AIChatAssistant() {
   const [isOpen, setIsOpen] = useState(false);
