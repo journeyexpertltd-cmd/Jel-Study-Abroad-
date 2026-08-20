@@ -1,0 +1,107 @@
+name: Study Abroad Live Monitor
+
+on:
+  workflow_run:
+    workflows: ["Study Abroad CI"]
+    types: [completed]
+  schedule:
+    - cron: "17 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: study-abroad-live-monitor
+  cancel-in-progress: true
+
+jobs:
+  monitor:
+    name: Verify production availability and isolation
+    if: >-
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Wait for Pages propagation after CI
+        if: github.event_name == 'workflow_run'
+        run: sleep 60
+
+      - name: Check canonical public routes
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="https://journeyexpertbd.com"
+          routes=(
+            "/"
+            "/about"
+            "/services"
+            "/destinations"
+            "/partners"
+            "/scholarships"
+            "/blogs"
+            "/contact"
+            "/booking"
+            "/finder"
+            "/checker"
+            "/ects-calculator"
+          )
+          for path in "${routes[@]}"; do
+            status="$(curl --fail --silent --show-error --location --output /dev/null --write-out '%{http_code}' "$base$path")"
+            test "$status" = "200"
+            echo "$path $status"
+          done
+
+      - name: Check sitemap and robots
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="https://journeyexpertbd.com"
+          curl --fail --silent --show-error "$base/robots.txt" | grep -F "Sitemap: $base/sitemap.xml"
+          sitemap="$(curl --fail --silent --show-error "$base/sitemap.xml")"
+          test "$(grep -o '<loc>' <<< "$sitemap" | wc -l)" -eq 12
+          grep -F "https://journeyexpertbd.com/" <<< "$sitemap"
+          ! grep -E 'journeyexpert(ltd|limited)\.com' <<< "$sitemap"
+
+      - name: Check API health JSON
+        shell: bash
+        run: |
+          set -euo pipefail
+          headers="$(mktemp)"
+          body="$(mktemp)"
+          trap 'rm -f "$headers" "$body"' EXIT
+          curl --fail --silent --show-error --dump-header "$headers" --output "$body" https://journeyexpertbd.com/api/health
+          grep -i '^content-type: application/json' "$headers"
+          grep -q '"ok":true' "$body"
+          grep -q '"service":"jel-study-abroad-api"' "$body"
+          ! grep -E 'GEMINI_API_KEY|SERVICE_ROLE|STORE_PASSWORD' "$body"
+
+      - name: Check security headers and corporate isolation
+        shell: bash
+        run: |
+          set -euo pipefail
+          headers="$(mktemp)"
+          html="$(mktemp)"
+          trap 'rm -f "$headers" "$html"' EXIT
+          curl --fail --silent --show-error --dump-header "$headers" --output "$html" https://journeyexpertbd.com/
+          grep -qi '^strict-transport-security:' "$headers"
+          grep -qi '^x-frame-options: DENY' "$headers"
+          grep -qi '^x-content-type-options: nosniff' "$headers"
+          grep -qi '^referrer-policy:' "$headers"
+          grep -qi '^permissions-policy:' "$headers"
+          grep -qi '^content-security-policy-report-only:' "$headers"
+          ! grep -E 'journeyexpert(ltd|limited)\.com' "$html"
+
+      - name: Publish monitor summary
+        if: always()
+        run: |
+          {
+            echo "## Study Abroad Live Monitor"
+            echo ""
+            echo "- Target: https://journeyexpertbd.com"
+            echo "- Trigger: ${{ github.event_name }}"
+            echo "- Commit: ${{ github.sha }}"
+            echo "- Failure behavior: this workflow fails and uses the existing GitHub Actions failure notifications."
+            echo "- Production changes: none; this workflow is read-only."
+          } >> "$GITHUB_STEP_SUMMARY"
