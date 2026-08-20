@@ -1,0 +1,105 @@
+name: Study Abroad SEO and Cloudflare Uptime
+
+on:
+  schedule:
+    - cron: "37 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: study-abroad-seo-uptime
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    name: Daily SEO and edge availability audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Check homepage SEO signals
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="https://journeyexpertbd.com"
+          html="$(mktemp)"
+          trap 'rm -f "$html"' EXIT
+          curl --fail --silent --show-error --location --max-time 20 "$base/" -o "$html"
+          grep -qi '<title>[^<][^<]*</title>' "$html"
+          grep -qi 'rel="canonical" href="https://journeyexpertbd.com/"' "$html"
+          grep -qi 'name="description"' "$html"
+          grep -qi 'property="og:title"' "$html"
+          grep -qi 'application/ld+json' "$html"
+          ! grep -E 'journeyexpert(ltd|limited)\.com' "$html"
+          echo "Homepage SEO metadata and domain isolation passed."
+
+      - name: Check canonical routes
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="https://journeyexpertbd.com"
+          routes=(
+            "/"
+            "/about"
+            "/services"
+            "/destinations"
+            "/partners"
+            "/scholarships"
+            "/blogs"
+            "/contact"
+            "/booking"
+            "/finder"
+            "/checker"
+            "/ects-calculator"
+          )
+          for path in "${routes[@]}"; do
+            result="$(curl --fail --silent --show-error --location --max-time 20 --output /dev/null --write-out '%{http_code} %{time_total}' "$base$path")"
+            status="${result%% *}"
+            test "$status" = "200"
+            echo "$path $result"
+          done
+
+      - name: Check robots and sitemap integrity
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="https://journeyexpertbd.com"
+          robots="$(curl --fail --silent --show-error --max-time 20 "$base/robots.txt")"
+          sitemap="$(curl --fail --silent --show-error --max-time 20 "$base/sitemap.xml")"
+          grep -F "Sitemap: $base/sitemap.xml" <<< "$robots"
+          test "$(grep -o '<loc>' <<< "$sitemap" | wc -l)" -eq 12
+          ! grep -E 'journeyexpert(ltd|limited)\.com' <<< "$sitemap"
+          echo "robots.txt and sitemap.xml passed."
+
+      - name: Check Cloudflare edge availability and headers
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="https://journeyexpertbd.com"
+          headers="$(mktemp)"
+          trace="$(mktemp)"
+          trap 'rm -f "$headers" "$trace"' EXIT
+          curl --fail --silent --show-error --location --max-time 20 --dump-header "$headers" --output /dev/null "$base/"
+          curl --fail --silent --show-error --max-time 20 "$base/cdn-cgi/trace" -o "$trace"
+          grep -Eq '^colo=' "$trace"
+          grep -Eq '^http=2' "$trace"
+          grep -qi '^strict-transport-security:' "$headers"
+          grep -qi '^x-frame-options: DENY' "$headers"
+          grep -qi '^x-content-type-options: nosniff' "$headers"
+          grep -qi '^referrer-policy:' "$headers"
+          grep -qi '^permissions-policy:' "$headers"
+          grep -qi '^content-security-policy-report-only:' "$headers"
+          echo "Cloudflare edge trace, HTTPS, and security headers passed."
+
+      - name: Publish audit summary
+        if: always()
+        run: |
+          {
+            echo "## Daily Study Abroad SEO and Cloudflare Uptime Audit"
+            echo ""
+            echo "- Target: https://journeyexpertbd.com"
+            echo "- Schedule: daily at 03:37 UTC"
+            echo "- Checks: SEO metadata, 12 canonical routes, robots, sitemap, Cloudflare edge trace, HTTPS, and security headers"
+            echo "- Production changes: none; all checks are read-only HTTP requests"
+          } >> "$GITHUB_STEP_SUMMARY"
