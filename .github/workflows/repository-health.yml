@@ -1,0 +1,87 @@
+name: Study Abroad Repository and Website Health
+
+on:
+  schedule:
+    - cron: "17 5 * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/**"
+      - "public/**"
+      - "scripts/**"
+      - "src/**"
+      - "index.html"
+      - "package.json"
+      - "vite.config.*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: repository-health-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  SITE_URL: https://journeyexpertbd.com
+  EXPECTED_REPOSITORY: journeyexpertltd-cmd/Jel-Study-Abroad-
+  EXPECTED_BRANCH: main
+
+jobs:
+  health:
+    name: Verify GitHub source and live site
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check repository identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REPOSITORY" = "$EXPECTED_REPOSITORY"
+          test "$GITHUB_REF_NAME" = "$EXPECTED_BRANCH" || test "$GITHUB_EVENT_NAME" = "workflow_dispatch"
+          test -n "$GITHUB_SHA"
+
+      - name: Check public website and canonical routes
+        shell: bash
+        run: |
+          set -euo pipefail
+          routes=(/ /about /services /destinations /partners /scholarships /blogs /contact /booking /finder /checker /ects-calculator)
+          for path in "${routes[@]}"; do
+            status=$(curl --fail --silent --show-error --location --max-time 20 --output /dev/null --write-out '%{http_code}' "$SITE_URL$path")
+            test "$status" = "200"
+          done
+
+      - name: Check SEO control files and security headers
+        shell: bash
+        run: |
+          set -euo pipefail
+          robots=$(curl --fail --silent --show-error --max-time 20 "$SITE_URL/robots.txt")
+          grep -F "Sitemap: $SITE_URL/sitemap.xml" <<< "$robots"
+          sitemap=$(curl --fail --silent --show-error --max-time 20 "$SITE_URL/sitemap.xml")
+          test "$(grep -o '<loc>' <<< "$sitemap" | wc -l | tr -d ' ')" = "12"
+          headers=$(curl --fail --silent --show-error --max-time 20 --head "$SITE_URL/")
+          grep -iq '^strict-transport-security:' <<< "$headers"
+          grep -iq '^x-frame-options: DENY' <<< "$headers"
+          grep -iq '^x-content-type-options: nosniff' <<< "$headers"
+          grep -iq '^referrer-policy:' <<< "$headers"
+
+      - name: Check Pages health Function without integration writes
+        shell: bash
+        run: |
+          set -euo pipefail
+          health=$(curl --fail --silent --show-error --max-time 20 "$SITE_URL/api/health")
+          grep -q '"ok":true' <<< "$health"
+          grep -q '"service":"jel-study-abroad-api"' <<< "$health"
+          grep -q '"configured":false' <<< "$health"
+
+      - name: Write summary
+        if: always()
+        run: |
+          {
+            echo "## GitHub-first repository and website health"
+            echo "- Repository: $GITHUB_REPOSITORY"
+            echo "- Branch: $GITHUB_REF_NAME"
+            echo "- Commit: $GITHUB_SHA"
+            echo "- Site: $SITE_URL"
+            echo "- Secrets: not required; backend integrations remain unchanged"
+          } >> "$GITHUB_STEP_SUMMARY"
