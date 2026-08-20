@@ -18,7 +18,7 @@ const pages = {
     title: "Study Abroad Services | Admissions, Scholarships & Student Visas",
     description: "Explore JEL Study Abroad services for university applications, scholarships, SOP review, IELTS guidance and student visa preparation from Bangladesh.",
   },
-  "/destinations": {
+  "/destinations/": {
     title: "Study Destinations for Bangladeshi Students | UK, Canada & Australia",
     description: "Compare study destinations including the UK, Canada, Australia, USA, Germany and Ireland with JEL Study Abroad admission and visa guidance.",
   },
@@ -26,7 +26,7 @@ const pages = {
     title: "Partner Universities for Bangladeshi Students | JEL Study Abroad",
     description: "Explore JEL Study Abroad partner universities and admission pathways for Bangladeshi students seeking trusted international education options.",
   },
-  "/scholarships": {
+  "/scholarships/": {
     title: "Study Abroad Scholarships 2026/2027 | JEL Study Abroad",
     description: "Explore full and partial merit scholarships for Bangladeshi students across UK, USA, Canada, Australia and European partner universities.",
   },
@@ -34,7 +34,7 @@ const pages = {
     title: "Study Abroad Guides & Student Visa Updates | JEL Study Abroad",
     description: "Read practical study abroad guides, scholarship updates, IELTS advice and student visa information for Bangladeshi applicants.",
   },
-  "/contact": {
+  "/contact/": {
     title: "Contact JEL Study Abroad | Student Visa Consultancy in Dhaka",
     description: "Contact JEL Study Abroad at our Tejgaon, Dhaka office for university admissions, scholarships and student visa counseling.",
   },
