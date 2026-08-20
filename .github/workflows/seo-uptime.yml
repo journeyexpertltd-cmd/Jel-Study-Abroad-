@@ -83,7 +83,7 @@ jobs:
           curl --fail --silent --show-error --location --max-time 20 --dump-header "$headers" --output /dev/null "$base/"
           curl --fail --silent --show-error --max-time 20 "$base/cdn-cgi/trace" -o "$trace"
           grep -Eq '^colo=' "$trace"
-          grep -Eq '^http=2' "$trace"
+          grep -Eq '^http=http/2' "$trace"
           grep -qi '^strict-transport-security:' "$headers"
           grep -qi '^x-frame-options: DENY' "$headers"
           grep -qi '^x-content-type-options: nosniff' "$headers"
