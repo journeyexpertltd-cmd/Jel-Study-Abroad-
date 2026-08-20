@@ -59,11 +59,11 @@ jobs:
           grep -F "Sitemap: $SITE_URL/sitemap.xml" <<< "$robots"
           sitemap=$(curl --fail --silent --show-error --max-time 20 "$SITE_URL/sitemap.xml")
           test "$(grep -o '<loc>' <<< "$sitemap" | wc -l | tr -d ' ')" = "12"
-          headers=$(curl --fail --silent --show-error --max-time 20 --head "$SITE_URL/")
-          grep -iq '^strict-transport-security:' <<< "$headers"
-          grep -iq '^x-frame-options: DENY' <<< "$headers"
-          grep -iq '^x-content-type-options: nosniff' <<< "$headers"
-          grep -iq '^referrer-policy:' <<< "$headers"
+          headers=$(curl --fail --silent --show-error --max-time 20 --head "$SITE_URL/" | tr -d '\r')
+          grep -Eiq '^[[:space:]]*strict-transport-security:[[:space:]]*' <<< "$headers"
+          grep -Eiq '^[[:space:]]*x-frame-options:[[:space:]]*DENY[[:space:]]*$' <<< "$headers"
+          grep -Eiq '^[[:space:]]*x-content-type-options:[[:space:]]*nosniff[[:space:]]*$' <<< "$headers"
+          grep -Eiq '^[[:space:]]*referrer-policy:[[:space:]]*' <<< "$headers"
 
       - name: Check Pages health Function without integration writes
         shell: bash
