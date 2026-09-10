@@ -1012,19 +1012,19 @@ export default function App() {
         </div>
       )}
 
-      {/* 8. JEL Floating Premium Conversion Bar */}
-      <div className="fixed bottom-6 right-6 flex flex-col items-end space-y-3.5 z-40 fade-in" id="floating-conversion-widget">
+      {/* 8. JEL Floating Premium Conversion Bar (Positioned bottom-left to prevent overlap with Angela on right) */}
+      <div className="fixed bottom-6 left-4 sm:left-6 flex flex-col items-start space-y-3 z-40 fade-in pointer-events-auto" id="floating-conversion-widget">
         {/* Floating "Get Free Guide" Button */}
         <button
           onClick={() => setShowExitIntent(true)}
-          className="group bg-gradient-to-r from-[#0B5D3B] to-[#D4AF37] hover:from-[#074028] hover:to-yellow-500 text-white font-extrabold px-5 py-3 rounded-full text-[11px] uppercase tracking-wider transition-all duration-300 hover:scale-105 shadow-2xl flex items-center space-x-2 animate-bounce cursor-pointer border border-[#D4AF37]/30"
+          className="group bg-gradient-to-r from-[#0B5D3B] to-[#D4AF37] hover:from-[#074028] hover:to-yellow-500 text-white font-extrabold px-4 py-2.5 rounded-full text-[10px] sm:text-[11px] uppercase tracking-wider transition-all duration-300 hover:scale-105 shadow-xl flex items-center space-x-1.5 cursor-pointer border border-[#D4AF37]/30"
           title="Get Free Study Abroad Guide"
         >
-          <Sparkles className="h-4 w-4 text-yellow-300 animate-spin group-hover:scale-125 transition-transform duration-300" style={{ animationDuration: '4s' }} />
+          <Sparkles className="h-3.5 w-3.5 text-yellow-300 animate-spin group-hover:scale-125 transition-transform duration-300" style={{ animationDuration: '4s' }} />
           <span>Get Free Guide</span>
         </button>
 
-        <div className="flex flex-row md:flex-col items-center gap-2.5 bg-white/90 dark:bg-slate-900/95 backdrop-blur-md p-2.5 rounded-full shadow-2xl border border-slate-100 dark:border-slate-800">
+        <div className="flex flex-row md:flex-col items-center gap-2 bg-white/90 dark:bg-slate-900/95 backdrop-blur-md p-2 rounded-full shadow-2xl border border-slate-100 dark:border-slate-800">
           {/* WhatsApp Action */}
           <a
             href="https://wa.me/8801926400400"
@@ -1032,10 +1032,10 @@ export default function App() {
             rel="noreferrer"
             title="WhatsApp Support"
             aria-label="WhatsApp Support"
-            className="group relative h-11 w-11 bg-[#25D366] hover:bg-[#1ebd53] text-white rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-md"
+            className="group relative h-10 w-10 sm:h-11 sm:w-11 bg-[#25D366] hover:bg-[#1ebd53] text-white rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-md"
           >
-            <Phone className="h-4.5 w-4.5 transition-transform duration-300 group-hover:scale-125" />
-            <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 hidden md:group-hover:block px-2.5 py-1 text-[11px] font-medium text-white bg-slate-900 dark:bg-slate-800 rounded-md whitespace-nowrap shadow-lg pointer-events-none transition-opacity duration-200 z-50">
+            <Phone className="h-4 w-4 sm:h-4.5 sm:w-4.5 transition-transform duration-300 group-hover:scale-125" />
+            <span className="absolute left-full ml-3 top-1/2 -translate-y-1/2 hidden md:group-hover:block px-2.5 py-1 text-[11px] font-medium text-white bg-slate-900 dark:bg-slate-800 rounded-md whitespace-nowrap shadow-lg pointer-events-none transition-opacity duration-200 z-50">
               WhatsApp Support
             </span>
           </a>
@@ -1047,10 +1047,10 @@ export default function App() {
             rel="noreferrer"
             title="Messenger Chat"
             aria-label="Messenger Chat"
-            className="group relative h-11 w-11 bg-[#0084FF] hover:bg-[#0076e4] text-white rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-md"
+            className="group relative h-10 w-10 sm:h-11 sm:w-11 bg-[#0084FF] hover:bg-[#0076e4] text-white rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-md"
           >
-            <MessageSquare className="h-4.5 w-4.5 fill-white transition-transform duration-300 group-hover:scale-125" />
-            <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 hidden md:group-hover:block px-2.5 py-1 text-[11px] font-medium text-white bg-slate-900 dark:bg-slate-800 rounded-md whitespace-nowrap shadow-lg pointer-events-none transition-opacity duration-200 z-50">
+            <MessageSquare className="h-4 w-4 sm:h-4.5 sm:w-4.5 fill-white transition-transform duration-300 group-hover:scale-125" />
+            <span className="absolute left-full ml-3 top-1/2 -translate-y-1/2 hidden md:group-hover:block px-2.5 py-1 text-[11px] font-medium text-white bg-slate-900 dark:bg-slate-800 rounded-md whitespace-nowrap shadow-lg pointer-events-none transition-opacity duration-200 z-50">
               Messenger Chat
             </span>
           </a>
@@ -1060,10 +1060,10 @@ export default function App() {
             href="tel:+8801926400400"
             title="Helpline"
             aria-label="Helpline"
-            className="group relative h-11 w-11 bg-[#0B5D3B] hover:bg-[#074028] text-white rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-md"
+            className="group relative h-10 w-10 sm:h-11 sm:w-11 bg-[#0B5D3B] hover:bg-[#074028] text-white rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-md"
           >
-            <Phone className="h-4.5 w-4.5 fill-white transition-transform duration-300 group-hover:scale-125" />
-            <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 hidden md:group-hover:block px-2.5 py-1 text-[11px] font-medium text-white bg-slate-900 dark:bg-slate-800 rounded-md whitespace-nowrap shadow-lg pointer-events-none transition-opacity duration-200 z-50">
+            <Phone className="h-4 w-4 sm:h-4.5 sm:w-4.5 fill-white transition-transform duration-300 group-hover:scale-125" />
+            <span className="absolute left-full ml-3 top-1/2 -translate-y-1/2 hidden md:group-hover:block px-2.5 py-1 text-[11px] font-medium text-white bg-slate-900 dark:bg-slate-800 rounded-md whitespace-nowrap shadow-lg pointer-events-none transition-opacity duration-200 z-50">
               Helpline
             </span>
           </a>
@@ -1073,10 +1073,10 @@ export default function App() {
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
             title="Scroll to top"
             aria-label="Scroll to top"
-            className="group relative h-11 w-11 bg-slate-900 dark:bg-slate-700 hover:bg-slate-800 dark:hover:bg-slate-600 text-white rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-md cursor-pointer"
+            className="group relative h-10 w-10 sm:h-11 sm:w-11 bg-slate-900 dark:bg-slate-700 hover:bg-slate-800 dark:hover:bg-slate-600 text-white rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-md cursor-pointer"
           >
             <span className="transition-transform duration-300 group-hover:scale-125 inline-block text-xs">▲</span>
-            <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 hidden md:group-hover:block px-2.5 py-1 text-[11px] font-medium text-white bg-slate-900 dark:bg-slate-800 rounded-md whitespace-nowrap shadow-lg pointer-events-none transition-opacity duration-200 z-50">
+            <span className="absolute left-full ml-3 top-1/2 -translate-y-1/2 hidden md:group-hover:block px-2.5 py-1 text-[11px] font-medium text-white bg-slate-900 dark:bg-slate-800 rounded-md whitespace-nowrap shadow-lg pointer-events-none transition-opacity duration-200 z-50">
               Scroll to top
             </span>
           </button>

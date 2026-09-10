@@ -1,6 +1,6 @@
 import express from "express";
 import path from "path";
-import { createServer as createViteServer } from "vite";
+import fs from "fs";
 import dotenv from "dotenv";
 import { GoogleGenAI } from "@google/genai";
 import { createClient } from "@supabase/supabase-js";
@@ -8,7 +8,16 @@ import { createClient } from "@supabase/supabase-js";
 dotenv.config();
 
 const app = express();
-const PORT = 3000;
+
+// Port determination:
+// - In development (local workspace), the reverse proxy exclusively routes external traffic to port 3000.
+// - In production deployment (Cloud Run), Cloud Run directs traffic to process.env.PORT (default 8080).
+const getPort = (): number => {
+  if (process.env.NODE_ENV === "production") {
+    return Number(process.env.PORT) || 8080;
+  }
+  return 3000;
+};
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -614,51 +623,129 @@ Your instructions:
   }
 });
 
-// AI Chat AI endpoint proxy helper
-app.post("/api/gemini/chat", async (req: express.Request, res: express.Response) => {
+// Angela AI Voice Assistant endpoint proxy
+const ANGELA_SYSTEM_PROMPT = `You are "Angela", the official AI Voice & Customer Assistant for Journey Expert Limited (JEL).
+Official Website: https://journeyexpertbd.com
+Additional Website: https://journeyexpertltd.com
+Slogan: "Your Journey, Our Expertise"
+Positioning: "Building Bangladesh’s Next-Generation AI-Driven Travel Ecosystem"
+
+Head Office:
+189/A (2nd Floor), Abdul Motin Complex,
+Hazi Moron Ali Road, Nabisco Mor,
+Tejgaon, Dhaka-1215, Bangladesh.
+
+Direct Contacts:
+- WhatsApp & Hotline: +8801926400400
+- Telephone: +8802 9830404
+- Email: journeyexpertbd@gmail.com
+- Office Hours: Saturday to Thursday, 10:00 AM - 6:30 PM (Friday Closed)
+
+CORE SERVICES OF JOURNEY EXPERT LIMITED (JEL):
+1. Air Ticketing & Flight Assistance (Domestic & International airlines, group bookings, reissue, date changes)
+2. Visa Assistance: Tourist Visa, Visit Visa, Business Visa, Medical Visa, Student Visa, Work-related Visa Assistance
+3. Hotel Booking: Global & domestic hotels, boutique stays, family suites
+4. Tour Packages: Domestic tours (Cox's Bazar, Sajek, Sylhet, Sundarbans) and International tours (Thailand, Malaysia, Singapore, Dubai, Turkey, Europe)
+5. Hajj & Umrah Packages: VIP and economy Umrah packages, Ramadan packages, Ziyarah tours
+6. Halal Tourism & Family-Friendly Travel
+7. Medical Tourism: Top hospitals in India, Thailand, Singapore, Malaysia with doctor appointment & medical visa support
+8. Travel Insurance & Corporate Travel Management
+9. Airport Meet & Greet assistance
+10. JEL Study Abroad: Complete counseling, university admission, scholarship assessment, SOP polishing, visa filing, and mock interviews for UK, USA, Canada, Australia, Ireland, New Zealand, Malaysia, Germany, and Schengen Europe.
+
+CRITICAL COMPLIANCE & SAFETY RULES (NON-NEGOTIABLE):
+1. IDENTITY: You are an AI assistant named Angela. NEVER claim to be human.
+2. ABSOLUTE ZERO-TOLERANCE ANTI-FABRICATION:
+   - NEVER fabricate or guarantee visa approvals or visa success rates. Explicitly state that visa issuance is the sole prerogative of the respective country's embassy or immigration authority.
+   - NEVER fabricate ticket prices, airfares, or flight availability. Clarify that fares and seats fluctuate in real time and direct the customer to JEL ticketing officers.
+   - NEVER fabricate hotel prices, hotel availability, or room rates.
+   - NEVER fabricate embassy/consulate appointment availability, processing times (unless officially verified), government policy, airline baggage/fare policy, or exchange rates.
+   - NEVER fabricate university admission decisions, university policies, or scholarship guarantees.
+   - NEVER invent promotional offers, coupons, or unverified discounts.
+   - When current information is unavailable or unconfirmed, state clearly that live availability/details must be confirmed by the JEL team.
+3. CONVERSATIONAL PERSONALITY:
+   - Professional, warm, concise, trustworthy, and commercially helpful.
+   - Do not repeat robotic greetings in every turn.
+   - Maintain context across messages (e.g. if the user says "I want to visit Malaysia" and then "Tourism", understand that they want a tourist visa/package for Malaysia).
+4. BILINGUAL & BANGLISH ADAPTIVE RESPONSE:
+   - Automatically detect the customer's language.
+   - If the customer speaks or writes in Bengali (বাংলা), respond in natural, fluent, polite Bengali (বাংলা).
+   - If the customer speaks or writes in English, respond in polished, articulate English.
+   - If the customer uses mixed Banglish or code-switching, respond naturally in friendly bilingual format.
+   - Do NOT force customers to select a language before speaking or chatting.
+5. VOICE & SPEECH OPTIMIZATION:
+   - Since your response is often spoken aloud via text-to-speech, keep responses punchy, conversational, and avoid excessive markdown symbols, tables, or asterisks.
+6. HUMAN HANDOFF:
+   - When a quotation, live booking, payment, complex case assessment, or human agent is requested, immediately provide JEL's verified contact channels:
+     * WhatsApp / Hotline: +8801926400400
+     * Telephone: +8802 9830404
+     * Email: journeyexpertbd@gmail.com
+     * Head Office: 189/A (2nd Floor), Abdul Motin Complex, Hazi Moron Ali Road, Nabisco Mor, Tejgaon, Dhaka-1215, Bangladesh.`;
+
+const handleAngelaChat = async (req: express.Request, res: express.Response) => {
   try {
-    const { messages } = req.body;
-    if (!messages || !Array.isArray(messages)) {
-      res.status(400).json({ error: "Invalid payload: messages array required" });
+    const { messages, message, language } = req.body;
+    
+    // Support both single message and conversation array
+    let normalizedMessages: Array<{ sender: string; text: string }> = [];
+    if (Array.isArray(messages)) {
+      normalizedMessages = messages;
+    } else if (typeof message === "string" && message.trim()) {
+      normalizedMessages = [{ sender: "user", text: message }];
+    } else {
+      res.status(400).json({ error: "Invalid payload: messages array or message text required" });
       return;
     }
 
-    // Guard evaluation
+    // Offline / fallback mode if GEMINI_API_KEY is not configured
     if (!process.env.GEMINI_API_KEY) {
-       res.json({ 
-        reply: "Hi there! This is JEL Study Abroad Assistance. (Note: The Gemini API Key is currently not set up in Settings > Secrets, so I am running in Offline Companion Mode). How can I assist you with admissions, English tests, or visa processes today?" 
-      });
+      const lastUserMsg = [...normalizedMessages].reverse().find((m: any) => m.sender === "user")?.text || "";
+      const isBangla = /[\u0980-\u09FF]/.test(lastUserMsg) || (language === "bn");
+
+      if (isBangla) {
+        res.json({
+          reply: "আসসালামু আলাইকুম! আমি অ্যাঞ্জেলা (Angela), জার্নি এক্সপার্ট লিমিটেড-এর অফিশিয়াল এআই ভয়েস অ্যাসিস্ট্যান্ট। এয়ার টিকিট, ভিসা প্রসেসিং, ট্যুর প্যাকেজ, ওমরাহ অথবা স্টাডি অ্যাব্রোড নিয়ে আপনার যেকোনো প্রশ্ন আমাকে করতে পারেন। সরাসরি আমাদের অভিজ্ঞ ট্রাভেল ও এডুকেশন কনসালট্যান্টের সাথে কথা বলতে হোয়াটসঅ্যাপ বা কল করুন +8801926400400 নম্বরে।"
+        });
+      } else {
+        res.json({
+          reply: "Hello! I am Angela, the official AI Voice Assistant for Journey Expert Limited (JEL). I can assist you with air ticketing, visa services, tour packages, Umrah, and study abroad programs. For instant personalized support, connect directly with our experts via WhatsApp at +8801926400400 or visit our head office at Nabisco Mor, Tejgaon, Dhaka."
+        });
+      }
       return;
     }
 
     const ai = getGeminiClient();
-    const systemPrompt = `You are "JEL Study Abroad Assistant", a highly specialized premium AI student consultant for JEL Study Abroad (parent company: Journey Expert Ltd). JEL is based in Dhaka, Bangladesh: Office Address: 189/A, Abdul Motin Complex, Nabisco Mor, Tejgaon, Dhaka, Bangladesh. Website: https://journeyexpertbd.com. Contacts: Phone (+88029830404), WhatsApp (+8801926400400), email (journeyexpertbd@gmail.com).
-
-Your guidelines:
-1. Provide polished, professional, encouraging, and detailed counseling on studying abroad in the UK, Australia, Canada, USA, Ireland, New Zealand, Malaysia, and Europe.
-2. Formulate helpful answers regarding tuition structures, visa requirements, IELTS/PTE, SOP drafting, and the 2026/2027 intakes.
-3. Sound ethical, transparent, and objective. Never make false promises about 100% visa guarantees.
-4. Keep paragraphs readable, well-spaced, and properly organized. Provide helpful checklists where appropriate.`;
 
     // Map conversation array to model API inputs
+    const contents = normalizedMessages.map((m: any) => ({
+      role: m.sender === "user" ? "user" : "model",
+      parts: [{ text: m.text }]
+    }));
+
     const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
-      contents: messages.map((m: any) => ({
-        role: m.sender === "user" ? "user" : "model",
-        parts: [{ text: m.text }]
-      })),
+      model: "gemini-3.6-flash",
+      contents,
       config: {
-        systemInstruction: systemPrompt,
+        systemInstruction: ANGELA_SYSTEM_PROMPT,
         temperature: 0.7,
       }
     });
 
-    res.json({ reply: response.text || "I am processing your query. Please rephrase or contact our counselors." });
+    const reply = response.text || "I am here to help you. For direct assistance, please contact our JEL team at +8801926400400.";
+    res.json({ reply });
   } catch (error: any) {
-    console.error("Gemini Chat backend exception:", error);
-    res.status(500).json({ error: error.message || "Gemini conversation failed" });
+    console.error("Angela Gemini Chat backend exception:", error);
+    // Never expose stack traces to customers (Phase 12 error handling rule)
+    res.status(500).json({ 
+      error: "I'm temporarily unable to respond. Please try again or contact JEL directly via WhatsApp at +8801926400400.",
+      reply: "I'm temporarily unable to process your request. Please connect with our counselors directly via WhatsApp at +8801926400400 or call +8802 9830404." 
+    });
   }
-});
+};
+
+app.post("/api/gemini/chat", handleAngelaChat);
+app.post("/api/gemini/angela", handleAngelaChat);
+app.post("/api/chat", handleAngelaChat);
 
 // Smart Course Finder matching logic
 app.post("/api/gemini/course-finder", async (req: express.Request, res: express.Response) => {
@@ -823,10 +910,17 @@ Return details strictly as JSON format matching this schema:
   }
 });
 
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok", service: "jel-server", timestamp: new Date().toISOString() });
+});
+
 // Setup Vite Dev server integration / Static files build paths
 async function bootServer() {
+  const PORT = getPort();
+
   if (process.env.NODE_ENV !== "production") {
-    console.log("Loading Vite Dev Middlewares for server on Port 3000...");
+    console.log(`Loading Vite Dev Middlewares for server on Port ${PORT}...`);
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
@@ -834,7 +928,11 @@ async function bootServer() {
     app.use(vite.middlewares);
   } else {
     // Serve production static assets compiled inside /dist
-    const distPath = path.join(process.cwd(), "dist");
+    const distPath = fs.existsSync(path.join(__dirname, "index.html"))
+      ? __dirname
+      : (fs.existsSync(path.join(process.cwd(), "dist", "index.html"))
+          ? path.join(process.cwd(), "dist")
+          : path.resolve(__dirname, "..", "dist"));
     console.log(`Serving static production build from: ${distPath}`);
     app.use(express.static(distPath));
     app.get("*", (req, res) => {
@@ -842,10 +940,20 @@ async function bootServer() {
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`[JEL BACKEND SERVER] successfully listening on http://localhost:${PORT}`);
+  const server = app.listen(PORT, "0.0.0.0", () => {
+    console.log(`[JEL BACKEND SERVER] successfully listening on http://0.0.0.0:${PORT}`);
+  });
+
+  server.on("error", (err: any) => {
+    console.error(`[JEL BACKEND SERVER] Fatal server listen error on port ${PORT}:`, err);
   });
 }
+
+// Graceful container termination for Cloud Run lifecycle
+process.on("SIGTERM", () => {
+  console.log("[JEL BACKEND SERVER] Received SIGTERM signal, shutting down gracefully for Cloud Run...");
+  process.exit(0);
+});
 
 // Export app for serverless function targets like Netlify
 export { app };
