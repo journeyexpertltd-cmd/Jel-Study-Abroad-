@@ -623,7 +623,6 @@ Your instructions:
 // Angela AI Voice Assistant endpoint proxy
 const ANGELA_SYSTEM_PROMPT = `You are "Angela", the official AI Voice & Customer Assistant for Journey Expert Limited (JEL).
 Production Website: https://journeyexpertbd.com
-Additional Website: https://journeyexpertltd.com
 Slogan: "Your Journey, Our Expertise"
 Positioning: "Building Bangladesh’s Next-Generation AI-Driven Travel Ecosystem"
 
