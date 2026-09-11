@@ -10,13 +10,10 @@ dotenv.config();
 const app = express();
 
 // Port determination:
-// - In development (local workspace), the reverse proxy exclusively routes external traffic to port 3000.
-// - In production deployment (Cloud Run), Cloud Run directs traffic to process.env.PORT (default 8080).
+// - The AI Studio reverse proxy exclusively routes external traffic to port 3000.
+// - Cloud Run can specify process.env.PORT if configured; otherwise default strictly to 3000.
 const getPort = (): number => {
-  if (process.env.NODE_ENV === "production") {
-    return Number(process.env.PORT) || 8080;
-  }
-  return 3000;
+  return process.env.PORT ? Number(process.env.PORT) : 3000;
 };
 
 app.use(express.json());
@@ -625,7 +622,7 @@ Your instructions:
 
 // Angela AI Voice Assistant endpoint proxy
 const ANGELA_SYSTEM_PROMPT = `You are "Angela", the official AI Voice & Customer Assistant for Journey Expert Limited (JEL).
-Official Website: https://journeyexpertbd.com
+Production Website: https://journeyexpertbd.com
 Additional Website: https://journeyexpertltd.com
 Slogan: "Your Journey, Our Expertise"
 Positioning: "Building Bangladesh’s Next-Generation AI-Driven Travel Ecosystem"
@@ -667,14 +664,15 @@ CRITICAL COMPLIANCE & SAFETY RULES (NON-NEGOTIABLE):
    - Professional, warm, concise, trustworthy, and commercially helpful.
    - Do not repeat robotic greetings in every turn.
    - Maintain context across messages (e.g. if the user says "I want to visit Malaysia" and then "Tourism", understand that they want a tourist visa/package for Malaysia).
-4. BILINGUAL & BANGLISH ADAPTIVE RESPONSE:
-   - Automatically detect the customer's language.
-   - If the customer speaks or writes in Bengali (বাংলা), respond in natural, fluent, polite Bengali (বাংলা).
-   - If the customer speaks or writes in English, respond in polished, articulate English.
-   - If the customer uses mixed Banglish or code-switching, respond naturally in friendly bilingual format.
-   - Do NOT force customers to select a language before speaking or chatting.
+4. STRICT LANGUAGE MIRRORING (BANGLA / ENGLISH / BANGLISH):
+   - If the customer speaks or writes in Bengali (বাংলা script), you MUST ALWAYS respond in natural, polite, grammatically correct Bengali (বাংলা). NEVER answer a Bengali inquiry in English.
+   - For Bengali greetings, use Bangladeshi cultural etiquette: "আসসালামু আলাইকুম! আমি অ্যাঞ্জেলা (Angela)..."
+   - If the customer speaks or writes in English, respond in articulate, professional English.
+   - If the customer uses Banglish (e.g., "flight fare koto?", "visa requirements ki ki?") or code-switches, respond naturally in friendly, bilingual conversational style.
+   - Do NOT output prompt tags, emotion markers, or bracketed text like [friendly], [cheerful], or [sad].
 5. VOICE & SPEECH OPTIMIZATION:
-   - Since your response is often spoken aloud via text-to-speech, keep responses punchy, conversational, and avoid excessive markdown symbols, tables, or asterisks.
+   - Your responses are frequently spoken aloud via voice synthesis.
+   - Keep answers punchy, natural, conversational, and avoid excessive markdown symbols, tables, or asterisks.
 6. HUMAN HANDOFF:
    - When a quotation, live booking, payment, complex case assessment, or human agent is requested, immediately provide JEL's verified contact channels:
      * WhatsApp / Hotline: +8801926400400
@@ -697,16 +695,48 @@ const handleAngelaChat = async (req: express.Request, res: express.Response) => 
       return;
     }
 
+    const lastUserMsg = [...normalizedMessages].reverse().find((m: any) => m.sender === "user")?.text || "";
+    const isBangla = /[\u0980-\u09FF]/.test(lastUserMsg) || (language === "bn");
+
     // Offline / fallback mode if GEMINI_API_KEY is not configured
     if (!process.env.GEMINI_API_KEY) {
-      const lastUserMsg = [...normalizedMessages].reverse().find((m: any) => m.sender === "user")?.text || "";
-      const isBangla = /[\u0980-\u09FF]/.test(lastUserMsg) || (language === "bn");
+      const lower = lastUserMsg.toLowerCase();
 
       if (isBangla) {
+        if (lower.includes("ঠিকানা") || lower.includes("অফিস") || lower.includes("কোথায়")) {
+          res.json({
+            reply: "জার্নি এক্সপার্ট লিমিটেড (JEL)-এর হেড অফিস: ১৮৯/এ (২য় তলা), আব্দুল মতিন কমপ্লেক্স, হাজী মরণ আলী রোড, নাবিস্কো মোড়, তেজগাঁও, ঢাকা-১২১৫। অফিস খোলা থাকে শনিবার থেকে বৃহস্পতিবার, সকাল ১০:০০ থেকে সন্ধ্যা ৬:৩০ পর্যন্ত (শুক্রবার বন্ধ)।"
+          });
+          return;
+        }
+        if (lower.includes("যোগাযোগ") || lower.includes("ফোন") || lower.includes("নাম্বার") || lower.includes("হোয়াটসঅ্যাপ")) {
+          res.json({
+            reply: "আমাদের সাথে সরাসরি যোগাযোগের মাধ্যম:\n• হোয়াটসঅ্যাপ ও হটলাইন: +8801926400400\n• টেলিফোন: +8802 9830404\n• ইমেইল: journeyexpertbd@gmail.com"
+          });
+          return;
+        }
+        if (lower.includes("ভিসা") || lower.includes("টিকেট") || lower.includes("ওমরাহ") || lower.includes("স্টাডি")) {
+          res.json({
+            reply: "জার্নি এক্সপার্ট লিমিটেড এয়ার টিকিট, ভিজিট ও মেডিকেল ভিসা, ওমরাহ প্যাকেজ এবং স্টাডি অ্যাব্রোড প্রসেসিংয়ে সহায়তা করে। তবে লাইভ ফেয়ার ও ভিসা নিয়মের জন্য আমাদের হটলাইন বা হোয়াটসঅ্যাপে (+8801926400400) যোগাযোগ করুন। ভিসা অনুমোদন সম্পূর্ণ সংশ্লিষ্ট এম্বাসির নিজস্ব এখতিয়ার।"
+          });
+          return;
+        }
         res.json({
-          reply: "আসসালামু আলাইকুম! আমি অ্যাঞ্জেলা (Angela), জার্নি এক্সপার্ট লিমিটেড-এর অফিশিয়াল এআই ভয়েস অ্যাসিস্ট্যান্ট। এয়ার টিকিট, ভিসা প্রসেসিং, ট্যুর প্যাকেজ, ওমরাহ অথবা স্টাডি অ্যাব্রোড নিয়ে আপনার যেকোনো প্রশ্ন আমাকে করতে পারেন। সরাসরি আমাদের অভিজ্ঞ ট্রাভেল ও এডুকেশন কনসালট্যান্টের সাথে কথা বলতে হোয়াটসঅ্যাপ বা কল করুন +8801926400400 নম্বরে।"
+          reply: "আসসালামু আলাইকুম! আমি অ্যাঞ্জেলা (Angela), জার্নি এক্সপার্ট লিমিটেড-এর অফিশিয়াল এআই ভয়েস অ্যাসিস্ট্যান্ট। এয়ার টিকিট, ভিসা প্রসেসিং, ট্যুর প্যাকেজ, ওমরাহ অথবা স্টাডি অ্যাব্রোড নিয়ে আপনার যেকোনো প্রশ্ন আমাকে করতে পারেন। সরাসরি সহায়তার জন্য হোয়াটসঅ্যাপ বা কল করুন +8801926400400 নম্বরে।"
         });
       } else {
+        if (lower.includes("address") || lower.includes("office") || lower.includes("location")) {
+          res.json({
+            reply: "Journey Expert Limited (JEL) Head Office: 189/A (2nd Floor), Abdul Motin Complex, Hazi Moron Ali Road, Nabisco Mor, Tejgaon, Dhaka-1215, Bangladesh. Open Saturday to Thursday, 10:00 AM - 6:30 PM (Closed Friday)."
+          });
+          return;
+        }
+        if (lower.includes("contact") || lower.includes("phone") || lower.includes("whatsapp") || lower.includes("number")) {
+          res.json({
+            reply: "Connect directly with Journey Expert Limited:\n• WhatsApp & Hotline: +8801926400400\n• Telephone: +8802 9830404\n• Email: journeyexpertbd@gmail.com\n• Website: https://journeyexpertbd.com"
+          });
+          return;
+        }
         res.json({
           reply: "Hello! I am Angela, the official AI Voice Assistant for Journey Expert Limited (JEL). I can assist you with air ticketing, visa services, tour packages, Umrah, and study abroad programs. For instant personalized support, connect directly with our experts via WhatsApp at +8801926400400 or visit our head office at Nabisco Mor, Tejgaon, Dhaka."
         });
@@ -723,7 +753,7 @@ const handleAngelaChat = async (req: express.Request, res: express.Response) => 
     }));
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.6-flash",
+      model: "gemini-3.8-flash",
       contents,
       config: {
         systemInstruction: ANGELA_SYSTEM_PROMPT,
@@ -742,6 +772,33 @@ const handleAngelaChat = async (req: express.Request, res: express.Response) => 
     });
   }
 };
+
+// Angela Health & Capability Status Endpoint
+app.get("/api/angela/health", (req, res) => {
+  res.json({
+    status: "ok",
+    assistant: "Angela",
+    role: "Official AI Voice & Customer Assistant",
+    company: "Journey Expert Limited (JEL)",
+    official_website: "https://journeyexpertbd.com",
+    engine: "Google Gemini (gemini-3.8-flash)",
+    voice_architecture: {
+      primary_voice_provider: "Native Web Speech API / Gemini Realtime",
+      elevenlabs_required: false,
+      elevenlabs_runtime_dependency: "REMOVED",
+      supported_states: ["READY", "LISTENING", "THINKING", "SPEAKING", "ERROR"],
+      languages: ["Bengali / বাংলা", "English", "Banglish / Code-switching"],
+      barge_in_supported: true,
+      text_fallback_supported: true
+    },
+    contact: {
+      whatsapp: "+8801926400400",
+      telephone: "+8802 9830404",
+      email: "journeyexpertbd@gmail.com",
+      office: "189/A (2nd Floor), Abdul Motin Complex, Hazi Moron Ali Road, Nabisco Mor, Tejgaon, Dhaka-1215, Bangladesh"
+    }
+  });
+});
 
 app.post("/api/gemini/chat", handleAngelaChat);
 app.post("/api/gemini/angela", handleAngelaChat);
@@ -910,7 +967,7 @@ Return details strictly as JSON format matching this schema:
   }
 });
 
-app.get("/health", (req, res) => {
+app.get(["/health", "/api/health"], (req, res) => {
   res.status(200).json({ status: "ok", service: "jel-server", timestamp: new Date().toISOString() });
 });
 
@@ -918,7 +975,9 @@ app.get("/health", (req, res) => {
 async function bootServer() {
   const PORT = getPort();
 
-  if (process.env.NODE_ENV !== "production") {
+  const isProduction = process.env.NODE_ENV === "production" || (typeof __filename !== "undefined" && __filename.endsWith(".cjs"));
+
+  if (!isProduction) {
     console.log(`Loading Vite Dev Middlewares for server on Port ${PORT}...`);
     const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
