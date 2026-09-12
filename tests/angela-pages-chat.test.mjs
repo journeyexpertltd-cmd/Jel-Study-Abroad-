@@ -39,3 +39,25 @@ test('Gemini receives bounded history and quota failures return usable fallback'
     assert.equal((await (await onRequest({ request: request({ message: 'hello' }), env: { GEMINI_API_KEY: 'test-only' } })).json()).mode, 'fallback');
   } finally { globalThis.fetch = originalFetch; }
 });
+
+test('Explicit Bangla overrides English history and rejects an English-only model reply', async () => {
+  const originalFetch = globalThis.fetch;
+  try {
+    let answer = 'Hello, I am Angela';
+    globalThis.fetch = async (_url, options) => {
+      const payload = JSON.parse(options.body);
+      assert.match(payload.systemInstruction.parts[0].text, /Respond in Bengali script/);
+      return Response.json({ candidates: [{ content: { parts: [{ text: answer }] } }] });
+    };
+    const send = () => onRequest({ request: request({ language: 'bn', messages: [{ sender: 'assistant', text: 'Hello' }, { sender: 'user', text: 'Introduce yourself' }] }), env: { GEMINI_API_KEY: 'test-only' } });
+    const wrongLanguage = await (await send()).json();
+    assert.equal(wrongLanguage.mode, 'fallback');
+    assert.match(wrongLanguage.reply, /[\u0980-\u09FF]/);
+    answer = 'আমি অ্যাঞ্জেলা। আপনাকে কীভাবে সাহায্য করতে পারি?';
+    const correctLanguage = await (await send()).json();
+    assert.equal(correctLanguage.mode, 'ai');
+    assert.equal(correctLanguage.reply, answer);
+    const english = await (await onRequest({ request: request({ language: 'en', message: 'পরিচয় দিন' }), env: {} })).json();
+    assert.equal(english.language, 'en');
+  } finally { globalThis.fetch = originalFetch; }
+});

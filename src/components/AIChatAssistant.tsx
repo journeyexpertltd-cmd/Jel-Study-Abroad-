@@ -136,6 +136,14 @@ export function AIChatAssistant() {
     setVoiceState((prev) => (prev === "SPEAKING" ? "READY" : prev));
   }, []);
 
+  const changeLanguage = (mode: "auto" | "en" | "bn") => {
+    cancelPending();
+    stopSpeaking();
+    setLanguageMode(mode);
+    setVoiceState("READY");
+    setErrorMessage(null);
+  };
+
   // Text-to-speech engine with natural voice matching
   const speakText = useCallback((text: string, messageId?: string) => {
     if (typeof window === "undefined" || !window.speechSynthesis) {
@@ -179,7 +187,16 @@ export function AIChatAssistant() {
       if (voices.length > 0) {
         if (hasBangla) {
           const banglaVoice = voices.find(v => v.lang.startsWith("bn") || v.name.toLowerCase().includes("bangla") || v.name.toLowerCase().includes("bengali"));
-          if (banglaVoice) utterance.voice = banglaVoice;
+          if (banglaVoice) {
+            utterance.voice = banglaVoice;
+            utterance.lang = banglaVoice.lang;
+          } else {
+            currentUtteranceRef.current = null;
+            setActiveSpeakingId(null);
+            setVoiceState("READY");
+            setErrorMessage("এই ব্রাউজারে বাংলা কণ্ঠ পাওয়া যায়নি। বাংলা লেখা পড়তে পারবেন; ইংরেজি শুনতে EN নির্বাচন করে নতুন প্রশ্ন করুন।");
+            return;
+          }
         } else {
           const preferredVoice = voices.find(v => 
             (v.lang.startsWith("en") && (v.name.toLowerCase().includes("female") || v.name.toLowerCase().includes("zira") || v.name.toLowerCase().includes("samantha") || v.name.toLowerCase().includes("google uk english female") || v.name.toLowerCase().includes("natural")))
@@ -579,21 +596,21 @@ export function AIChatAssistant() {
               {/* Language Switcher */}
               <div className="flex items-center bg-white/10 rounded-lg p-0.5 text-[10px] sm:text-[11px] font-medium mr-1">
                 <button
-                  onClick={() => setLanguageMode("auto")}
+                  onClick={() => changeLanguage("auto")}
                   className={`px-1 sm:px-1.5 py-0.5 rounded transition-all ${languageMode === "auto" ? "bg-white text-[#0B5D3B] font-bold shadow-xs" : "text-white/80 hover:text-white"}`}
                   title="Auto Detect Language"
                 >
                   Auto
                 </button>
                 <button
-                  onClick={() => setLanguageMode("en")}
+                  onClick={() => changeLanguage("en")}
                   className={`px-1 sm:px-1.5 py-0.5 rounded transition-all ${languageMode === "en" ? "bg-white text-[#0B5D3B] font-bold shadow-xs" : "text-white/80 hover:text-white"}`}
                   title="English Mode"
                 >
                   EN
                 </button>
                 <button
-                  onClick={() => setLanguageMode("bn")}
+                  onClick={() => changeLanguage("bn")}
                   className={`px-1 sm:px-1.5 py-0.5 rounded transition-all ${languageMode === "bn" ? "bg-white text-[#0B5D3B] font-bold shadow-xs" : "text-white/80 hover:text-white"}`}
                   title="বাংলা মোড"
                 >
