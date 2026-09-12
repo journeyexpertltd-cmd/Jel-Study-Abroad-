@@ -36,7 +36,7 @@ jobs:
         run: npm run lint
 
       - name: Test Pages chat API
-        run: node --experimental-strip-types --test tests/angela-pages-chat.test.mjs
+        run: node --experimental-strip-types --test tests/angela-pages-chat.test.mjs tests/angela-speech.test.mjs
 
       - name: Run SEO and domain safety checks
         run: npm run check:seo

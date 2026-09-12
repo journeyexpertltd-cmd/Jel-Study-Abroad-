@@ -6,6 +6,7 @@ import {
   AlertCircle, Radio, Plane, Compass, Award, Building2, MapPin
 } from "lucide-react";
 import { ChatMessage } from "../types";
+import { fetchAngelaSpeech, voiceErrorMessage } from "../lib/angelaAudio";
 
 const jelBrandIcon = new URL("../assets/images/jel-study-abroad-official.webp", import.meta.url).href;
 
@@ -79,6 +80,15 @@ export function AIChatAssistant() {
   const currentUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   const speechAttemptRef = useRef(0);
+  const serverSpeechRef = useRef<AbortController | null>(null);
+  const serverAudioRef = useRef<HTMLAudioElement | null>(null);
+  const stopServerAudio = () => {
+    serverSpeechRef.current?.abort();
+    serverSpeechRef.current = null;
+    const audio = serverAudioRef.current;
+    if (audio) { audio.onended = null; audio.onerror = null; audio.pause(); URL.revokeObjectURL(audio.src); }
+    serverAudioRef.current = null;
+  };
   const requestRef = useRef<AbortController | null>(null);
   const enabledRef = useRef(isVoiceEnabled);
   enabledRef.current = isVoiceEnabled;
@@ -111,6 +121,8 @@ export function AIChatAssistant() {
   // Voice toggle handler
   const toggleVoiceOutput = () => {
     const nextState = !isVoiceEnabled;
+    enabledRef.current = nextState;
+    if (!nextState) { speechAttemptRef.current += 1; stopServerAudio(); }
     setIsVoiceEnabled(nextState);
     try { localStorage.setItem("jel_angela_voice_muted", nextState ? "false" : "true"); } catch { /* Storage may be disabled. */ }
     if (!nextState && typeof window !== "undefined" && window.speechSynthesis) {
@@ -125,6 +137,7 @@ export function AIChatAssistant() {
   // Conversational interruption / Barge-in
   const stopSpeaking = useCallback(() => {
     speechAttemptRef.current += 1;
+    stopServerAudio();
     if (typeof window !== "undefined" && window.speechSynthesis) {
       window.speechSynthesis.cancel();
     }
@@ -149,6 +162,7 @@ export function AIChatAssistant() {
   // Text-to-speech engine with natural voice matching
   const speakText = useCallback(async (text: string, messageId?: string) => {
     const attempt = ++speechAttemptRef.current;
+    stopServerAudio();
     if (typeof window === "undefined" || !window.speechSynthesis) {
       setErrorMessage("Voice output is not supported in this browser. You can still chat by text.");
       setVoiceState("ERROR");
@@ -210,9 +224,37 @@ export function AIChatAssistant() {
       if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
       if (hasBangla && !voices.some(matchesBangla)) {
         currentUtteranceRef.current = null;
-        setActiveSpeakingId(null);
-        setVoiceState("ERROR");
-        setErrorMessage("এই ব্রাউজারে বাংলা কণ্ঠ পাওয়া যায়নি। বাংলা লেখা পড়তে পারবেন; ইংরেজি শুনতে EN নির্বাচন করে নতুন প্রশ্ন করুন।");
+        const controller = new AbortController();
+        serverSpeechRef.current = controller;
+        const timeout = setTimeout(() => controller.abort(), 30000);
+        setVoiceState("THINKING");
+        setErrorMessage(null);
+        try {
+          const blob = await fetchAngelaSpeech(cleanSpeech, controller.signal);
+          if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
+          const audio = new Audio(URL.createObjectURL(blob));
+          serverAudioRef.current = audio;
+          audio.onended = () => {
+            if (serverAudioRef.current !== audio) return;
+            stopServerAudio(); setVoiceState("READY"); setActiveSpeakingId(null);
+          };
+          audio.onerror = () => {
+            if (serverAudioRef.current !== audio) return;
+            stopServerAudio(); setVoiceState("ERROR"); setActiveSpeakingId(null);
+            setErrorMessage("কণ্ঠ চালানো যায়নি। Listen চেপে আবার চেষ্টা করুন।");
+          };
+          await audio.play();
+          if (attempt !== speechAttemptRef.current) return;
+          setVoiceState("SPEAKING");
+          if (messageId) setActiveSpeakingId(messageId);
+        } catch (error) {
+          if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
+          stopServerAudio(); setActiveSpeakingId(null);
+          setVoiceState("ERROR"); setErrorMessage(voiceErrorMessage(error));
+        } finally {
+          clearTimeout(timeout);
+          if (serverSpeechRef.current === controller) serverSpeechRef.current = null;
+        }
         return;
       }
       if (voices.length > 0) {
@@ -274,6 +316,7 @@ export function AIChatAssistant() {
   useEffect(() => {
     return () => {
       speechAttemptRef.current += 1;
+      stopServerAudio();
       cancelPending();
       if (typeof window !== "undefined" && window.speechSynthesis) {
         window.speechSynthesis.cancel();
@@ -989,7 +1032,7 @@ export function AIChatAssistant() {
             <div className="flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500 px-1 pt-0.5">
               <span className="flex items-center gap-1 truncate max-w-[240px] sm:max-w-none">
                 <ShieldCheck className="h-3 w-3 text-emerald-500 shrink-0" />
-                <span className="truncate">Official JEL AI. Visa decisions subject to embassy authority.</span>
+                <span className="truncate">AI voice. বাংলা audio তৈরিতে উত্তরের লেখা Google-এ পাঠানো হতে পারে।</span>
               </span>
               <span className="font-mono text-[9px] shrink-0">v2.5 Live Voice</span>
             </div>
