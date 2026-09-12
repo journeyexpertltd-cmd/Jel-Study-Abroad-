@@ -78,6 +78,7 @@ export function AIChatAssistant() {
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const currentUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
+  const speechAttemptRef = useRef(0);
   const requestRef = useRef<AbortController | null>(null);
   const enabledRef = useRef(isVoiceEnabled);
   enabledRef.current = isVoiceEnabled;
@@ -123,6 +124,7 @@ export function AIChatAssistant() {
 
   // Conversational interruption / Barge-in
   const stopSpeaking = useCallback(() => {
+    speechAttemptRef.current += 1;
     if (typeof window !== "undefined" && window.speechSynthesis) {
       window.speechSynthesis.cancel();
     }
@@ -145,7 +147,8 @@ export function AIChatAssistant() {
   };
 
   // Text-to-speech engine with natural voice matching
-  const speakText = useCallback((text: string, messageId?: string) => {
+  const speakText = useCallback(async (text: string, messageId?: string) => {
+    const attempt = ++speechAttemptRef.current;
     if (typeof window === "undefined" || !window.speechSynthesis) {
       setErrorMessage("Voice output is not supported in this browser. You can still chat by text.");
       setVoiceState("ERROR");
@@ -183,17 +186,45 @@ export function AIChatAssistant() {
       utterance.pitch = 1.0;
 
       // Select high quality voices
-      const voices = window.speechSynthesis.getVoices();
+      let voices = window.speechSynthesis.getVoices();
+      const matchesBangla = (v: SpeechSynthesisVoice) => /^bn(?:[-_]|$)/i.test(v.lang) || /bangla|bengali/i.test(v.name);
+      if (!voices.length || (hasBangla && !voices.some(matchesBangla))) {
+        // Browsers may expose their voices after the first getVoices() call.
+        await new Promise<void>((resolve) => {
+          const synthesis = window.speechSynthesis;
+          const finish = () => {
+            clearTimeout(timeout);
+            synthesis.removeEventListener("voiceschanged", onVoices);
+            resolve();
+          };
+          const onVoices = () => {
+            const available = synthesis.getVoices();
+            if (hasBangla ? available.some(matchesBangla) : available.length > 0) finish();
+          };
+          const timeout = setTimeout(finish, 1500);
+          synthesis.addEventListener("voiceschanged", onVoices);
+          onVoices();
+        });
+        voices = window.speechSynthesis.getVoices();
+      }
+      if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
+      if (hasBangla && !voices.some(matchesBangla)) {
+        currentUtteranceRef.current = null;
+        setActiveSpeakingId(null);
+        setVoiceState("ERROR");
+        setErrorMessage("এই ব্রাউজারে বাংলা কণ্ঠ পাওয়া যায়নি। বাংলা লেখা পড়তে পারবেন; ইংরেজি শুনতে EN নির্বাচন করে নতুন প্রশ্ন করুন।");
+        return;
+      }
       if (voices.length > 0) {
         if (hasBangla) {
-          const banglaVoice = voices.find(v => v.lang.startsWith("bn") || v.name.toLowerCase().includes("bangla") || v.name.toLowerCase().includes("bengali"));
+          const banglaVoice = voices.find(matchesBangla);
           if (banglaVoice) {
             utterance.voice = banglaVoice;
             utterance.lang = banglaVoice.lang;
           } else {
             currentUtteranceRef.current = null;
             setActiveSpeakingId(null);
-            setVoiceState("READY");
+            setVoiceState("ERROR");
             setErrorMessage("এই ব্রাউজারে বাংলা কণ্ঠ পাওয়া যায়নি। বাংলা লেখা পড়তে পারবেন; ইংরেজি শুনতে EN নির্বাচন করে নতুন প্রশ্ন করুন।");
             return;
           }
@@ -242,6 +273,7 @@ export function AIChatAssistant() {
   // Clean speech synthesis on unmount
   useEffect(() => {
     return () => {
+      speechAttemptRef.current += 1;
       cancelPending();
       if (typeof window !== "undefined" && window.speechSynthesis) {
         window.speechSynthesis.cancel();
