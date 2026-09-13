@@ -6,6 +6,7 @@ import {
   Briefcase, FileText, FileCheck, CheckCircle2, Clock, Check, Database, Sparkle
 } from "lucide-react";
 import { COUNTRIES, SCHOLARSHIPS, TESTIMONIALS, UNIVERSITY_PARTNERS, BLOGS } from "../data";
+import { InsuranceFinancialHub } from "./InsuranceFinancialHub";
 
 const brandLogoImg = new URL("../assets/images/jel-study-abroad-official.webp", import.meta.url).href;
 
@@ -199,9 +200,34 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
     }
   ];
 
+  const [heroSearchInput, setHeroSearchInput] = useState("");
+  const [videoCountryFilter, setVideoCountryFilter] = useState<string>("All");
+
+  const handleHeroSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!heroSearchInput.trim()) return;
+    const query = heroSearchInput.trim().toLowerCase();
+    
+    // Check if matching a country
+    const matchedCountry = ["united kingdom", "uk", "canada", "australia", "united states", "usa", "germany", "ireland"]
+      .find(c => query.includes(c));
+
+    if (matchedCountry) {
+      const canonical = matchedCountry === "uk" ? "United Kingdom" : 
+                        matchedCountry === "usa" ? "United States" : 
+                        matchedCountry.charAt(0).toUpperCase() + matchedCountry.slice(1);
+      onPreSelectCountry(canonical);
+      setActiveTab("countries");
+    } else {
+      setActiveTab("finder");
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const videoTestimonials = [
     {
       id: "v-1",
+      country: "UK",
       name: "Samiul Alom Chowdhury",
       university: "University of Greenwich, UK",
       course: "M.Sc. in Management & Finance",
@@ -211,6 +237,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
     },
     {
       id: "v-2",
+      country: "Australia",
       name: "Mst. Afrina Tabassum",
       university: "Monash University, Australia",
       course: "Bachelor of Business",
@@ -220,14 +247,49 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
     },
     {
       id: "v-3",
+      country: "Canada",
       name: "Rahat Bin Kabir",
       university: "University of Toronto, Canada",
       course: "B.Sc. in Computer Engineering",
       photoUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=300",
       quote: "Highly recommended for Canada! They audit your family financial declarations with professional CA standards.",
       achievement: "100% Secure Visa Processing"
+    },
+    {
+      id: "v-4",
+      country: "USA",
+      name: "Tanvir Hasan Rifat",
+      university: "University of Texas at Arlington, USA",
+      course: "M.Sc. in Computer Science",
+      photoUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300",
+      quote: "My F-1 visa interview prep at JEL was flawless! Their mock sessions helped me answer funding questions confidently.",
+      achievement: "US F-1 Visa Approved with Full STEM OPT"
+    },
+    {
+      id: "v-5",
+      country: "Germany",
+      name: "Ishrat Jahan Nabila",
+      university: "Technical University of Munich, Germany",
+      course: "M.Sc. in Environmental Engineering",
+      photoUrl: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=300",
+      quote: "Zero tuition fees in Germany! JEL handled my APS certificate, Expatrio blocked account, and German embassy paperwork seamlessly.",
+      achievement: "100% Tuition Free Public University Admit"
+    },
+    {
+      id: "v-6",
+      country: "Ireland",
+      name: "Farhan Shahriar",
+      university: "Trinity College Dublin, Ireland",
+      course: "M.Sc. in Artificial Intelligence",
+      photoUrl: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=300",
+      quote: "Ireland is Europe's Silicon Valley! JEL's counselors helped me secure an unconditional offer and 2-year post-study work visa.",
+      achievement: "€4,000 Global Excellence Scholar"
     }
   ];
+
+  const filteredVideoTestimonials = videoCountryFilter === "All"
+    ? videoTestimonials
+    : videoTestimonials.filter(v => v.country.toLowerCase() === videoCountryFilter.toLowerCase());
 
   const handleAIModalLaunch = (title: string, desc: string, promptPreset: string) => {
     setActiveAIModal({ title, desc, systemPrompt: promptPreset });
@@ -279,20 +341,42 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
           <div className="lg:col-span-7 space-y-6 md:space-y-8 text-left">
             <span className="inline-flex items-center space-x-2 bg-white/10 border border-white/10 backdrop-blur-md text-[#D4AF37] py-2 px-4 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider shadow-md max-w-full">
               <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#D4AF37] shrink-0 animate-pulse" />
-              <span className="truncate font-mono">Bangladesh's Premium AI-Powered Global Education Group</span>
+              <span className="truncate font-mono">Official AI Gateway • Journey Expert Limited</span>
             </span>
             
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-[64px] xl:text-[72px] font-display font-black leading-[1.05] tracking-tight text-white">
-              Your Global Future, <br/>
-              <span className="bg-gradient-to-r from-yellow-300 via-[#D4AF37] to-[#00AEEF] bg-clip-text text-transparent">Designed by Experts</span>
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-[60px] xl:text-[68px] font-display font-black leading-[1.08] tracking-tight text-white">
+              AI-Powered Gateway to <br/>
+              <span className="bg-gradient-to-r from-yellow-300 via-[#D4AF37] to-[#00AEEF] bg-clip-text text-transparent">
+                Global Education & Student Mobility
+              </span>
             </h1>
             
             <p className="text-slate-200 text-xs sm:text-sm md:text-base lg:text-lg leading-relaxed max-w-2xl font-light">
-              Get direct university admissions, high-percentage scholarships, and audited visa success through Bangladesh's elite, ethically certified consultants and AI matching engines.
+              Accelerate university admissions, secure high-value scholarships, and audit visa solvency with 98.4% verified success through JEL’s elite AI eligibility and case registrars.
             </p>
 
+            {/* Interactive Search Bar */}
+            <form onSubmit={handleHeroSearchSubmit} className="relative max-w-2xl bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-2 flex items-center shadow-2xl focus-within:border-[#D4AF37] transition-all">
+              <div className="pl-3 text-slate-300">
+                <Search className="w-5 h-5 text-[#D4AF37]" />
+              </div>
+              <input
+                type="text"
+                value={heroSearchInput}
+                onChange={(e) => setHeroSearchInput(e.target.value)}
+                placeholder="Where do you want to study? (e.g., UK, Canada, Australia, Computer Science)"
+                className="w-full bg-transparent px-3 py-2 text-white placeholder-slate-300 text-xs sm:text-sm focus:outline-none"
+              />
+              <button
+                type="submit"
+                className="bg-[#D4AF37] hover:bg-yellow-400 text-slate-950 font-bold px-5 py-2.5 rounded-xl text-xs sm:text-sm transition-all shrink-0 cursor-pointer shadow-md hover:scale-102"
+              >
+                Search Programs
+              </button>
+            </form>
+
             {/* Quick Country Explorer Flags row */}
-            <div className="space-y-3 pt-2">
+            <div className="space-y-3 pt-1">
               <p className="text-[10px] uppercase font-bold tracking-widest text-slate-300 font-mono flex items-center gap-2">
                 <span className="h-1.5 w-1.5 bg-[#D4AF37] rounded-full animate-ping"></span>
                 Select study destination:
@@ -318,31 +402,34 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
               </div>
             </div>
 
-            {/* CTAs */}
-            <div className="flex flex-wrap items-center gap-3 pt-4">
-              <button
-                onClick={() => {
-                  setActiveTab("booking");
-                  window.scrollTo({ top: 0, behavior: "smooth" });
-                }}
-                className="bg-[#D4AF37] hover:bg-yellow-500 text-slate-950 font-extrabold px-7 py-4 rounded-xl text-xs uppercase tracking-wider transition-all duration-300 shadow-lg shadow-[#D4AF37]/20 text-center hover:scale-[1.03] active:scale-[0.98] cursor-pointer font-display"
-              >
-                Book Free Consultation
-              </button>
+            {/* Dual CTAs */}
+            <div className="flex flex-wrap items-center gap-3 pt-3">
               <button
                 onClick={() => {
                   setActiveTab("checker");
                   window.scrollTo({ top: 0, behavior: "smooth" });
                 }}
-                className="bg-white/10 hover:bg-white/15 text-white border border-white/10 hover:border-white/30 font-extrabold px-7 py-4 rounded-xl text-xs uppercase tracking-wider transition-all duration-300 text-center hover:scale-[1.03] cursor-pointer font-display"
+                className="relative group bg-[#D4AF37] hover:bg-yellow-400 text-slate-950 font-extrabold px-8 py-4 rounded-xl text-xs sm:text-sm uppercase tracking-wider transition-all duration-300 shadow-xl shadow-[#D4AF37]/30 text-center hover:scale-[1.03] active:scale-[0.98] cursor-pointer font-display ring-4 ring-[#D4AF37]/30 animate-pulse"
               >
-                Check Visa Eligibility
+                <span className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-slate-950" />
+                  <span>Check Eligibility with AI</span>
+                </span>
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab("booking");
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                className="bg-white/10 hover:bg-white/20 text-white border border-white/20 hover:border-white/40 font-extrabold px-7 py-4 rounded-xl text-xs sm:text-sm uppercase tracking-wider transition-all duration-300 text-center hover:scale-[1.03] cursor-pointer font-display"
+              >
+                Book 1:1 Expert Counselling
               </button>
               <a
                 href="https://wa.me/8801926400400"
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20ba59] text-white font-extrabold px-6 py-4 rounded-xl text-xs uppercase tracking-wider transition-all duration-300 text-center hover:scale-[1.03] shadow-md"
+                className="flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20ba59] text-white font-extrabold px-6 py-4 rounded-xl text-xs uppercase tracking-wider transition-all duration-300 text-center hover:scale-[1.03] shadow-md font-mono"
               >
                 <Phone className="h-4 w-4" />
                 <span>WhatsApp Advisor</span>
@@ -431,48 +518,48 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8 items-center text-center">
             
             <div className="space-y-1 group">
-              <div className="mx-auto bg-slate-50 border border-slate-100 h-12 w-12 rounded-2xl flex items-center justify-center text-[#0B5D3B] font-extrabold shadow-sm group-hover:scale-110 transition-transform duration-300">
-                <Users className="h-5 w-5" />
-              </div>
-              <p className="text-2xl font-display font-black text-[#0B5D3B] pt-2 leading-none">1,000+</p>
-              <p className="text-[10px] text-slate-400 uppercase tracking-widest font-mono font-bold mt-1">Students Assisted</p>
-              <p className="text-[9px] text-slate-500 font-light mt-0.5">Tejgaon office records</p>
-            </div>
-
-            <div className="space-y-1 group">
               <div className="mx-auto bg-slate-50 border border-slate-100 h-12 w-12 rounded-2xl flex items-center justify-center text-amber-500 font-extrabold shadow-sm group-hover:scale-110 transition-transform duration-300">
                 <Shield className="h-5 w-5" />
               </div>
-              <p className="text-2xl font-display font-black text-slate-900 pt-2 leading-none">98%</p>
-              <p className="text-[10px] text-slate-400 uppercase tracking-widest font-mono font-bold mt-1">Visa Success</p>
-              <p className="text-[9px] text-slate-500 font-light mt-0.5">Government audit</p>
+              <p className="text-2xl sm:text-3xl font-display font-black text-[#0B5D3B] pt-2 leading-none">98.4%</p>
+              <p className="text-[10px] text-slate-700 uppercase tracking-widest font-mono font-bold mt-1">Visa Approval Rate</p>
+              <p className="text-[9px] text-slate-400 font-light mt-0.5">Audited embassy files</p>
             </div>
 
             <div className="space-y-1 group">
               <div className="mx-auto bg-slate-50 border border-slate-100 h-12 w-12 rounded-2xl flex items-center justify-center text-emerald-500 font-extrabold shadow-sm group-hover:scale-110 transition-transform duration-300">
                 <Globe className="h-5 w-5" />
               </div>
-              <p className="text-2xl font-display font-black text-slate-900 pt-2 leading-none">50+</p>
-              <p className="text-[10px] text-slate-400 uppercase tracking-widest font-mono font-bold mt-1">Partner Universities</p>
-              <p className="text-[9px] text-slate-500 font-light mt-0.5">Direct affiliations</p>
+              <p className="text-2xl sm:text-3xl font-display font-black text-slate-900 pt-2 leading-none">850+</p>
+              <p className="text-[10px] text-slate-700 uppercase tracking-widest font-mono font-bold mt-1">Partner Universities</p>
+              <p className="text-[9px] text-slate-400 font-light mt-0.5">Across UK, CA, AU, USA</p>
+            </div>
+
+            <div className="space-y-1 group">
+              <div className="mx-auto bg-slate-50 border border-slate-100 h-12 w-12 rounded-2xl flex items-center justify-center text-[#0B5D3B] font-extrabold shadow-sm group-hover:scale-110 transition-transform duration-300">
+                <Users className="h-5 w-5" />
+              </div>
+              <p className="text-2xl sm:text-3xl font-display font-black text-slate-900 pt-2 leading-none">12,500+</p>
+              <p className="text-[10px] text-slate-700 uppercase tracking-widest font-mono font-bold mt-1">Global Alumni</p>
+              <p className="text-[9px] text-slate-400 font-light mt-0.5">Settled worldwide</p>
             </div>
 
             <div className="space-y-1 group col-span-1">
-              <div className="mx-auto bg-slate-50 border border-slate-100 h-12 w-12 rounded-2xl flex items-center justify-center text-purple-500 font-extrabold shadow-sm group-hover:scale-110 transition-transform duration-300">
-                <Sparkles className="h-5 w-5" />
+              <div className="mx-auto bg-slate-50 border border-slate-100 h-12 w-12 rounded-2xl flex items-center justify-center text-[#D4AF37] font-extrabold shadow-sm group-hover:scale-110 transition-transform duration-300">
+                <Award className="h-5 w-5" />
               </div>
-              <p className="text-2xl font-display font-black text-slate-900 pt-2 leading-none">AI Powered</p>
-              <p className="text-[10px] text-slate-400 uppercase tracking-widest font-mono font-bold mt-1">Consultancy</p>
-              <p className="text-[9px] text-slate-500 font-light mt-0.5">Smart system analysis</p>
+              <p className="text-2xl sm:text-3xl font-display font-black text-[#D4AF37] pt-2 leading-none">$4.2M+</p>
+              <p className="text-[10px] text-slate-700 uppercase tracking-widest font-mono font-bold mt-1">Scholarships Secured</p>
+              <p className="text-[9px] text-slate-400 font-light mt-0.5">Merit bursaries awarded</p>
             </div>
 
             <div className="space-y-1 group col-span-2 md:col-span-1">
               <div className="mx-auto bg-slate-50 border border-slate-100 h-12 w-12 rounded-2xl flex items-center justify-center text-[#00AEEF] font-extrabold shadow-sm group-hover:scale-110 transition-transform duration-300">
-                <Award className="h-5 w-5" />
+                <Sparkles className="h-5 w-5" />
               </div>
-              <p className="text-2xl font-display font-black text-slate-900 pt-2 leading-none">Expert</p>
-              <p className="text-[10px] text-slate-400 uppercase tracking-widest font-mono font-bold mt-1">Counselors</p>
-              <p className="text-[9px] text-slate-500 font-light mt-0.5">Licensed, ethical team</p>
+              <p className="text-2xl sm:text-3xl font-display font-black text-slate-900 pt-2 leading-none">Instant</p>
+              <p className="text-[10px] text-slate-700 uppercase tracking-widest font-mono font-bold mt-1">AI Eligibility</p>
+              <p className="text-[9px] text-slate-400 font-light mt-0.5">Powered by Gemini AI</p>
             </div>
 
           </div>
@@ -547,6 +634,11 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
             </div>
           ))}
         </div>
+      </section>
+
+      {/* 3B. INSURANCE & FINANCIAL SOLVENCY CALCULATOR HUB */}
+      <section className="w-full relative" id="insurance-financial-hub">
+        <InsuranceFinancialHub />
       </section>
 
       {/* 4. OUR SERVICES (6 Interactive AI Assistants + Core Services Cards) */}
@@ -996,7 +1088,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
 
       {/* 9. VIDEO SUCCESS STORIES */}
       <section className="w-full" id="video-testimonials">
-        <div className="text-center space-y-3 max-w-2xl mx-auto mb-12">
+        <div className="text-center space-y-3 max-w-2xl mx-auto mb-8">
           <span className="text-xs text-[#0B5D3B] font-bold uppercase tracking-widest block font-mono bg-[#0B5D3B]/5 px-3.5 py-1.5 rounded-full w-fit mx-auto">
             🎥 Video Success Stories
           </span>
@@ -1006,10 +1098,27 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
           <p className="text-slate-500 text-xs sm:text-sm">
             Watch JEL students walkthrough their file processing, admission stages, and visa checklists.
           </p>
+
+          {/* Country Filter Bar */}
+          <div className="flex flex-wrap items-center justify-center gap-2 pt-4">
+            {["All", "UK", "Canada", "Australia", "USA", "Germany", "Ireland"].map((c) => (
+              <button
+                key={c}
+                onClick={() => setVideoCountryFilter(c)}
+                className={`px-4 py-2 rounded-xl text-xs font-bold font-mono transition-all cursor-pointer ${
+                  videoCountryFilter === c
+                    ? "bg-[#0B5D3B] text-white shadow-md"
+                    : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+                }`}
+              >
+                {c === "All" ? "🌍 All Countries" : c}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {videoTestimonials.map((v) => (
+          {filteredVideoTestimonials.map((v) => (
             <div 
               key={v.id}
               className="bg-white border border-slate-200/70 rounded-3xl overflow-hidden shadow-sm flex flex-col justify-between text-left group hover:border-[#0B5D3B] transition-all duration-300"

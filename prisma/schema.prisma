@@ -1,0 +1,349 @@
+// Prisma Schema for JL Study Abroad (Journey Expert Limited)
+// Production-ready database schema for PostgreSQL
+// Database: PostgreSQL with full relational integrity, enums, indexes, and auditing.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// -------------------------------------------------------------
+// USER & AUTHENTICATION MODELS
+// -------------------------------------------------------------
+
+enum UserRole {
+  STUDENT
+  COUNSELOR
+  SENIOR_CONSULTANT
+  ADMIN
+  SUPER_ADMIN
+  PARTNER_AGENT
+}
+
+model User {
+  id            String          @id @default(cuid())
+  email         String          @unique
+  name          String
+  phone         String?
+  passwordHash  String?
+  role          UserRole        @default(STUDENT)
+  avatarUrl     String?
+  isActive      Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  // 1-to-1 or 1-to-many relationships
+  studentProfile   StudentProfile?
+  assignedLeads    Lead[]          @relation("AssignedCounselor")
+  auditLogs        AuditLog[]
+
+  @@index([email])
+  @@index([role])
+}
+
+// -------------------------------------------------------------
+// STUDENT PROFILE & ACADEMIC ATTRIBUTES
+// -------------------------------------------------------------
+
+enum EnglishTestType {
+  IELTS
+  PTE
+  TOEFL_IBT
+  DUOLINGO
+  MOI_WAIVER
+  NOT_TAKEN
+}
+
+enum ApplicationLifecycleStage {
+  DRAFT
+  DOCS_VERIFIED
+  APPLICATION_SUBMITTED
+  OFFER_ISSUED
+  INSURANCE_PAID
+  VISA_LODGED
+  APPROVED
+}
+
+model StudentProfile {
+  id                    String                    @id @default(cuid())
+  userId                String                    @unique
+  user                  User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Academic & Background
+  highestDegree         String
+  fieldOfStudy          String
+  institutionName       String?
+  cgpa                  Float
+  cgpaScale             Float                     @default(4.0)
+  graduationYear        Int
+  studyGapYears         Int                       @default(0)
+
+  // English Proficiency
+  englishTest           EnglishTestType           @default(NOT_TAKEN)
+  englishOverallScore   Float?
+  listeningScore        Float?
+  readingScore          Float?
+  writingScore          Float?
+  speakingScore         Float?
+
+  // Destination & Budget
+  targetCountry         String
+  targetDegreeLevel     String                    @default("Master's Degree")
+  preferredIntake       String                    @default("September 2026")
+  annualTuitionBudget   String                    // e.g. "£14,000 - £18,000"
+  sponsorshipType       String                    @default("Family Sponsored")
+  has28DayBankHolding   Boolean                   @default(false)
+
+  // Current Progress
+  currentStage          ApplicationLifecycleStage @default(DRAFT)
+  stageProgressPercent  Int                       @default(15)
+
+  // Relationships
+  applications          Application[]
+  documents             Document[]
+  insuranceBookings     InsuranceBooking[]
+  leads                 Lead[]
+
+  createdAt             DateTime                  @default(now())
+  updatedAt             DateTime                  @updatedAt
+
+  @@index([targetCountry])
+  @@index([currentStage])
+}
+
+// -------------------------------------------------------------
+// UNIVERSITY APPLICATION MODEL
+// -------------------------------------------------------------
+
+enum OfferType {
+  NONE
+  CONDITIONAL
+  UNCONDITIONAL
+  CAS_ISSUED
+  I20_ISSUED
+  COE_ISSUED
+}
+
+model Application {
+  id                    String                    @id @default(cuid())
+  studentProfileId      String
+  studentProfile        StudentProfile            @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  
+  universityName        String
+  campusCity            String?
+  country               String
+  courseName            String
+  degreeLevel           String
+  intakeTerm            String                    // e.g. "Fall 2026"
+  
+  stage                 ApplicationLifecycleStage @default(DRAFT)
+  offerType             OfferType                 @default(NONE)
+  
+  // Financial Estimates
+  grossTuitionAnnual    Float
+  scholarshipGranted    Float                     @default(0)
+  netTuitionAnnual      Float
+  currency              String                    @default("GBP")
+
+  // Visa & Compliance
+  visaProbability       Int                       @default(85)
+  casOrI20Number        String?
+  counselorNotes        String?                   @db.Text
+  trackingNumber        String                    @unique @default(cuid())
+
+  // Timestamps
+  submittedAt           DateTime?
+  offerReceivedAt       DateTime?
+  visaLodgedAt          DateTime?
+  visaApprovedAt        DateTime?
+  createdAt             DateTime                  @default(now())
+  updatedAt             DateTime                  @updatedAt
+
+  documents             Document[]
+
+  @@index([studentProfileId])
+  @@index([country])
+  @@index([stage])
+}
+
+// -------------------------------------------------------------
+// DOCUMENT VAULT & OCR MODEL
+// -------------------------------------------------------------
+
+enum DocumentCategory {
+  PASSPORT
+  ACADEMIC_TRANSCRIPT
+  DEGREE_CERTIFICATE
+  ENGLISH_SCORECARD
+  BANK_SOLVENCY
+  SOP_STATEMENT_OF_PURPOSE
+  CV_RESUME
+  RECOMMENDATION_LETTER
+  SPONSOR_DECLARATION
+  OTHER
+}
+
+enum DocumentVerificationStatus {
+  PENDING_UPLOAD
+  UPLOADED_UNVERIFIED
+  OCR_PARSED
+  VERIFIED_BY_COUNSELOR
+  REJECTED_REQUIRES_REUPLOAD
+}
+
+model Document {
+  id                    String                     @id @default(cuid())
+  studentProfileId      String
+  studentProfile        StudentProfile             @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  
+  applicationId         String?
+  application           Application?               @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+
+  name                  String
+  category              DocumentCategory
+  fileUrl               String
+  mimeType              String                     @default("application/pdf")
+  fileSizeBytes         Int                        @default(0)
+  
+  // Security & Integrity
+  fileSha256Checksum    String?
+  isClientEncrypted     Boolean                    @default(true)
+  encryptionAlgorithm   String                     @default("AES-256-GCM")
+
+  // Verification & OCR
+  status                DocumentVerificationStatus @default(UPLOADED_UNVERIFIED)
+  ocrConfidence         Float?
+  ocrExtractedJson      Json?                      // Parsed metadata from Gemini/OCR
+  rejectionReason       String?
+
+  uploadedAt            DateTime                   @default(now())
+  verifiedAt            DateTime?
+
+  @@index([studentProfileId])
+  @@index([category])
+  @@index([status])
+}
+
+// -------------------------------------------------------------
+// INSURANCE & BLOCKED ACCOUNT / GIC BOOKINGS
+// -------------------------------------------------------------
+
+enum InsuranceType {
+  AUSTRALIA_OSHC
+  GERMANY_PUBLIC_HEALTH
+  UK_IHS_SURCHARGE
+  CANADA_UHIP_HEALTHGUARD
+  USA_STUDENT_MED_COVER
+}
+
+enum BookingStatus {
+  INQUIRY
+  AWAITING_PAYMENT
+  CONFIRMED_ACTIVE
+  CANCELLED
+}
+
+model InsuranceBooking {
+  id                    String           @id @default(cuid())
+  studentProfileId      String
+  studentProfile        StudentProfile   @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+
+  country               String
+  insuranceType         InsuranceType
+  provider              String           // e.g. "Allianz Care", "Bupa", "TK Techniker", "Coracle", "Fintiba"
+  policyNumber          String?
+  coverageStart         DateTime
+  coverageEnd           DateTime
+  
+  annualPremium         Float
+  currency              String           @default("AUD")
+  
+  // Financial Maintenance (Blocked Account / GIC)
+  includesBlockedAccount Boolean         @default(false)
+  blockedAccountAmount  Float?
+  
+  status                BookingStatus    @default(INQUIRY)
+  certificateUrl        String?
+
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+
+  @@index([studentProfileId])
+  @@index([country])
+}
+
+// -------------------------------------------------------------
+// LEADS & AUTOMATION ALERTS (WhatsApp & CRM)
+// -------------------------------------------------------------
+
+enum LeadStatus {
+  NEW
+  HOT_PRIORITY
+  CONTACTED
+  COUNSELLING_SCHEDULED
+  ENROLLED
+  ARCHIVED
+}
+
+model Lead {
+  id                    String          @id @default(cuid())
+  studentProfileId      String?
+  studentProfile        StudentProfile? @relation(fields: [studentProfileId], references: [id], onDelete: SetNull)
+
+  fullName              String
+  email                 String
+  phone                 String
+  targetCountry         String
+  fieldOfStudy          String?
+  
+  // AI Eligibility Score Indicators
+  assessmentScore       Int             @default(75) // 0-100
+  visaProbability       Int             @default(80) // 0-100
+  isHotLead             Boolean         @default(false) // Auto-flagged if score >= 80%
+
+  // Staff Assignment
+  assignedCounselorId   String?
+  assignedCounselor     User?           @relation("AssignedCounselor", fields: [assignedCounselorId], references: [id], onDelete: SetNull)
+
+  status                LeadStatus      @default(NEW)
+  source                String          @default("AI Eligibility Checker")
+  counselorNotes        String?         @db.Text
+
+  // Automation Notifications
+  whatsappAlertSent     Boolean         @default(false)
+  whatsappMessageId     String?
+  emailNotificationSent Boolean         @default(false)
+  lastContactedAt       DateTime?
+
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  @@index([email])
+  @@index([phone])
+  @@index([isHotLead])
+  @@index([status])
+}
+
+// -------------------------------------------------------------
+// SYSTEM AUDIT LOGS
+// -------------------------------------------------------------
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action      String
+  entityType  String
+  entityId    String
+  details     Json?
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}

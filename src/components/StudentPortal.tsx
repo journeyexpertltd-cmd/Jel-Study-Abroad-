@@ -9,6 +9,7 @@ import { supabase, isSandboxCredentials } from "../lib/supabase";
 import { SOPGenerator } from "./SOPGenerator";
 import { VisaChecklist } from "./VisaChecklist";
 import { StudentInvoices } from "./StudentInvoices";
+import { StudentApplicationTracker } from "./StudentApplicationTracker";
 
 interface StudentPortalProps {
   setActiveTab: (tab: string) => void;
@@ -50,7 +51,7 @@ export function StudentPortal({ setActiveTab, onPreSelectCountry }: StudentPorta
   // Logged-in session profile state
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [isSandboxMode, setIsSandboxMode] = useState<boolean>(false);
-  const [subTab, setSubTab] = useState<"overview" | "sop" | "visa" | "billing">("overview");
+  const [subTab, setSubTab] = useState<"overview" | "tracker" | "sop" | "visa" | "billing">("tracker");
 
   // Messages log within Student Workspace
   const [workspaceMsg, setWorkspaceMsg] = useState("");
@@ -872,7 +873,8 @@ export function StudentPortal({ setActiveTab, onPreSelectCountry }: StudentPorta
               {/* Internal Sub-navigation Tabs */}
               <div className="flex flex-wrap border-b border-slate-200 pb-px gap-6 select-none">
                 {[
-                  { id: "overview", label: "Overview & Tracking", icon: GraduationCap },
+                  { id: "tracker", label: "Live Application Tracker", icon: Clock },
+                  { id: "overview", label: "Overview & Profile", icon: GraduationCap },
                   { id: "sop", label: "AI SOP Generator", icon: Sparkles },
                   { id: "visa", label: "Visa Checklist", icon: Compass },
                   { id: "billing", label: "Fees & Payments", icon: CreditCard }
@@ -899,6 +901,10 @@ export function StudentPortal({ setActiveTab, onPreSelectCountry }: StudentPorta
               </div>
 
               {/* Dynamic Inner Panel View Rendering */}
+              {subTab === "tracker" && (
+                <StudentApplicationTracker />
+              )}
+
               {subTab === "sop" && (
                 <SOPGenerator currentUser={currentUser} />
               )}

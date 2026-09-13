@@ -86,3 +86,51 @@ export interface CourseRecommendation {
   approxTuition: string;
   reason: string;
 }
+
+export type ApplicationStage = 
+  | "DRAFT"
+  | "DOCS_VERIFIED"
+  | "APPLICATION_SUBMITTED"
+  | "OFFER_ISSUED"
+  | "INSURANCE_PAID"
+  | "VISA_LODGED"
+  | "APPROVED";
+
+export interface ApplicationTask {
+  id: string;
+  title: string;
+  description: string;
+  status: "COMPLETED" | "PENDING" | "IN_REVIEW";
+  dueDate?: string;
+  actionUrl?: string;
+}
+
+export interface StudentApplicationStatus {
+  id: string;
+  studentId: string;
+  studentName: string;
+  studentEmail: string;
+  studentPhone: string;
+  targetCountry: string;
+  targetUniversity: string;
+  targetCourse: string;
+  currentStage: ApplicationStage;
+  completedStages: ApplicationStage[];
+  stageProgressPercent: number;
+  estimatedTimeline: {
+    stage: ApplicationStage;
+    targetDate: string;
+    completedDate?: string;
+    status: "done" | "current" | "upcoming";
+  }[];
+  pendingTasks: ApplicationTask[];
+  completedTasks: ApplicationTask[];
+  assignedCounselor: {
+    name: string;
+    email: string;
+    phone: string;
+    avatarUrl?: string;
+  };
+  lastUpdated: string;
+  timelineNotes?: string;
+}
