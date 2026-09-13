@@ -25,11 +25,27 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
     .slice(-8).map((m: any) => ({ role: m.sender === 'user' ? 'user' : 'model', parts: [{ text: m.text.slice(0, 4000) }] }));
   if (!turns.length || turns[turns.length - 1].role !== 'user') return json({ error: 'User message required' }, 400);
   const last = turns[turns.length - 1].parts[0].text;
-  const bn = body.language === 'bn' || (body.language !== 'en' && /[\u0980-\u09FF]/.test(last));
+  const bn = body.language === 'bn' || (body.language !== 'en' && (/[\u0980-\u09FF]/.test(last) || /\b(ami|apni|chai|jabo|jete|koto|kivabe|hobe|korbo|lagbe|apnader|kothay|banglay)\b/i.test(last)));
   const fallback = () => json({
     reply: bn ? 'লাইভ AI এখন উপলব্ধ নেই। স্টাডি অ্যাব্রোড বা ভ্রমণের বিষয়ে যাচাইকৃত পরামর্শের জন্য JEL-এর সঙ্গে +8801926400400 নম্বরে যোগাযোগ করুন। আপনি কোন দেশে যেতে চান?' : 'Live AI is currently unavailable. For verified study abroad or travel guidance, contact JEL at +8801926400400. Which country are you considering?',
     mode: 'fallback', language: bn ? 'bn' : 'en',
   });
+  // Both company sites use the existing company-owned Angela gateway by default.
+  // Its Gemini credential stays in the Worker and is never sent to this browser.
+  if (!env.GEMINI_MODEL) {
+    try {
+      const response = await fetch('https://journeyexpertltd.com/api/ai/voice-agent', {
+        method: 'POST', signal: AbortSignal.timeout(17000),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: last, language: bn ? 'bn' : 'en', history: turns.slice(0, -1).map((turn: any) => ({ role: turn.role === 'model' ? 'assistant' : 'user', content: turn.parts[0].text })) }),
+      });
+      if (!response.ok) return fallback();
+      const data: any = await response.json();
+      if (typeof data.reply !== 'string' || !data.reply.trim() || (bn && !/[\u0980-\u09FF]/.test(data.reply))) return fallback();
+      const degraded = data.mode === 'fallback' || data.usedSources?.includes('JEL safe fallback');
+      return json({ reply: data.reply.slice(0, 1800), mode: degraded ? 'fallback' : 'ai', language: bn ? 'bn' : 'en' });
+    } catch { return fallback(); }
+  }
   if (!env.GEMINI_API_KEY) return fallback();
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 15000);
@@ -48,3 +64,4 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
     return reply ? json({ reply, mode: 'ai', language: bn ? 'bn' : 'en' }) : fallback();
   } catch { return fallback(); } finally { clearTimeout(timer); }
 }
+
