@@ -6,6 +6,7 @@ import {
   AlertCircle, Radio, Plane, Compass, Award, Building2, MapPin
 } from "lucide-react";
 import { ChatMessage } from "../types";
+import { fetchAngelaSpeech, voiceErrorMessage } from "../lib/angelaAudio";
 
 const jelBrandIcon = new URL("../assets/images/jel-study-abroad-official.webp", import.meta.url).href;
 
@@ -54,7 +55,7 @@ export function AIChatAssistant() {
 
   const [isVoiceEnabled, setIsVoiceEnabled] = useState<boolean>(() => {
     if (typeof window !== "undefined") {
-      return localStorage.getItem("jel_angela_voice_muted") !== "true";
+      try { return localStorage.getItem("jel_angela_voice_muted") !== "true"; } catch { return true; }
     }
     return true;
   });
@@ -78,6 +79,28 @@ export function AIChatAssistant() {
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const currentUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
+  const speechAttemptRef = useRef(0);
+  const serverSpeechRef = useRef<AbortController | null>(null);
+  const serverAudioRef = useRef<HTMLAudioElement | null>(null);
+  const stopServerAudio = () => {
+    serverSpeechRef.current?.abort();
+    serverSpeechRef.current = null;
+    const audio = serverAudioRef.current;
+    if (audio) { audio.onended = null; audio.onerror = null; audio.pause(); URL.revokeObjectURL(audio.src); }
+    serverAudioRef.current = null;
+  };
+  const requestRef = useRef<AbortController | null>(null);
+  const enabledRef = useRef(isVoiceEnabled);
+  enabledRef.current = isVoiceEnabled;
+  const cancelPending = () => {
+    requestRef.current?.abort();
+    requestRef.current = null;
+    if (recognitionRef.current) {
+      recognitionRef.current.onend = null;
+      recognitionRef.current.abort();
+    }
+  };
+
   // Auto-scroll on conversation update
   useEffect(() => {
     if (bottomRef.current) {
@@ -98,8 +121,10 @@ export function AIChatAssistant() {
   // Voice toggle handler
   const toggleVoiceOutput = () => {
     const nextState = !isVoiceEnabled;
+    enabledRef.current = nextState;
+    if (!nextState) { speechAttemptRef.current += 1; stopServerAudio(); }
     setIsVoiceEnabled(nextState);
-    localStorage.setItem("jel_angela_voice_muted", nextState ? "false" : "true");
+    try { localStorage.setItem("jel_angela_voice_muted", nextState ? "false" : "true"); } catch { /* Storage may be disabled. */ }
     if (!nextState && typeof window !== "undefined" && window.speechSynthesis) {
       window.speechSynthesis.cancel();
       if (voiceState === "SPEAKING") {
@@ -111,15 +136,33 @@ export function AIChatAssistant() {
 
   // Conversational interruption / Barge-in
   const stopSpeaking = useCallback(() => {
+    speechAttemptRef.current += 1;
+    stopServerAudio();
     if (typeof window !== "undefined" && window.speechSynthesis) {
       window.speechSynthesis.cancel();
+    }
+    if (currentUtteranceRef.current) {
+      currentUtteranceRef.current.onend = null;
+      currentUtteranceRef.current.onerror = null;
+      currentUtteranceRef.current.onstart = null;
+      currentUtteranceRef.current = null;
     }
     setActiveSpeakingId(null);
     setVoiceState((prev) => (prev === "SPEAKING" ? "READY" : prev));
   }, []);
 
+  const changeLanguage = (mode: "auto" | "en" | "bn") => {
+    cancelPending();
+    stopSpeaking();
+    setLanguageMode(mode);
+    setVoiceState("READY");
+    setErrorMessage(null);
+  };
+
   // Text-to-speech engine with natural voice matching
-  const speakText = useCallback((text: string, messageId?: string) => {
+  const speakText = useCallback(async (text: string, messageId?: string) => {
+    const attempt = ++speechAttemptRef.current;
+    stopServerAudio();
     if (typeof window === "undefined" || !window.speechSynthesis) {
       setErrorMessage("Voice output is not supported in this browser. You can still chat by text.");
       setVoiceState("ERROR");
@@ -129,7 +172,7 @@ export function AIChatAssistant() {
     // Barge-in: interrupt previous speech
     window.speechSynthesis.cancel();
 
-    if (!isVoiceEnabled) {
+    if (!enabledRef.current) {
       setVoiceState("READY");
       return;
     }
@@ -157,11 +200,76 @@ export function AIChatAssistant() {
       utterance.pitch = 1.0;
 
       // Select high quality voices
-      const voices = window.speechSynthesis.getVoices();
+      let voices = window.speechSynthesis.getVoices();
+      const matchesBangla = (v: SpeechSynthesisVoice) => /^bn(?:[-_]|$)/i.test(v.lang) || /bangla|bengali/i.test(v.name);
+      if (!voices.length || (hasBangla && !voices.some(matchesBangla))) {
+        // Browsers may expose their voices after the first getVoices() call.
+        await new Promise<void>((resolve) => {
+          const synthesis = window.speechSynthesis;
+          const finish = () => {
+            clearTimeout(timeout);
+            synthesis.removeEventListener("voiceschanged", onVoices);
+            resolve();
+          };
+          const onVoices = () => {
+            const available = synthesis.getVoices();
+            if (hasBangla ? available.some(matchesBangla) : available.length > 0) finish();
+          };
+          const timeout = setTimeout(finish, 1500);
+          synthesis.addEventListener("voiceschanged", onVoices);
+          onVoices();
+        });
+        voices = window.speechSynthesis.getVoices();
+      }
+      if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
+      if (hasBangla && !voices.some(matchesBangla)) {
+        currentUtteranceRef.current = null;
+        const controller = new AbortController();
+        serverSpeechRef.current = controller;
+        const timeout = setTimeout(() => controller.abort(), 30000);
+        setVoiceState("THINKING");
+        setErrorMessage(null);
+        try {
+          const blob = await fetchAngelaSpeech(cleanSpeech, controller.signal);
+          if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
+          const audio = new Audio(URL.createObjectURL(blob));
+          serverAudioRef.current = audio;
+          audio.onended = () => {
+            if (serverAudioRef.current !== audio) return;
+            stopServerAudio(); setVoiceState("READY"); setActiveSpeakingId(null);
+          };
+          audio.onerror = () => {
+            if (serverAudioRef.current !== audio) return;
+            stopServerAudio(); setVoiceState("ERROR"); setActiveSpeakingId(null);
+            setErrorMessage("কণ্ঠ চালানো যায়নি। Listen চেপে আবার চেষ্টা করুন।");
+          };
+          await audio.play();
+          if (attempt !== speechAttemptRef.current) return;
+          setVoiceState("SPEAKING");
+          if (messageId) setActiveSpeakingId(messageId);
+        } catch (error) {
+          if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
+          stopServerAudio(); setActiveSpeakingId(null);
+          setVoiceState("ERROR"); setErrorMessage(voiceErrorMessage(error));
+        } finally {
+          clearTimeout(timeout);
+          if (serverSpeechRef.current === controller) serverSpeechRef.current = null;
+        }
+        return;
+      }
       if (voices.length > 0) {
         if (hasBangla) {
-          const banglaVoice = voices.find(v => v.lang.startsWith("bn") || v.name.toLowerCase().includes("bangla") || v.name.toLowerCase().includes("bengali"));
-          if (banglaVoice) utterance.voice = banglaVoice;
+          const banglaVoice = voices.find(matchesBangla);
+          if (banglaVoice) {
+            utterance.voice = banglaVoice;
+            utterance.lang = banglaVoice.lang;
+          } else {
+            currentUtteranceRef.current = null;
+            setActiveSpeakingId(null);
+            setVoiceState("ERROR");
+            setErrorMessage("এই ব্রাউজারে বাংলা কণ্ঠ পাওয়া যায়নি। বাংলা লেখা পড়তে পারবেন; ইংরেজি শুনতে EN নির্বাচন করে নতুন প্রশ্ন করুন।");
+            return;
+          }
         } else {
           const preferredVoice = voices.find(v => 
             (v.lang.startsWith("en") && (v.name.toLowerCase().includes("female") || v.name.toLowerCase().includes("zira") || v.name.toLowerCase().includes("samantha") || v.name.toLowerCase().includes("google uk english female") || v.name.toLowerCase().includes("natural")))
@@ -171,17 +279,20 @@ export function AIChatAssistant() {
       }
 
       utterance.onstart = () => {
+        if (currentUtteranceRef.current !== utterance) return;
         setVoiceState("SPEAKING");
         setErrorMessage(null);
         if (messageId) setActiveSpeakingId(messageId);
       };
 
       utterance.onend = () => {
+        if (currentUtteranceRef.current !== utterance) return;
         setVoiceState("READY");
         setActiveSpeakingId(null);
       };
 
       utterance.onerror = (e) => {
+        if (currentUtteranceRef.current !== utterance) return;
         // Only set error if not cancelled deliberately (interruption)
         if (e.error !== "canceled" && e.error !== "interrupted") {
           console.warn("Speech synthesis notice:", e.error);
@@ -204,6 +315,9 @@ export function AIChatAssistant() {
   // Clean speech synthesis on unmount
   useEffect(() => {
     return () => {
+      speechAttemptRef.current += 1;
+      stopServerAudio();
+      cancelPending();
       if (typeof window !== "undefined" && window.speechSynthesis) {
         window.speechSynthesis.cancel();
       }
@@ -214,6 +328,10 @@ export function AIChatAssistant() {
   const handleSendMessage = async (textToSend: string, triggeredByVoice: boolean = false) => {
     const trimmed = textToSend.trim();
     if (!trimmed) return;
+    cancelPending();
+    const controller = new AbortController();
+    requestRef.current = controller;
+    const timer = setTimeout(() => controller.abort(), 20000);
 
     // Barge-in: interrupt any current speech synthesis immediately
     stopSpeaking();
@@ -234,6 +352,7 @@ export function AIChatAssistant() {
     try {
       const historyContext = [...messages, userMsg].slice(-8);
       const response = await fetch("/api/gemini/chat", {
+        signal: controller.signal,
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
@@ -247,6 +366,7 @@ export function AIChatAssistant() {
       }
 
       const data = await response.json();
+      if (requestRef.current !== controller) return;
       const replyText = data.reply || "I am processing your inquiry. Please reach out to our JEL Counselors at +8801926400400 for immediate assistance.";
       
       const assistantMsgId = `m-${Date.now() + 1}`;
@@ -261,13 +381,12 @@ export function AIChatAssistant() {
 
       // Speak response if voice enabled
       if (isVoiceEnabled || triggeredByVoice) {
-        setTimeout(() => {
-          speakText(replyText, assistantMsgId);
-        }, 120);
+        speakText(replyText, assistantMsgId);
       } else {
         setVoiceState("READY");
       }
     } catch (error) {
+      if (requestRef.current !== controller) return;
       console.error("Angela Chat Error:", error);
       // Phase 12: Never display technical stack traces to customers
       const friendlyError = "I'm temporarily unable to respond. Please try again or contact JEL directly.";
@@ -281,11 +400,15 @@ export function AIChatAssistant() {
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
       };
       setMessages(prev => [...prev, errorMsg]);
+    } finally {
+      clearTimeout(timer);
+      if (requestRef.current === controller) requestRef.current = null;
     }
   };
 
   // Start Voice Listening (Speech-to-Text) with full Interruption logic
   const startListening = () => {
+    cancelPending();
     // Interruption: halt Angela's voice immediately when user taps mic
     stopSpeaking();
     setErrorMessage(null);
@@ -327,9 +450,11 @@ export function AIChatAssistant() {
       };
 
       let finalTranscript = "";
+      let latestInterim = "";
 
       recognition.onresult = (event: SpeechRecognitionEventLike) => {
         let interim = "";
+        finalTranscript = "";
         for (let i = 0; i < event.results.length; ++i) {
           const res = event.results[i];
           if (res.isFinal) {
@@ -338,6 +463,7 @@ export function AIChatAssistant() {
             interim += res[0].transcript;
           }
         }
+        latestInterim = interim;
         setInterimTranscript(interim || finalTranscript);
       };
 
@@ -358,7 +484,7 @@ export function AIChatAssistant() {
       };
 
       recognition.onend = () => {
-        const spoken = finalTranscript.trim() || interimTranscript.trim();
+        const spoken = finalTranscript.trim() || latestInterim.trim();
         if (spoken) {
           handleSendMessage(spoken, true);
         } else {
@@ -391,6 +517,7 @@ export function AIChatAssistant() {
   };
 
   const handleResetChat = () => {
+    cancelPending();
     stopSpeaking();
     setErrorMessage(null);
     setVoiceState("READY");
@@ -544,21 +671,21 @@ export function AIChatAssistant() {
               {/* Language Switcher */}
               <div className="flex items-center bg-white/10 rounded-lg p-0.5 text-[10px] sm:text-[11px] font-medium mr-1">
                 <button
-                  onClick={() => setLanguageMode("auto")}
+                  onClick={() => changeLanguage("auto")}
                   className={`px-1 sm:px-1.5 py-0.5 rounded transition-all ${languageMode === "auto" ? "bg-white text-[#0B5D3B] font-bold shadow-xs" : "text-white/80 hover:text-white"}`}
                   title="Auto Detect Language"
                 >
                   Auto
                 </button>
                 <button
-                  onClick={() => setLanguageMode("en")}
+                  onClick={() => changeLanguage("en")}
                   className={`px-1 sm:px-1.5 py-0.5 rounded transition-all ${languageMode === "en" ? "bg-white text-[#0B5D3B] font-bold shadow-xs" : "text-white/80 hover:text-white"}`}
                   title="English Mode"
                 >
                   EN
                 </button>
                 <button
-                  onClick={() => setLanguageMode("bn")}
+                  onClick={() => changeLanguage("bn")}
                   className={`px-1 sm:px-1.5 py-0.5 rounded transition-all ${languageMode === "bn" ? "bg-white text-[#0B5D3B] font-bold shadow-xs" : "text-white/80 hover:text-white"}`}
                   title="বাংলা মোড"
                 >
@@ -597,7 +724,9 @@ export function AIChatAssistant() {
               {/* Close Button */}
               <button 
                 onClick={() => {
+                  cancelPending();
                   stopSpeaking();
+                  setVoiceState("READY");
                   setIsOpen(false);
                 }}
                 className="text-white/80 hover:text-white hover:bg-white/10 p-1.5 rounded-lg transition-colors"
@@ -903,7 +1032,7 @@ export function AIChatAssistant() {
             <div className="flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500 px-1 pt-0.5">
               <span className="flex items-center gap-1 truncate max-w-[240px] sm:max-w-none">
                 <ShieldCheck className="h-3 w-3 text-emerald-500 shrink-0" />
-                <span className="truncate">Official JEL AI. Visa decisions subject to embassy authority.</span>
+                <span className="truncate">AI voice. বাংলা audio তৈরিতে উত্তরের লেখা Google-এ পাঠানো হতে পারে।</span>
               </span>
               <span className="font-mono text-[9px] shrink-0">v2.5 Live Voice</span>
             </div>
@@ -916,3 +1045,4 @@ export function AIChatAssistant() {
 
 // Named alias export for authoritative integration
 export { AIChatAssistant as AngelaVoiceAssistant };
+
