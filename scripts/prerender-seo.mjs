@@ -1,5 +1,6 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const site = "https://journeyexpertbd.com";
 const dist = new URL("../dist/", import.meta.url);
@@ -93,13 +94,17 @@ function renderPage(path, meta) {
     inLanguage: "en-BD",
   });
   html = html.replace("</head>", `    <script type="application/ld+json">${webPage}</script>\n  </head>`);
+  const navigation = Object.entries(pages).map(([href, item]) => `<a href="${href}">${escapeHtml(item.title.split(' | ')[0])}</a>`).join(' · ');
+  const content = `<main><h1>${escapeHtml(meta.title.split(' | ')[0])}</h1><p>${escapeHtml(meta.description)}</p><nav aria-label="Study abroad services">${navigation}</nav><p>Contact JEL Study Abroad: <a href="tel:+8801926400400">+880 1926-400400</a> · <a href="mailto:journeyexpertbd@gmail.com">journeyexpertbd@gmail.com</a></p></main>`;
+  html = html.replace(/<div\s+id="root"\s*>\s*<\/div>/i, `<div id="root">${content}</div>`);
   return html;
 }
 
 for (const [path, meta] of Object.entries(pages)) {
   const output = path === "/" ? new URL("index.html", dist) : new URL(`${path.slice(1)}/index.html`, dist);
-  if (path !== "/") await mkdir(dirname(output.pathname), { recursive: true });
+  if (path !== "/") await mkdir(dirname(fileURLToPath(output)), { recursive: true });
   await writeFile(output, renderPage(path, meta));
 }
 
 console.log(`Prerendered ${Object.keys(pages).length} route metadata snapshots.`);
+
