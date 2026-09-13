@@ -9,12 +9,9 @@ dotenv.config();
 
 const app = express();
 
-// Port determination:
-// - The AI Studio reverse proxy exclusively routes external traffic to port 3000.
-// - Cloud Run can specify process.env.PORT if configured; otherwise default strictly to 3000.
-const getPort = (): number => {
-  return process.env.PORT ? Number(process.env.PORT) : 3000;
-};
+// The reverse proxy strictly routes traffic to port 3000.
+// Do NOT read process.env.PORT as the container's Nginx listens on 8080 and forwards to 3000.
+const PORT = 3000;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -967,14 +964,12 @@ Return details strictly as JSON format matching this schema:
   }
 });
 
-app.get(["/health", "/api/health"], (req, res) => {
+app.get(["/health", "/api/health", "/healthz", "/_ah/health"], (req, res) => {
   res.status(200).json({ status: "ok", service: "jel-server", timestamp: new Date().toISOString() });
 });
 
 // Setup Vite Dev server integration / Static files build paths
 async function bootServer() {
-  const PORT = getPort();
-
   const isProduction = process.env.NODE_ENV === "production" || (typeof __filename !== "undefined" && __filename.endsWith(".cjs"));
 
   if (!isProduction) {
