@@ -1,0 +1,187 @@
+name: Patch Angela Web Audio Playback
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Patch reliable Angela playback
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('src/components/AIChatAssistant.tsx')
+          s = p.read_text(encoding='utf-8')
+
+          old = '''  const serverAudioRef = useRef<HTMLAudioElement | null>(null);
+  const stopServerAudio = () => {
+    serverSpeechRef.current?.abort();
+    serverSpeechRef.current = null;
+    const audio = serverAudioRef.current;
+    if (audio) { audio.onended = null; audio.onerror = null; audio.pause(); URL.revokeObjectURL(audio.src); }
+    serverAudioRef.current = null;
+  };'''
+          new = '''  const serverAudioRef = useRef<HTMLAudioElement | null>(null);
+  const serverAudioSourceRef = useRef<AudioBufferSourceNode | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const stopServerAudio = () => {
+    serverSpeechRef.current?.abort();
+    serverSpeechRef.current = null;
+    const source = serverAudioSourceRef.current;
+    if (source) {
+      source.onended = null;
+      try { source.stop(); } catch { /* already stopped */ }
+      try { source.disconnect(); } catch { /* already disconnected */ }
+    }
+    serverAudioSourceRef.current = null;
+    const audio = serverAudioRef.current;
+    if (audio) { audio.onended = null; audio.onerror = null; audio.pause(); URL.revokeObjectURL(audio.src); }
+    serverAudioRef.current = null;
+  };
+  const unlockAudio = async () => {
+    if (typeof window === "undefined" || !window.AudioContext) return null;
+    try {
+      if (!audioContextRef.current) audioContextRef.current = new window.AudioContext();
+      if (audioContextRef.current.state === "suspended") await audioContextRef.current.resume();
+      return audioContextRef.current;
+    } catch {
+      return null;
+    }
+  };'''
+          if old not in s:
+              raise SystemExit('audio refs target not found')
+          s = s.replace(old, new, 1)
+
+          old = '''  const toggleVoiceOutput = () => {
+    const nextState = !isVoiceEnabled;'''
+          new = '''  const toggleVoiceOutput = () => {
+    const nextState = !isVoiceEnabled;
+    if (nextState) void unlockAudio();'''
+          if old not in s:
+              raise SystemExit('toggle target not found')
+          s = s.replace(old, new, 1)
+
+          old = '''  const startListening = () => {
+    cancelPending();'''
+          new = '''  const startListening = () => {
+    void unlockAudio();
+    cancelPending();'''
+          if old not in s:
+              raise SystemExit('listening target not found')
+          s = s.replace(old, new, 1)
+
+          old = '''          onClick={() => {
+            setIsOpen(true);'''
+          new = '''          onClick={() => {
+            void unlockAudio();
+            setIsOpen(true);'''
+          if old not in s:
+              raise SystemExit('open target not found')
+          s = s.replace(old, new, 1)
+
+          old = '''      .replace(/\\n+/g, ". ")
+      .trim();'''
+          new = '''      .replace(/\\n+/g, ". ")
+      .trim()
+      .slice(0, 900);'''
+          if old not in s:
+              raise SystemExit('speech length target not found')
+          s = s.replace(old, new, 1)
+
+          old = '''          const audio = new Audio(URL.createObjectURL(blob));
+          serverAudioRef.current = audio;
+          audio.onended = () => {
+            if (serverAudioRef.current !== audio) return;
+            stopServerAudio(); setVoiceState("READY"); setActiveSpeakingId(null);
+          };
+          audio.onerror = () => {
+            if (serverAudioRef.current !== audio) return;
+            stopServerAudio(); setVoiceState("ERROR"); setActiveSpeakingId(null);
+            setErrorMessage("কণ্ঠ চালানো যায়নি। Listen চেপে আবার চেষ্টা করুন।");
+          };
+          await audio.play();
+          if (attempt !== speechAttemptRef.current) return;
+          setVoiceState("SPEAKING");
+          if (messageId) setActiveSpeakingId(messageId);'''
+          new = '''          // Prefer an unlocked Web Audio context. This remains reliable after the initial user gesture
+          // even when Chrome blocks a later HTMLMediaElement.play() call as autoplay.
+          const context = await unlockAudio();
+          let playedWithWebAudio = false;
+          if (context?.state === "running") {
+            try {
+              const wav = await blob.arrayBuffer();
+              const decoded = await context.decodeAudioData(wav.slice(0));
+              if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
+              const source = context.createBufferSource();
+              source.buffer = decoded;
+              source.connect(context.destination);
+              serverAudioSourceRef.current = source;
+              source.onended = () => {
+                if (serverAudioSourceRef.current !== source) return;
+                serverAudioSourceRef.current = null;
+                try { source.disconnect(); } catch { /* already disconnected */ }
+                setVoiceState("READY");
+                setActiveSpeakingId(null);
+              };
+              source.start(0);
+              playedWithWebAudio = true;
+              setVoiceState("SPEAKING");
+              setErrorMessage(null);
+              if (messageId) setActiveSpeakingId(messageId);
+            } catch (webAudioError) {
+              console.warn("Angela Web Audio playback notice:", webAudioError);
+            }
+          }
+
+          if (!playedWithWebAudio) {
+            const audio = new Audio(URL.createObjectURL(blob));
+            serverAudioRef.current = audio;
+            audio.preload = "auto";
+            audio.volume = 1;
+            audio.onended = () => {
+              if (serverAudioRef.current !== audio) return;
+              stopServerAudio(); setVoiceState("READY"); setActiveSpeakingId(null);
+            };
+            audio.onerror = () => {
+              if (serverAudioRef.current !== audio) return;
+              stopServerAudio(); setVoiceState("ERROR"); setActiveSpeakingId(null);
+              setErrorMessage("কণ্ঠ চালানো যায়নি। Listen চেপে আবার চেষ্টা করুন।");
+            };
+            await audio.play();
+            if (attempt !== speechAttemptRef.current) return;
+            setVoiceState("SPEAKING");
+            setErrorMessage(null);
+            if (messageId) setActiveSpeakingId(messageId);
+          }'''
+          if old not in s:
+              raise SystemExit('server playback target not found')
+          s = s.replace(old, new, 1)
+
+          p.write_text(s, encoding='utf-8')
+          PY
+
+      - name: Validate application
+        run: |
+          npm ci
+          npm run lint
+          npm run check:seo
+          npm run build
+          grep -F 'Prefer an unlocked Web Audio context' src/components/AIChatAssistant.tsx
+
+      - name: Commit playback patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/components/AIChatAssistant.tsx
+          git commit -m "fix: make Angela voice playback resilient in Chrome"
+          git push origin HEAD:main
