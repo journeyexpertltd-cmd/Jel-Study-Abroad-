@@ -30,11 +30,11 @@ test('Speech endpoint rejects bad requests and missing credentials without calli
   }
 });
 
-test('Speech produces a playable PCM WAV and maps full quota exhaustion safely', async () => {
+test('Speech produces a playable PCM WAV using the low-latency primary model and maps full quota exhaustion safely', async () => {
   const original = globalThis.fetch;
   try {
     globalThis.fetch = async (url, options) => {
-      assert.match(url, /gemini-3\.1-flash-tts-preview:generateContent$/);
+      assert.match(url, /gemini-2\.5-flash-preview-tts:generateContent$/);
       assert.equal(options.headers['x-goog-api-key'], 'test-key');
       const body = JSON.parse(options.body);
       assert.deepEqual(body.generationConfig.responseModalities, ['AUDIO']);
@@ -43,6 +43,7 @@ test('Speech produces a playable PCM WAV and maps full quota exhaustion safely',
 
     const response = await onRequest({ request: request('আমি অ্যাঞ্জেলা'), env: { GEMINI_API_KEY: 'test-key' } });
     assert.equal(response.headers.get('content-type'), 'audio/wav');
+    assert.equal(response.headers.get('x-angela-tts-model'), 'gemini-2.5-flash-preview-tts');
     const buffer = await response.arrayBuffer();
     assert.equal(new TextDecoder().decode(buffer.slice(0, 4)), 'RIFF');
     const view = new DataView(buffer);
@@ -64,16 +65,16 @@ test('Speech produces a playable PCM WAV and maps full quota exhaustion safely',
   }
 });
 
-test('Speech falls back from Gemini 3.1 TTS to Gemini 2.5 TTS after quota failure', async () => {
+test('Speech falls back from Gemini 2.5 TTS to Gemini 3.1 TTS after quota failure', async () => {
   const original = globalThis.fetch;
   const urls = [];
   try {
     globalThis.fetch = async (url) => {
       urls.push(String(url));
-      if (String(url).includes('gemini-3.1-flash-tts-preview')) {
+      if (String(url).includes('gemini-2.5-flash-preview-tts')) {
         return new Response('quota', { status: 429 });
       }
-      if (String(url).includes('gemini-2.5-flash-preview-tts')) {
+      if (String(url).includes('gemini-3.1-flash-tts-preview')) {
         return pcmAudio();
       }
       throw new Error('unexpected model');
@@ -82,9 +83,10 @@ test('Speech falls back from Gemini 3.1 TTS to Gemini 2.5 TTS after quota failur
     const response = await onRequest({ request: request('বাংলায় বলুন'), env: { GEMINI_API_KEY: 'test-key' } });
     assert.equal(response.status, 200);
     assert.equal(response.headers.get('content-type'), 'audio/wav');
+    assert.equal(response.headers.get('x-angela-tts-model'), 'gemini-3.1-flash-tts-preview');
     assert.equal(urls.length, 2);
-    assert.match(urls[0], /gemini-3\.1-flash-tts-preview:generateContent$/);
-    assert.match(urls[1], /gemini-2\.5-flash-preview-tts:generateContent$/);
+    assert.match(urls[0], /gemini-2\.5-flash-preview-tts:generateContent$/);
+    assert.match(urls[1], /gemini-3\.1-flash-tts-preview:generateContent$/);
   } finally {
     globalThis.fetch = original;
   }
