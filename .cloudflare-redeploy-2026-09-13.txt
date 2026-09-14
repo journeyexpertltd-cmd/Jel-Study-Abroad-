@@ -1,4 +1,4 @@
 Cloudflare Pages redeploy trigger.
-Purpose: load the latest Production/Preview environment variables for the JEL Study Abroad deployment.
-No application logic changed.
-Triggered: 2026-09-13.
+Purpose: deploy the latest Angela routing and build fixes to Production.
+No user data or secrets changed.
+Triggered: 2026-09-14.
