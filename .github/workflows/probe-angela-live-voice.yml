@@ -75,8 +75,18 @@ jobs:
             }));
           });
 
-          ws.addEventListener('message', (event) => {
-            const data = typeof event.data === 'string' ? event.data : Buffer.from(event.data).toString('utf8');
+          ws.addEventListener('message', async (event) => {
+            let data;
+            if (typeof event.data === 'string') {
+              data = event.data;
+            } else if (event.data instanceof Blob) {
+              data = await event.data.text();
+            } else if (event.data instanceof ArrayBuffer) {
+              data = Buffer.from(event.data).toString('utf8');
+            } else {
+              data = Buffer.from(event.data).toString('utf8');
+            }
+
             let message;
             try { message = JSON.parse(data); } catch { return; }
             if (message.setupComplete && !sent) {
