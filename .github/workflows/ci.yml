@@ -41,6 +41,9 @@ jobs:
       - name: Run SEO and domain safety checks
         run: npm run check:seo
 
+      - name: Verify protected production contract
+        run: node scripts/verify-production-contract.mjs
+
       - name: Build production artifacts
         run: npm run build
 
@@ -48,6 +51,12 @@ jobs:
         run: |
           test -f dist/index.html
           test -f dist/server.cjs
+          test -f dist/about/index.html
+          test -f dist/ects-calculator/index.html
+          grep -q 'https://journeyexpertbd.com/about"' dist/about/index.html
+          grep -q 'https://journeyexpertbd.com/ects-calculator"' dist/ects-calculator/index.html
+          ! grep -q 'https://journeyexpertbd.com/about/' dist/about/index.html
+          ! grep -q 'https://journeyexpertbd.com/ects-calculator/' dist/ects-calculator/index.html
           ! grep -RInE 'journeyexpertltd\.com|journeyexpertlimited\.com' dist index.html public
 
       - name: Publish CI summary
@@ -61,5 +70,7 @@ jobs:
             echo "- Ref: \`${{ github.ref_name }}\`"
             echo "- Build command: \`npm run build\`"
             echo "- Production target: \`https://journeyexpertbd.com\`"
+            echo "- Angela voice contract: protected by automated regression checks."
+            echo "- Canonical URL contract: no trailing slash except the homepage."
             echo "- Cloudflare deployment: triggered by the connected Pages GitHub integration after a successful push to \`main\`."
           } >> "$GITHUB_STEP_SUMMARY"
