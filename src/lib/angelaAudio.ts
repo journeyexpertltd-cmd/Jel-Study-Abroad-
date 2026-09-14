@@ -3,26 +3,6 @@ const MAX_CACHE_ENTRIES = 12;
 const LIVE_FALLBACK_MODEL = 'gemini-2.5-flash-native-audio-preview-12-2025';
 const speechCache = new Map<string, Blob>();
 
-// Angela uses the verified server voice for Bangla so the result is consistent
-// across Chrome/Windows installations. Local Bengali OS voices can be absent,
-// silent, or use a different speaker profile. English browser voices remain untouched.
-if (typeof window !== 'undefined' && window.speechSynthesis) {
-  const w = window as typeof window & { __jelAngelaBanglaServerVoice?: boolean };
-  if (!w.__jelAngelaBanglaServerVoice) {
-    try {
-      const synth = window.speechSynthesis;
-      const originalGetVoices = synth.getVoices.bind(synth);
-      synth.getVoices = () => originalGetVoices().filter((voice) =>
-        !/^bn(?:[-_]|$)/i.test(voice.lang) && !/bangla|bengali/i.test(voice.name)
-      );
-      w.__jelAngelaBanglaServerVoice = true;
-    } catch {
-      // If the browser prevents method replacement, Angela's existing server
-      // fallback remains available without affecting text chat.
-    }
-  }
-}
-
 function normalizeSpeechText(text: string): string {
   return text.replace(/\s+/g, ' ').trim().slice(0, MAX_SPEECH_CHARS);
 }
@@ -42,6 +22,13 @@ function base64ToBytes(value: string): Uint8Array {
   const output = new Uint8Array(raw.length);
   for (let i = 0; i < raw.length; i += 1) output[i] = raw.charCodeAt(i);
   return output;
+}
+
+async function webSocketDataToText(data: unknown): Promise<string> {
+  if (typeof data === 'string') return data;
+  if (data instanceof Blob) return await data.text();
+  if (data instanceof ArrayBuffer) return new TextDecoder().decode(data);
+  return String(data);
 }
 
 function pcmChunksToWav(chunks: Uint8Array[]): Blob {
@@ -98,6 +85,7 @@ async function fetchAngelaLiveSpeech(text: string, signal: AbortSignal): Promise
     let sentTranscript = false;
     const wsUrl = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContentConstrained?access_token=${encodeURIComponent(token)}`;
     const socket = new WebSocket(wsUrl);
+    socket.binaryType = 'arraybuffer';
 
     const cleanup = () => {
       clearTimeout(timer);
@@ -150,9 +138,9 @@ async function fetchAngelaLiveSpeech(text: string, signal: AbortSignal): Promise
       }));
     };
 
-    socket.onmessage = (event) => {
+    socket.onmessage = async (event) => {
       try {
-        const message = JSON.parse(String(event.data));
+        const message = JSON.parse(await webSocketDataToText(event.data));
         if (message.setupComplete && !sentTranscript) {
           sentTranscript = true;
           socket.send(JSON.stringify({
@@ -205,7 +193,13 @@ export async function fetchAngelaSpeech(text: string, signal: AbortSignal): Prom
   if (!response.ok) {
     const data = await response.json().catch(() => ({}));
     const code = data.error || 'voice_provider_unavailable';
-    if (response.status === 429 || code === 'voice_quota_exceeded') {
+    const shouldTryLive = response.status === 429
+      || response.status >= 500
+      || code === 'voice_quota_exceeded'
+      || code === 'voice_provider_unavailable'
+      || code === 'voice_timeout';
+
+    if (shouldTryLive) {
       const liveBlob = await fetchAngelaLiveSpeech(speechText, signal);
       rememberSpeech(speechText, liveBlob);
       return liveBlob;
@@ -213,7 +207,11 @@ export async function fetchAngelaSpeech(text: string, signal: AbortSignal): Prom
     throw new Error(code);
   }
 
-  if (!response.headers.get('content-type')?.includes('audio/wav')) throw new Error('invalid_audio');
+  if (!response.headers.get('content-type')?.includes('audio/wav')) {
+    const liveBlob = await fetchAngelaLiveSpeech(speechText, signal);
+    rememberSpeech(speechText, liveBlob);
+    return liveBlob;
+  }
 
   const blob = await response.blob();
   rememberSpeech(speechText, blob);
