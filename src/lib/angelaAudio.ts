@@ -2,6 +2,26 @@ const MAX_SPEECH_CHARS = 700;
 const MAX_CACHE_ENTRIES = 12;
 const speechCache = new Map<string, Blob>();
 
+// Angela uses the verified server voice for Bangla so the result is consistent
+// across Chrome/Windows installations. Local Bengali OS voices can be absent,
+// silent, or use a different speaker profile. English browser voices remain untouched.
+if (typeof window !== 'undefined' && window.speechSynthesis) {
+  const w = window as typeof window & { __jelAngelaBanglaServerVoice?: boolean };
+  if (!w.__jelAngelaBanglaServerVoice) {
+    try {
+      const synth = window.speechSynthesis;
+      const originalGetVoices = synth.getVoices.bind(synth);
+      synth.getVoices = () => originalGetVoices().filter((voice) =>
+        !/^bn(?:[-_]|$)/i.test(voice.lang) && !/bangla|bengali/i.test(voice.name)
+      );
+      w.__jelAngelaBanglaServerVoice = true;
+    } catch {
+      // If the browser prevents method replacement, Angela's existing server
+      // fallback remains available without affecting text chat.
+    }
+  }
+}
+
 function normalizeSpeechText(text: string): string {
   return text.replace(/\s+/g, ' ').trim().slice(0, MAX_SPEECH_CHARS);
 }
@@ -40,8 +60,8 @@ export async function fetchAngelaSpeech(text: string, signal: AbortSignal): Prom
 
 export function voiceErrorMessage(error: unknown): string {
   const code = error instanceof Error ? error.message : '';
-  if (code === 'voice_not_configured') return 'বাংলা কণ্ঠসেবা এখনও চালু হয়নি। আপাতত লেখা পড়ে নিতে পারেন।';
-  if (code === 'voice_quota_exceeded') return 'কণ্ঠসেবা সাময়িকভাবে ব্যস্ত। Listen আবার চাপলে cached voice থাকলে সঙ্গে সঙ্গে শোনা যাবে।';
+  if (code === 'voice_not_configured') return 'Angela-র বাংলা female voice এখনও চালু হয়নি। আপাতত লেখা পড়ে নিতে পারেন।';
+  if (code === 'voice_quota_exceeded') return 'Angela-র কণ্ঠসেবা সাময়িকভাবে ব্যস্ত। Listen আবার চাপলে cached voice থাকলে সঙ্গে সঙ্গে শোনা যাবে।';
   if (error instanceof Error && error.name === 'NotAllowedError') return 'শব্দ চালাতে উত্তরের Listen বোতামটি চাপুন।';
-  return 'এই মুহূর্তে বাংলা কণ্ঠ চালানো যাচ্ছে না। Listen চেপে আবার চেষ্টা করুন।';
+  return 'এই মুহূর্তে Angela-র বাংলা female voice চালানো যাচ্ছে না। Listen চেপে আবার চেষ্টা করুন।';
 }
