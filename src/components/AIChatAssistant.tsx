@@ -250,7 +250,42 @@ export function AIChatAssistant() {
         } catch (error) {
           if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
           stopServerAudio(); setActiveSpeakingId(null);
-          setVoiceState("ERROR"); setErrorMessage(voiceErrorMessage(error));
+
+          // Keep Angela audible when Gemini TTS is quota-limited or temporarily unavailable.
+          const browserVoice = voices.find(matchesBangla);
+          if (browserVoice) {
+            utterance.voice = browserVoice;
+            utterance.lang = browserVoice.lang;
+          } else {
+            // Let the browser choose its best Bengali-capable voice if no explicit match is exposed.
+            utterance.lang = "bn-BD";
+          }
+          currentUtteranceRef.current = utterance;
+          utterance.onstart = () => {
+            if (currentUtteranceRef.current !== utterance) return;
+            setVoiceState("SPEAKING");
+            setErrorMessage(null);
+            if (messageId) setActiveSpeakingId(messageId);
+          };
+          utterance.onend = () => {
+            if (currentUtteranceRef.current !== utterance) return;
+            currentUtteranceRef.current = null;
+            setVoiceState("READY");
+            setActiveSpeakingId(null);
+          };
+          utterance.onerror = (event) => {
+            if (currentUtteranceRef.current !== utterance) return;
+            currentUtteranceRef.current = null;
+            setActiveSpeakingId(null);
+            if (event.error === "canceled" || event.error === "interrupted") {
+              setVoiceState("READY");
+              return;
+            }
+            setVoiceState("ERROR");
+            setErrorMessage(voiceErrorMessage(error));
+          };
+          window.speechSynthesis.speak(utterance);
+          return;
         } finally {
           clearTimeout(timeout);
           if (serverSpeechRef.current === controller) serverSpeechRef.current = null;
