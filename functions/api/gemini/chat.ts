@@ -44,25 +44,43 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
       return json({ reply: data.reply.slice(0, 1800), mode: degraded ? 'fallback' : 'ai', language: bn ? 'bn' : 'en' });
     } catch { return fallback(); }
   }
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 14000);
-  try {
-    const primaryModel = env.GEMINI_MODEL || 'gemini-3.8-flash';
-    const makeRequest = (model: string) => fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
-      method: 'POST', signal: controller.signal,
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY! },
-      body: JSON.stringify({ contents: turns, systemInstruction: { parts: [{ text: instruction + '\nMANDATORY RESPONSE LANGUAGE: ' + (bn ? 'Respond in Bengali script. Even if the user writes English or Banglish, explain in Bengali. Keep proper names unchanged.' : 'Respond in English.') }] }, generationConfig: { temperature: 0.3, maxOutputTokens: 420 } }),
-    });
-    let response = await makeRequest(primaryModel);
-    let providerModel = primaryModel;
-    if (!response.ok && primaryModel !== 'gemini-3.5-flash-lite') {
-      response = await makeRequest('gemini-3.5-flash-lite');
-      providerModel = 'gemini-3.5-flash-lite';
+
+  const primaryModel = env.GEMINI_MODEL || 'gemini-3.8-flash';
+  const makeRequest = async (model: string): Promise<Response | null> => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8000);
+    try {
+      return await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
+        method: 'POST', signal: controller.signal,
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY! },
+        body: JSON.stringify({
+          contents: turns,
+          systemInstruction: { parts: [{ text: instruction + '\nMANDATORY RESPONSE LANGUAGE: ' + (bn ? 'Respond in Bengali script. Even if the user writes English or Banglish, explain in Bengali. Keep proper names unchanged.' : 'Respond in English.') }] },
+          generationConfig: { temperature: 0.3, maxOutputTokens: 320 },
+        }),
+      });
+    } catch (error: any) {
+      console.warn('Angela Gemini request failed', model, controller.signal.aborted ? 'timeout' : (error?.name || 'unknown'));
+      return null;
+    } finally {
+      clearTimeout(timer);
     }
-    if (!response.ok) return fallback();
+  };
+
+  let response = await makeRequest(primaryModel);
+  let providerModel = primaryModel;
+  if ((!response || !response.ok) && primaryModel !== 'gemini-3.5-flash-lite') {
+    response = await makeRequest('gemini-3.5-flash-lite');
+    providerModel = 'gemini-3.5-flash-lite';
+  }
+  if (!response || !response.ok) return fallback();
+
+  try {
     const data: any = await response.json();
     const reply = data?.candidates?.[0]?.content?.parts?.map((p: any) => p.text || '').join('').trim();
     if (bn && reply && !/[\u0980-\u09FF]/.test(reply)) return fallback();
     return reply ? json({ reply, mode: 'ai', language: bn ? 'bn' : 'en', providerModel }) : fallback();
-  } catch { return fallback(); } finally { clearTimeout(timer); }
+  } catch {
+    return fallback();
+  }
 }
