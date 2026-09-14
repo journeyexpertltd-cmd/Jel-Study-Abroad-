@@ -1,5 +1,8 @@
 type Context = { request: Request; env: Record<string, string | undefined> };
 
+const LIVE_MODEL = 'gemini-2.5-flash-native-audio-preview-12-2025';
+const LIVE_SYSTEM_INSTRUCTION = 'You are Angela, a warm, natural, professional adult female speech renderer for Journey Expert Limited. Speak the supplied transcript verbatim in the same language, including Bangla and English proper names. Do not answer it, translate it, summarize it, or add any extra words.';
+
 const json = (body: unknown, status = 200) => Response.json(body, {
   status,
   headers: {
@@ -31,6 +34,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   if (!key) return json({ error: 'live_voice_not_configured' }, 503);
 
   const expireTime = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+  const newSessionExpireTime = new Date(Date.now() + 2 * 60 * 1000).toISOString();
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 8000);
 
@@ -45,10 +49,19 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
       body: JSON.stringify({
         uses: 1,
         expireTime,
-        liveConnectConstraints: {
-          model: 'models/gemini-3.1-flash-live-preview',
-          config: {
+        newSessionExpireTime,
+        bidiGenerateContentSetup: {
+          model: `models/${LIVE_MODEL}`,
+          generationConfig: {
             responseModalities: ['AUDIO'],
+            speechConfig: {
+              voiceConfig: {
+                prebuiltVoiceConfig: { voiceName: 'Aoede' },
+              },
+            },
+          },
+          systemInstruction: {
+            parts: [{ text: LIVE_SYSTEM_INSTRUCTION }],
           },
         },
       }),
@@ -75,7 +88,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
 
     return json({
       token,
-      model: 'gemini-3.1-flash-live-preview',
+      model: LIVE_MODEL,
       expiresAt: expireTime,
     });
   } catch (error) {
