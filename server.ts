@@ -774,30 +774,6 @@ const handleAngelaChat = async (req: express.Request, res: express.Response) => 
       }
     }
 
-    try {
-      const gatewayResponse = await fetch("https://journeyexpertltd.com/api/ai/voice-agent", {
-        method: "POST",
-        signal: AbortSignal.timeout(11000),
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: lastUserMsg,
-          language: isBangla ? "bn" : "en",
-          history: normalizedMessages.slice(-6).map((m: any) => ({ role: m.sender === "user" ? "user" : "assistant", content: String(m.text || "").slice(0, 2500) }))
-        })
-      });
-      if (gatewayResponse.ok) {
-        const gatewayData: any = await gatewayResponse.json();
-        const gatewayReply = typeof gatewayData?.reply === "string" ? gatewayData.reply.trim() : "";
-        const degraded = gatewayData?.mode === "fallback" || gatewayData?.usedSources?.includes?.("JEL safe fallback");
-        if (gatewayReply && !degraded) {
-          res.json({ reply: gatewayReply, mode: "ai", provider: "jel-gateway", language: isBangla ? "bn" : "en" });
-          return;
-        }
-      }
-    } catch (gatewayError: any) {
-      console.warn("Angela gateway request failed", gatewayError?.name || "unknown");
-    }
-
     throw lastModelError || new Error("Angela providers returned no usable response");
   } catch (error: any) {
     console.error("Angela Gemini Chat backend exception:", error);
