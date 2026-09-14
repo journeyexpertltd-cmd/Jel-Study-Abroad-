@@ -65,7 +65,7 @@ test('Speech produces a playable PCM WAV using the low-latency primary model and
   }
 });
 
-test('Speech falls back from Gemini 2.5 TTS to Gemini 3.1 TTS after quota failure', async () => {
+test('Speech falls back from Gemini 2.5 Flash TTS to Gemini 3.1 Flash TTS after quota failure', async () => {
   const original = globalThis.fetch;
   const urls = [];
   try {
@@ -87,6 +87,35 @@ test('Speech falls back from Gemini 2.5 TTS to Gemini 3.1 TTS after quota failur
     assert.equal(urls.length, 2);
     assert.match(urls[0], /gemini-2\.5-flash-preview-tts:generateContent$/);
     assert.match(urls[1], /gemini-3\.1-flash-tts-preview:generateContent$/);
+  } finally {
+    globalThis.fetch = original;
+  }
+});
+
+test('Speech falls back to Gemini 2.5 Pro TTS after both Flash TTS models hit quota', async () => {
+  const original = globalThis.fetch;
+  const urls = [];
+  try {
+    globalThis.fetch = async (url) => {
+      const value = String(url);
+      urls.push(value);
+      if (value.includes('gemini-2.5-flash-preview-tts') || value.includes('gemini-3.1-flash-tts-preview')) {
+        return new Response('quota', { status: 429 });
+      }
+      if (value.includes('gemini-2.5-pro-preview-tts')) {
+        return pcmAudio();
+      }
+      throw new Error('unexpected model');
+    };
+
+    const response = await onRequest({ request: request('আমি বাংলায় কথা বলতে চাই'), env: { GEMINI_API_KEY: 'test-key' } });
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('content-type'), 'audio/wav');
+    assert.equal(response.headers.get('x-angela-tts-model'), 'gemini-2.5-pro-preview-tts');
+    assert.equal(urls.length, 3);
+    assert.match(urls[0], /gemini-2\.5-flash-preview-tts:generateContent$/);
+    assert.match(urls[1], /gemini-3\.1-flash-tts-preview:generateContent$/);
+    assert.match(urls[2], /gemini-2\.5-pro-preview-tts:generateContent$/);
   } finally {
     globalThis.fetch = original;
   }
