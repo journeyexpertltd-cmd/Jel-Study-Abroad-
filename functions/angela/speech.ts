@@ -18,7 +18,6 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   if (request.method !== 'POST') return new Response(null, { status: 405, headers: { Allow: 'POST' } });
   if (request.headers.get('origin') !== new URL(request.url).origin) return json('origin_not_allowed', 403);
   if (!request.headers.get('content-type')?.includes('application/json')) return json('json_required', 415);
-  // Bound input before reading the complete body.
   const reader = request.body?.getReader();
   if (!reader) return json('text_required', 400);
   const chunks: Uint8Array[] = []; let size = 0;
@@ -42,7 +41,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   const abort = () => controller.abort();
   request.signal.addEventListener('abort', abort, { once: true });
   try {
-    const model = env.GEMINI_TTS_MODEL || 'gemini-2.5-flash-preview-tts';
+    const model = env.GEMINI_TTS_MODEL || 'gemini-3.1-flash-tts-preview';
     const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent', {
       method: 'POST', signal: controller.signal,
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
@@ -52,7 +51,6 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
       })
     });
     if (!response.ok) {
-      // Never log the key, input, or provider response body.
       console.warn('Angela speech provider status', response.status);
       return json(response.status === 429 ? 'voice_quota_exceeded' : 'voice_provider_unavailable', response.status === 429 ? 429 : 502);
     }
