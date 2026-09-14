@@ -11,15 +11,6 @@ const json = (body: unknown, status = 200) => Response.json(body, {
   },
 });
 
-function sanitizeProviderMessage(value: unknown): string | undefined {
-  if (typeof value !== 'string') return undefined;
-  return value
-    .replace(/AIza[0-9A-Za-z_-]+/g, '[redacted]')
-    .replace(/sk-[0-9A-Za-z_-]+/g, '[redacted]')
-    .replace(/[\r\n\t]+/g, ' ')
-    .slice(0, 320);
-}
-
 export async function onRequest({ request, env }: Context): Promise<Response> {
   if (request.method !== 'POST') {
     return new Response(null, { status: 405, headers: { Allow: 'POST' } });
@@ -68,23 +59,16 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
     });
 
     if (!upstream.ok) {
-      let providerMessage: string | undefined;
-      try {
-        const providerData: any = await upstream.json();
-        providerMessage = sanitizeProviderMessage(providerData?.error?.message);
-      } catch {
-        providerMessage = undefined;
-      }
-      console.warn('Angela Live token provider status', upstream.status, providerMessage || 'no-message');
+      console.warn('Angela Live token provider status', upstream.status);
       if (upstream.status === 429) {
-        return json({ error: 'live_voice_quota_exceeded', providerStatus: 429, providerMessage }, 429);
+        return json({ error: 'live_voice_quota_exceeded' }, 429);
       }
-      return json({ error: 'live_voice_unavailable', providerStatus: upstream.status, providerMessage }, 424);
+      return json({ error: 'live_voice_unavailable' }, 424);
     }
 
     const data: any = await upstream.json();
     const token = typeof data?.name === 'string' ? data.name : '';
-    if (!token) return json({ error: 'live_voice_unavailable', providerStatus: 200 }, 424);
+    if (!token) return json({ error: 'live_voice_unavailable' }, 424);
 
     return json({
       token,
