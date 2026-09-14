@@ -1,0 +1,64 @@
+name: Patch Angela AI Studio Preview
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Harden Angela preview handler
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('server.ts')
+          src = path.read_text(encoding='utf-8')
+
+          old_lang = '''    const lastUserMsg = [...normalizedMessages].reverse().find((m: any) => m.sender === "user")?.text || "";\n    const isBangla = /[\\u0980-\\u09FF]/.test(lastUserMsg) || (language === "bn");'''
+          new_lang = '''    const lastUserMsg = [...normalizedMessages].reverse().find((m: any) => m.sender === "user")?.text || "";\n    const isBanglish = /\\b(ami|amar|amake|apni|apnar|tumi|tomar|chai|jabo|jete|koto|kivabe|ki|keno|kobe|kothay|hobe|korbo|korte|lagbe|bolen|diben|pari|parbo|visa|student|university|ticket|flight|banglay)\\b/i.test(lastUserMsg);\n    const isBangla = /[\\u0980-\\u09FF]/.test(lastUserMsg) || isBanglish || (language === "bn");'''
+          if old_lang in src:
+              src = src.replace(old_lang, new_lang, 1)
+
+          old_ai = '''    const response = await ai.models.generateContent({\n      model: "gemini-3.8-flash",\n      contents,\n      config: {\n        systemInstruction: ANGELA_SYSTEM_PROMPT,\n        temperature: 0.7,\n      }\n    });\n\n    const reply = response.text || "I am here to help you. For direct assistance, please contact our JEL team at +8801926400400.";\n    res.json({ reply });'''
+
+          new_ai = '''    const candidateModels = ["gemini-3.8-flash", "gemini-3.5-flash-lite"];\n    let reply = "";\n    let lastModelError: unknown = null;\n\n    for (const model of candidateModels) {\n      try {\n        const response = await ai.models.generateContent({\n          model,\n          contents,\n          config: {\n            systemInstruction: ANGELA_SYSTEM_PROMPT + "\\nMandatory response language: " + (isBangla ? "Respond in natural Bengali/Banglish-friendly Bengali. Keep proper names unchanged." : "Respond in clear English."),\n            temperature: 0.35,\n          }\n        });\n        reply = (response.text || "").trim();\n        if (reply) {\n          res.json({ reply, mode: "ai", provider: "gemini", providerModel: model, language: isBangla ? "bn" : "en" });\n          return;\n        }\n      } catch (modelError: any) {\n        lastModelError = modelError;\n        console.warn("Angela Gemini model request failed", model, modelError?.name || "unknown");\n      }\n    }\n\n    try {\n      const gatewayResponse = await fetch("https://journeyexpertltd.com/api/ai/voice-agent", {\n        method: "POST",\n        signal: AbortSignal.timeout(11000),\n        headers: { "Content-Type": "application/json" },\n        body: JSON.stringify({\n          message: lastUserMsg,\n          language: isBangla ? "bn" : "en",\n          history: normalizedMessages.slice(-6).map((m: any) => ({ role: m.sender === "user" ? "user" : "assistant", content: String(m.text || "").slice(0, 2500) }))\n        })\n      });\n      if (gatewayResponse.ok) {\n        const gatewayData: any = await gatewayResponse.json();\n        const gatewayReply = typeof gatewayData?.reply === "string" ? gatewayData.reply.trim() : "";\n        const degraded = gatewayData?.mode === "fallback" || gatewayData?.usedSources?.includes?.("JEL safe fallback");\n        if (gatewayReply && !degraded) {\n          res.json({ reply: gatewayReply, mode: "ai", provider: "jel-gateway", language: isBangla ? "bn" : "en" });\n          return;\n        }\n      }\n    } catch (gatewayError: any) {\n      console.warn("Angela gateway request failed", gatewayError?.name || "unknown");\n    }\n\n    throw lastModelError || new Error("Angela providers returned no usable response");'''
+
+          if old_ai not in src:
+              raise SystemExit('Angela AI block not found; refusing unsafe patch')
+          src = src.replace(old_ai, new_ai, 1)
+
+          old_catch = '''    res.status(500).json({ \n      error: "I'm temporarily unable to respond. Please try again or contact JEL directly via WhatsApp at +8801926400400.",\n      reply: "I'm temporarily unable to process your request. Please connect with our counselors directly via WhatsApp at +8801926400400 or call +8802 9830404." \n    });'''
+          new_catch = '''    const fallbackMessages = Array.isArray(req.body?.messages) ? req.body.messages : [];\n    const fallbackInput = typeof req.body?.message === "string"\n      ? req.body.message\n      : [...fallbackMessages].reverse().find((m: any) => m?.sender === "user")?.text || "";\n    const fallbackBn = req.body?.language === "bn" || /[\\u0980-\\u09FF]/.test(fallbackInput) || /\\b(ami|amar|apni|chai|jabo|koto|kivabe|ki|hobe|lagbe|banglay|visa|student|university)\\b/i.test(fallbackInput);\n    res.status(200).json({\n      reply: fallbackBn\n        ? "অ্যাঞ্জেলার লাইভ AI সংযোগটি এই মুহূর্তে সাময়িকভাবে ব্যস্ত। কয়েক সেকেন্ড পর আবার চেষ্টা করুন। জরুরি সহায়তার জন্য JEL-এর WhatsApp/Hotline +8801926400400।"\n        : "Angela's live AI connection is temporarily busy. Please try again in a few seconds. For urgent help, contact JEL via WhatsApp/Hotline at +8801926400400.",\n      mode: "fallback",\n      retryable: true,\n      language: fallbackBn ? "bn" : "en"\n    });'''
+          if old_catch not in src:
+              raise SystemExit('Angela catch block not found; refusing unsafe patch')
+          src = src.replace(old_catch, new_catch, 1)
+
+          path.write_text(src, encoding='utf-8')
+          PY
+
+      - name: Validate TypeScript
+        run: |
+          npm ci
+          npm run lint
+
+      - name: Commit patched handler
+        run: |
+          if git diff --quiet -- server.ts; then
+            echo "No patch needed"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add server.ts
+          git commit -m "fix: harden Angela AI Studio preview fallback chain"
+          git push origin HEAD:main
