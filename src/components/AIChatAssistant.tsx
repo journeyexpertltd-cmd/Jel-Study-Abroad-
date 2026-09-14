@@ -222,7 +222,7 @@ export function AIChatAssistant() {
         voices = window.speechSynthesis.getVoices();
       }
       if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
-      if (hasBangla && !voices.some(matchesBangla)) {
+      if (hasBangla) {
         currentUtteranceRef.current = null;
         const controller = new AbortController();
         serverSpeechRef.current = controller;
