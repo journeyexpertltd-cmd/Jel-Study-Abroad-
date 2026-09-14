@@ -77,6 +77,24 @@ jobs:
           grep -q '"service":"jel-study-abroad-api"' "$body"
           ! grep -E 'GEMINI_API_KEY|SERVICE_ROLE|STORE_PASSWORD' "$body"
 
+      - name: Check live Angela AI response
+        shell: bash
+        run: |
+          set -euo pipefail
+          body="$(mktemp)"
+          trap 'rm -f "$body"' EXIT
+          curl --fail --silent --show-error \
+            --max-time 20 \
+            --header 'Content-Type: application/json' \
+            --header 'Origin: https://journeyexpertbd.com' \
+            --data '{"message":"ami UK te masters korte chai, ki ki documents lagbe?","language":"auto"}' \
+            --output "$body" \
+            https://journeyexpertbd.com/api/gemini/chat
+          grep -q '"mode":"ai"' "$body"
+          grep -Pq '[\x{0980}-\x{09FF}]' "$body"
+          ! grep -q 'লাইভ AI এখন উপলব্ধ নেই' "$body"
+          echo "Angela production AI probe passed"
+
       - name: Check security headers and corporate isolation
         shell: bash
         run: |
@@ -102,6 +120,7 @@ jobs:
             echo "- Target: https://journeyexpertbd.com"
             echo "- Trigger: ${{ github.event_name }}"
             echo "- Commit: ${{ github.sha }}"
+            echo "- Angela: production AI endpoint is probed for a real non-fallback Bangla response."
             echo "- Failure behavior: this workflow fails and uses the existing GitHub Actions failure notifications."
             echo "- Production changes: none; this workflow is read-only."
           } >> "$GITHUB_STEP_SUMMARY"
