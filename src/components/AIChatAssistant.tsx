@@ -82,12 +82,35 @@ export function AIChatAssistant() {
   const speechAttemptRef = useRef(0);
   const serverSpeechRef = useRef<AbortController | null>(null);
   const serverAudioRef = useRef<HTMLAudioElement | null>(null);
+  const serverAudioSourceRef = useRef<AudioBufferSourceNode | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
   const stopServerAudio = () => {
     serverSpeechRef.current?.abort();
     serverSpeechRef.current = null;
+    const source = serverAudioSourceRef.current;
+    if (source) {
+      source.onended = null;
+      try { source.stop(); } catch { /* already stopped */ }
+      try { source.disconnect(); } catch { /* already disconnected */ }
+    }
+    serverAudioSourceRef.current = null;
     const audio = serverAudioRef.current;
     if (audio) { audio.onended = null; audio.onerror = null; audio.pause(); URL.revokeObjectURL(audio.src); }
     serverAudioRef.current = null;
+  };
+  const unlockAudio = async () => {
+    if (typeof window === "undefined" || !window.AudioContext) return null;
+    try {
+      let context = audioContextRef.current;
+      if (!context || context.state === "closed") {
+        context = new window.AudioContext();
+        audioContextRef.current = context;
+      }
+      if (context.state === "suspended") await context.resume();
+      return context;
+    } catch {
+      return null;
+    }
   };
   const requestRef = useRef<AbortController | null>(null);
   const enabledRef = useRef(isVoiceEnabled);
@@ -121,6 +144,7 @@ export function AIChatAssistant() {
   // Voice toggle handler
   const toggleVoiceOutput = () => {
     const nextState = !isVoiceEnabled;
+    if (nextState) void unlockAudio();
     enabledRef.current = nextState;
     if (!nextState) { speechAttemptRef.current += 1; stopServerAudio(); }
     setIsVoiceEnabled(nextState);
@@ -232,21 +256,57 @@ export function AIChatAssistant() {
         try {
           const blob = await fetchAngelaSpeech(cleanSpeech, controller.signal);
           if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
-          const audio = new Audio(URL.createObjectURL(blob));
-          serverAudioRef.current = audio;
-          audio.onended = () => {
-            if (serverAudioRef.current !== audio) return;
-            stopServerAudio(); setVoiceState("READY"); setActiveSpeakingId(null);
-          };
-          audio.onerror = () => {
-            if (serverAudioRef.current !== audio) return;
-            stopServerAudio(); setVoiceState("ERROR"); setActiveSpeakingId(null);
-            setErrorMessage("কণ্ঠ চালানো যায়নি। Listen চেপে আবার চেষ্টা করুন।");
-          };
-          await audio.play();
-          if (attempt !== speechAttemptRef.current) return;
-          setVoiceState("SPEAKING");
-          if (messageId) setActiveSpeakingId(messageId);
+
+          // Prefer the AudioContext unlocked by the user's open/send/mic gesture.
+          // This avoids Chrome dropping async TTS playback after user activation expires.
+          const context = await unlockAudio();
+          let playedWithWebAudio = false;
+          if (context?.state === "running") {
+            try {
+              const wav = await blob.arrayBuffer();
+              const decoded = await context.decodeAudioData(wav.slice(0));
+              if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
+              const source = context.createBufferSource();
+              source.buffer = decoded;
+              source.connect(context.destination);
+              serverAudioSourceRef.current = source;
+              source.onended = () => {
+                if (serverAudioSourceRef.current !== source) return;
+                serverAudioSourceRef.current = null;
+                try { source.disconnect(); } catch { /* already disconnected */ }
+                setVoiceState("READY");
+                setActiveSpeakingId(null);
+              };
+              source.start(0);
+              playedWithWebAudio = true;
+              setVoiceState("SPEAKING");
+              setErrorMessage(null);
+              if (messageId) setActiveSpeakingId(messageId);
+            } catch (webAudioError) {
+              console.warn("Angela Web Audio playback notice:", webAudioError);
+            }
+          }
+
+          if (!playedWithWebAudio) {
+            const audio = new Audio(URL.createObjectURL(blob));
+            serverAudioRef.current = audio;
+            audio.preload = "auto";
+            audio.volume = 1;
+            audio.onended = () => {
+              if (serverAudioRef.current !== audio) return;
+              stopServerAudio(); setVoiceState("READY"); setActiveSpeakingId(null);
+            };
+            audio.onerror = () => {
+              if (serverAudioRef.current !== audio) return;
+              stopServerAudio(); setVoiceState("ERROR"); setActiveSpeakingId(null);
+              setErrorMessage("কণ্ঠ চালানো যায়নি। Listen চেপে আবার চেষ্টা করুন।");
+            };
+            await audio.play();
+            if (attempt !== speechAttemptRef.current) return;
+            setVoiceState("SPEAKING");
+            setErrorMessage(null);
+            if (messageId) setActiveSpeakingId(messageId);
+          }
         } catch (error) {
           if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
           stopServerAudio(); setActiveSpeakingId(null);
@@ -361,6 +421,7 @@ export function AIChatAssistant() {
 
   // Send message to server-side Angela Gemini engine
   const handleSendMessage = async (textToSend: string, triggeredByVoice: boolean = false) => {
+    void unlockAudio();
     const trimmed = textToSend.trim();
     if (!trimmed) return;
     cancelPending();
@@ -443,6 +504,7 @@ export function AIChatAssistant() {
 
   // Start Voice Listening (Speech-to-Text) with full Interruption logic
   const startListening = () => {
+    void unlockAudio();
     cancelPending();
     // Interruption: halt Angela's voice immediately when user taps mic
     stopSpeaking();
@@ -596,6 +658,7 @@ export function AIChatAssistant() {
       {!isOpen && (
         <button
           onClick={() => {
+            void unlockAudio();
             setIsOpen(true);
             if (isVoiceEnabled && messages.length === 1) {
               speakText("Assalamu Alaikum! I am Angela, your official AI Voice Assistant for Journey Expert Limited. How can I assist you with travel or study abroad today?", "welcome");
