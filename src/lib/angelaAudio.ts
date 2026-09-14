@@ -36,6 +36,157 @@ function rememberSpeech(key: string, blob: Blob) {
   }
 }
 
+function base64ToBytes(value: string): Uint8Array {
+  const raw = atob(value);
+  const output = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i += 1) output[i] = raw.charCodeAt(i);
+  return output;
+}
+
+function pcmChunksToWav(chunks: Uint8Array[]): Blob {
+  const pcmLength = chunks.reduce((sum, chunk) => sum + chunk.byteLength, 0);
+  const buffer = new ArrayBuffer(44 + pcmLength);
+  const view = new DataView(buffer);
+  const bytes = new Uint8Array(buffer);
+  const label = (offset: number, value: string) => {
+    for (let i = 0; i < value.length; i += 1) bytes[offset + i] = value.charCodeAt(i);
+  };
+
+  label(0, 'RIFF');
+  view.setUint32(4, 36 + pcmLength, true);
+  label(8, 'WAVE');
+  label(12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, 24000, true);
+  view.setUint32(28, 48000, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  label(36, 'data');
+  view.setUint32(40, pcmLength, true);
+
+  let offset = 44;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+
+  return new Blob([buffer], { type: 'audio/wav' });
+}
+
+async function fetchAngelaLiveSpeech(text: string, signal: AbortSignal): Promise<Blob> {
+  const tokenResponse = await fetch('/api/gemini/live-token', {
+    method: 'POST',
+    signal,
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!tokenResponse.ok) {
+    const data = await tokenResponse.json().catch(() => ({}));
+    throw new Error(data.error || 'live_voice_unavailable');
+  }
+
+  const tokenData = await tokenResponse.json();
+  const token = typeof tokenData?.token === 'string' ? tokenData.token : '';
+  const model = typeof tokenData?.model === 'string' ? tokenData.model : 'gemini-3.1-flash-live-preview';
+  if (!token) throw new Error('live_voice_unavailable');
+
+  return await new Promise<Blob>((resolve, reject) => {
+    const chunks: Uint8Array[] = [];
+    let settled = false;
+    let sentTranscript = false;
+    const wsUrl = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContentConstrained?access_token=${encodeURIComponent(token)}`;
+    const socket = new WebSocket(wsUrl);
+
+    const cleanup = () => {
+      clearTimeout(timer);
+      signal.removeEventListener('abort', onAbort);
+      try { socket.close(); } catch { /* already closed */ }
+    };
+
+    const fail = (error: Error) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(error);
+    };
+
+    const succeed = () => {
+      if (settled) return;
+      const total = chunks.reduce((sum, chunk) => sum + chunk.byteLength, 0);
+      if (total < 2) {
+        fail(new Error('live_voice_unavailable'));
+        return;
+      }
+      settled = true;
+      const blob = pcmChunksToWav(chunks);
+      cleanup();
+      resolve(blob);
+    };
+
+    const onAbort = () => fail(new DOMException('Aborted', 'AbortError'));
+    signal.addEventListener('abort', onAbort, { once: true });
+    const timer = window.setTimeout(() => fail(new Error('live_voice_timeout')), 18000);
+
+    socket.onopen = () => {
+      socket.send(JSON.stringify({
+        setup: {
+          model: `models/${model}`,
+          responseModalities: ['AUDIO'],
+          speechConfig: {
+            voiceConfig: {
+              prebuiltVoiceConfig: { voiceName: 'Aoede' },
+            },
+          },
+          systemInstruction: {
+            parts: [{
+              text: 'You are Angela, a warm professional adult female voice. You are acting only as a speech renderer. When a transcript arrives, speak it verbatim in the same language, including Bangla and English proper names. Do not answer it, translate it, summarize it, add greetings, or add any extra words.',
+            }],
+          },
+        },
+      }));
+    };
+
+    socket.onmessage = (event) => {
+      try {
+        const message = JSON.parse(String(event.data));
+        if (message.setupComplete && !sentTranscript) {
+          sentTranscript = true;
+          socket.send(JSON.stringify({
+            realtimeInput: {
+              text: `Speak this transcript exactly as written:\n${text}`,
+            },
+          }));
+          return;
+        }
+
+        const content = message.serverContent;
+        const parts = content?.modelTurn?.parts;
+        if (Array.isArray(parts)) {
+          for (const part of parts) {
+            const audio = part?.inlineData;
+            if (audio?.data && (!audio.mimeType || String(audio.mimeType).includes('audio'))) {
+              chunks.push(base64ToBytes(audio.data));
+            }
+          }
+        }
+
+        if (content?.generationComplete || content?.turnComplete) succeed();
+      } catch (error) {
+        fail(error instanceof Error ? error : new Error('live_voice_unavailable'));
+      }
+    };
+
+    socket.onerror = () => fail(new Error('live_voice_unavailable'));
+    socket.onclose = () => {
+      if (!settled) {
+        if (chunks.length) succeed();
+        else fail(new Error('live_voice_unavailable'));
+      }
+    };
+  });
+}
+
 export async function fetchAngelaSpeech(text: string, signal: AbortSignal): Promise<Blob> {
   const speechText = normalizeSpeechText(text);
   if (!speechText) throw new Error('voice_provider_unavailable');
@@ -47,10 +198,18 @@ export async function fetchAngelaSpeech(text: string, signal: AbortSignal): Prom
     method: 'POST', signal, headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ text: speechText }),
   });
+
   if (!response.ok) {
     const data = await response.json().catch(() => ({}));
-    throw new Error(data.error || 'voice_provider_unavailable');
+    const code = data.error || 'voice_provider_unavailable';
+    if (response.status === 429 || code === 'voice_quota_exceeded') {
+      const liveBlob = await fetchAngelaLiveSpeech(speechText, signal);
+      rememberSpeech(speechText, liveBlob);
+      return liveBlob;
+    }
+    throw new Error(code);
   }
+
   if (!response.headers.get('content-type')?.includes('audio/wav')) throw new Error('invalid_audio');
 
   const blob = await response.blob();
@@ -61,7 +220,8 @@ export async function fetchAngelaSpeech(text: string, signal: AbortSignal): Prom
 export function voiceErrorMessage(error: unknown): string {
   const code = error instanceof Error ? error.message : '';
   if (code === 'voice_not_configured') return 'Angela-র বাংলা female voice এখনও চালু হয়নি। আপাতত লেখা পড়ে নিতে পারেন।';
-  if (code === 'voice_quota_exceeded') return 'Angela-র কণ্ঠসেবা সাময়িকভাবে ব্যস্ত। Listen আবার চাপলে cached voice থাকলে সঙ্গে সঙ্গে শোনা যাবে।';
+  if (code === 'voice_quota_exceeded' || code === 'live_voice_quota_exceeded') return 'Angela-র voice quota সাময়িকভাবে ব্যস্ত। একটু পরে Listen আবার চাপুন।';
+  if (code === 'live_voice_timeout' || code === 'live_voice_unavailable') return 'Angela-র backup female voice সাময়িকভাবে পাওয়া যাচ্ছে না। একটু পরে Listen আবার চাপুন।';
   if (error instanceof Error && error.name === 'NotAllowedError') return 'শব্দ চালাতে উত্তরের Listen বোতামটি চাপুন।';
   return 'এই মুহূর্তে Angela-র বাংলা female voice চালানো যাচ্ছে না। Listen চেপে আবার চেষ্টা করুন।';
 }
