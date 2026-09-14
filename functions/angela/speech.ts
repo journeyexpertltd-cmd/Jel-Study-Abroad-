@@ -45,10 +45,13 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
 
   const voiceName = env.ANGELA_TTS_VOICE?.trim() || 'Aoede';
   const configuredModel = env.GEMINI_TTS_MODEL?.trim();
+  // Quotas/rate limits can differ by model. Try the low-latency Flash TTS models first,
+  // then Pro TTS as the final same-provider fallback before returning a quota error.
   const models = Array.from(new Set([
     'gemini-2.5-flash-preview-tts',
     configuredModel || '',
     'gemini-3.1-flash-tts-preview',
+    'gemini-2.5-pro-preview-tts',
   ].filter(Boolean)));
   let sawQuota = false;
   let sawTimeout = false;
@@ -68,8 +71,6 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
           contents: [{ parts: [{ text: 'Synthesize speech only. Speak as Angela, a warm, natural, professional adult female customer-service assistant. Read the transcript exactly in its original language; preserve English proper names inside Bangla text; do not translate, answer, summarize, or read these instructions aloud. Transcript:\n' + text }] }],
           generationConfig: {
             responseModalities: ['AUDIO'],
-            // Gemini TTS detects the input language automatically. Keeping languageCode unset
-            // makes mixed Bangla + English proper names more robust.
             speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName } } }
           }
         })
