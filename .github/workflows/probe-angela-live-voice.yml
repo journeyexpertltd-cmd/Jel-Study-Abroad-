@@ -33,7 +33,7 @@ jobs:
           const tokenText = await tokenResponse.text();
           if (!tokenResponse.ok) throw new Error(`token endpoint ${tokenResponse.status}: ${tokenText}`);
           const tokenData = JSON.parse(tokenText);
-          if (!tokenData.token) throw new Error('token missing');
+          if (!tokenData.token || !tokenData.model) throw new Error('token or model missing');
 
           const wsUrl = 'wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContentConstrained?access_token=' + encodeURIComponent(tokenData.token);
           const ws = new WebSocket(wsUrl);
@@ -50,7 +50,7 @@ jobs:
               console.error(error);
               process.exitCode = 1;
             } else {
-              console.log(`Gemini Live Bangla audio probe passed: ${audioBytes} decoded bytes`);
+              console.log(`Gemini Live Bangla audio probe passed: ${audioBytes} decoded bytes via ${tokenData.model}`);
             }
           };
 
@@ -59,7 +59,7 @@ jobs:
           ws.addEventListener('open', () => {
             ws.send(JSON.stringify({
               setup: {
-                model: 'models/gemini-3.1-flash-live-preview',
+                model: `models/${tokenData.model}`,
                 generationConfig: {
                   responseModalities: ['AUDIO'],
                   speechConfig: {
@@ -98,7 +98,7 @@ jobs:
             if ((message?.serverContent?.generationComplete || message?.serverContent?.turnComplete) && audioBytes > 1000) done();
           });
 
-          ws.addEventListener('error', (event) => done(new Error('Gemini Live WebSocket error')));
+          ws.addEventListener('error', () => done(new Error('Gemini Live WebSocket error')));
           ws.addEventListener('close', (event) => {
             if (!settled) done(audioBytes > 1000 ? undefined : new Error(`Gemini Live closed ${event.code}; audioBytes=${audioBytes}`));
           });
