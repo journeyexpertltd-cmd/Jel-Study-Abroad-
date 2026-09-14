@@ -8,6 +8,15 @@ const json = (body: unknown, status = 200) => Response.json(body, {
   },
 });
 
+function sanitizeProviderMessage(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  return value
+    .replace(/AIza[0-9A-Za-z_-]+/g, '[redacted]')
+    .replace(/sk-[0-9A-Za-z_-]+/g, '[redacted]')
+    .replace(/[\r\n\t]+/g, ' ')
+    .slice(0, 320);
+}
+
 export async function onRequest({ request, env }: Context): Promise<Response> {
   if (request.method !== 'POST') {
     return new Response(null, { status: 405, headers: { Allow: 'POST' } });
@@ -46,13 +55,18 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
     });
 
     if (!upstream.ok) {
-      console.warn('Angela Live token provider status', upstream.status);
-      if (upstream.status === 429) {
-        return json({ error: 'live_voice_quota_exceeded', providerStatus: 429 }, 429);
+      let providerMessage: string | undefined;
+      try {
+        const providerData: any = await upstream.json();
+        providerMessage = sanitizeProviderMessage(providerData?.error?.message);
+      } catch {
+        providerMessage = undefined;
       }
-      // 424 keeps Cloudflare from replacing our diagnostic JSON with a branded 502 page.
-      // Only the provider HTTP status is exposed; credentials and provider body remain private.
-      return json({ error: 'live_voice_unavailable', providerStatus: upstream.status }, 424);
+      console.warn('Angela Live token provider status', upstream.status, providerMessage || 'no-message');
+      if (upstream.status === 429) {
+        return json({ error: 'live_voice_quota_exceeded', providerStatus: 429, providerMessage }, 429);
+      }
+      return json({ error: 'live_voice_unavailable', providerStatus: upstream.status, providerMessage }, 424);
     }
 
     const data: any = await upstream.json();
