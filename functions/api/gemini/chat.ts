@@ -28,6 +28,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   const last = turns[turns.length - 1].parts[0].text;
   const hasBanglaScript = /[\u0980-\u09FF]/.test(last);
   const looksBanglish = /\b(ami|amar|amake|apni|apnar|tumi|tomar|chai|jabo|jete|koto|kivabe|ki|keno|kobe|hobe|korbo|korte|lagbe|apnader|kothay|banglay|bolen|diben|pari|parbo|porte|bidesh|visa|student|university|ticket|flight)\b/i.test(last);
+  const fromVoice = body.source === 'voice';
   // Actual Bengali script always wins over a stale/manual UI language selection.
   const bn = hasBanglaScript || body.language === 'bn' || (body.language !== 'en' && looksBanglish);
   const fallback = () => json({
@@ -54,12 +55,15 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 8000);
     try {
+      const voiceNote = fromVoice
+        ? '\nVOICE TRANSCRIPT NOTE: The latest user message came from speech recognition and may contain small phonetic or transcription errors. Infer the likely intended Bangla, Banglish, or English question only when the intent is reasonably clear. If it is ambiguous, ask one short clarification question instead of inventing meaning.'
+        : '';
       return await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
         method: 'POST', signal: controller.signal,
         headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY! },
         body: JSON.stringify({
           contents: turns,
-          systemInstruction: { parts: [{ text: instruction + '\nMANDATORY RESPONSE LANGUAGE: ' + (bn ? 'Respond in natural Bengali script. Treat Banglish as Bengali. Keep proper names unchanged.' : 'Respond in English.') }] },
+          systemInstruction: { parts: [{ text: instruction + voiceNote + '\nMANDATORY RESPONSE LANGUAGE: ' + (bn ? 'Respond in natural Bengali script. Treat Banglish as Bengali. Keep proper names unchanged.' : 'Respond in English.') }] },
           generationConfig: { temperature: 0.3, maxOutputTokens: 320 },
         }),
       });
