@@ -43,78 +43,63 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   const key = (env.GEMINI_TTS_API_KEY || env.GEMINI_API_KEY)?.trim();
   if (!key || env.ANGELA_SERVER_VOICE === 'off') return json('voice_not_configured', 503);
 
-  const voiceName = env.ANGELA_TTS_VOICE?.trim() || 'Aoede';
-  const configuredModel = env.GEMINI_TTS_MODEL?.trim();
-  // Quotas/rate limits can differ by model. Try the low-latency Flash TTS models first,
-  // then Pro TTS as the final same-provider fallback before returning a quota error.
-  const models = Array.from(new Set([
-    'gemini-2.5-flash-preview-tts',
-    configuredModel || '',
-    'gemini-3.1-flash-tts-preview',
-    'gemini-2.5-pro-preview-tts',
-  ].filter(Boolean)));
-  let sawQuota = false;
-  let sawTimeout = false;
+  // Production baseline: keep one fast TTS attempt, then let the browser use the
+  // already-proven Gemini Live fallback. This avoids serial 10s model waits.
+  const voiceName = 'Aoede';
+  const model = env.GEMINI_TTS_MODEL?.trim() || 'gemini-2.5-flash-preview-tts';
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 4000);
+  const abort = () => controller.abort();
+  request.signal.addEventListener('abort', abort, { once: true });
 
-  for (const model of models) {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 10000);
-    const abort = () => controller.abort();
-    request.signal.addEventListener('abort', abort, { once: true });
-
-    try {
-      const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent', {
-        method: 'POST',
-        signal: controller.signal,
-        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: 'Synthesize speech only. Speak as Angela, a warm, natural, professional adult female customer-service assistant. Read the transcript exactly in its original language; preserve English proper names inside Bangla text; do not translate, answer, summarize, or read these instructions aloud. Transcript:\n' + text }] }],
-          generationConfig: {
-            responseModalities: ['AUDIO'],
-            speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName } } }
-          }
-        })
-      });
-
-      if (!response.ok) {
-        console.warn('Angela speech provider status', response.status, model);
-        if (response.status === 429) { sawQuota = true; continue; }
-        if (response.status === 404 || response.status >= 500) continue;
-        return json('voice_provider_unavailable', 502);
-      }
-
-      const data: any = await response.json();
-      const audio = data?.candidates?.[0]?.content?.parts?.find((part: any) => part.inlineData?.data)?.inlineData;
-      if (!audio || !/^audio\/(?:L16|pcm)(?:;|$)/i.test(audio.mimeType || '') || audio.data.length > 8000000) {
-        console.warn('Angela speech invalid audio', model);
-        continue;
-      }
-      const raw = atob(audio.data);
-      if (!raw.length || raw.length % 2) {
-        console.warn('Angela speech invalid PCM', model);
-        continue;
-      }
-      const pcm = Uint8Array.from(raw, character => character.charCodeAt(0));
-      return new Response(pcmToWav(pcm), {
-        headers: {
-          'Content-Type': 'audio/wav',
-          'Cache-Control': 'no-store',
-          'X-Content-Type-Options': 'nosniff',
-          'X-Angela-TTS-Model': model,
-          'X-Angela-TTS-Voice': voiceName,
-          'X-Angela-TTS-Language': hasBangla ? 'bn-auto' : 'en-auto',
+  try {
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent', {
+      method: 'POST',
+      signal: controller.signal,
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: 'Synthesize speech only. Speak as Angela, a warm, natural, professional adult female customer-service assistant. Read the transcript exactly in its original language; preserve English proper names inside Bangla text; do not translate, answer, summarize, or read these instructions aloud. Transcript:\n' + text }] }],
+        generationConfig: {
+          responseModalities: ['AUDIO'],
+          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName } } }
         }
-      });
-    } catch {
-      if (request.signal.aborted) return json('voice_timeout', 503);
-      if (controller.signal.aborted) { sawTimeout = true; continue; }
-    } finally {
-      clearTimeout(timer);
-      request.signal.removeEventListener('abort', abort);
-    }
-  }
+      })
+    });
 
-  if (sawQuota) return json('voice_quota_exceeded', 429);
-  if (sawTimeout) return json('voice_timeout', 503);
-  return json('voice_provider_unavailable', 503);
+    if (!response.ok) {
+      console.warn('Angela speech provider status', response.status, model);
+      if (response.status === 429) return json('voice_quota_exceeded', 429);
+      return json('voice_provider_unavailable', response.status >= 500 || response.status === 404 ? 503 : 502);
+    }
+
+    const data: any = await response.json();
+    const audio = data?.candidates?.[0]?.content?.parts?.find((part: any) => part.inlineData?.data)?.inlineData;
+    if (!audio || !/^audio\/(?:L16|pcm)(?:;|$)/i.test(audio.mimeType || '') || audio.data.length > 8000000) {
+      console.warn('Angela speech invalid audio', model);
+      return json('voice_provider_unavailable', 503);
+    }
+    const raw = atob(audio.data);
+    if (!raw.length || raw.length % 2) {
+      console.warn('Angela speech invalid PCM', model);
+      return json('voice_provider_unavailable', 503);
+    }
+    const pcm = Uint8Array.from(raw, character => character.charCodeAt(0));
+    return new Response(pcmToWav(pcm), {
+      headers: {
+        'Content-Type': 'audio/wav',
+        'Cache-Control': 'no-store',
+        'X-Content-Type-Options': 'nosniff',
+        'X-Angela-TTS-Model': model,
+        'X-Angela-TTS-Voice': voiceName,
+        'X-Angela-TTS-Language': hasBangla ? 'bn-auto' : 'en-auto',
+      }
+    });
+  } catch {
+    if (request.signal.aborted) return json('voice_timeout', 503);
+    if (controller.signal.aborted) return json('voice_timeout', 503);
+    return json('voice_provider_unavailable', 503);
+  } finally {
+    clearTimeout(timer);
+    request.signal.removeEventListener('abort', abort);
+  }
 }
