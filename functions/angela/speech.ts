@@ -31,21 +31,30 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.length; }
   let input: any;
   try { input = JSON.parse(new TextDecoder().decode(bytes)); } catch { return json('invalid_json', 400); }
-  const text = typeof input?.text === 'string' ? input.text.trim() : '';
-  if (!text) return json('text_required', 400);
-  if (text.length > 1800) return json('text_too_long', 413);
+  const rawText = typeof input?.text === 'string' ? input.text.trim() : '';
+  if (!rawText) return json('text_required', 400);
+  if (rawText.length > 1800) return json('text_too_long', 413);
+
+  // Keep spoken answers concise so voice stays responsive and consumes fewer TTS tokens.
+  const text = rawText.length > 700
+    ? rawText.slice(0, 700).replace(/\s+\S*$/, '').trim()
+    : rawText;
 
   const key = (env.GEMINI_TTS_API_KEY || env.GEMINI_API_KEY)?.trim();
   if (!key || env.ANGELA_SERVER_VOICE === 'off') return json('voice_not_configured', 503);
 
-  const configuredModel = env.GEMINI_TTS_MODEL?.trim() || 'gemini-3.1-flash-tts-preview';
-  const models = Array.from(new Set([configuredModel, 'gemini-2.5-flash-preview-tts']));
+  const configuredModel = env.GEMINI_TTS_MODEL?.trim();
+  const models = Array.from(new Set([
+    'gemini-2.5-flash-preview-tts',
+    configuredModel || '',
+    'gemini-3.1-flash-tts-preview',
+  ].filter(Boolean)));
   let sawQuota = false;
   let sawTimeout = false;
 
   for (const model of models) {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 15000);
+    const timer = setTimeout(() => controller.abort(), 10000);
     const abort = () => controller.abort();
     request.signal.addEventListener('abort', abort, { once: true });
 
@@ -82,7 +91,14 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
         continue;
       }
       const pcm = Uint8Array.from(raw, character => character.charCodeAt(0));
-      return new Response(pcmToWav(pcm), { headers: { 'Content-Type': 'audio/wav', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' } });
+      return new Response(pcmToWav(pcm), {
+        headers: {
+          'Content-Type': 'audio/wav',
+          'Cache-Control': 'no-store',
+          'X-Content-Type-Options': 'nosniff',
+          'X-Angela-TTS-Model': model,
+        }
+      });
     } catch {
       if (request.signal.aborted) return json('voice_timeout', 503);
       if (controller.signal.aborted) {
