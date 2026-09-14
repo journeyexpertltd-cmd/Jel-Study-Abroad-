@@ -617,6 +617,33 @@ Your instructions:
   }
 });
 
+// Angela speech bridge for Google AI Studio preview/runtime.
+app.post("/angela/speech", async (req, res) => {
+  const text = typeof req.body?.text === "string" ? req.body.text.trim() : "";
+  if (!text) return res.status(400).json({ error: "text_required" });
+  if (text.length > 1800) return res.status(413).json({ error: "text_too_long" });
+  try {
+    const upstream = await fetch("https://journeyexpertbd.com/angela/speech", {
+      method: "POST",
+      signal: AbortSignal.timeout(30000),
+      headers: {
+        "Content-Type": "application/json",
+        "Origin": "https://journeyexpertbd.com"
+      },
+      body: JSON.stringify({ text })
+    });
+    const contentType = upstream.headers.get("content-type") || "application/json";
+    const payload = Buffer.from(await upstream.arrayBuffer());
+    res.status(upstream.status);
+    res.setHeader("Content-Type", contentType);
+    res.setHeader("Cache-Control", "no-store");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    return res.send(payload);
+  } catch {
+    return res.status(503).json({ error: "voice_provider_unavailable" });
+  }
+});
+
 // Angela AI Voice Assistant endpoint proxy
 const ANGELA_SYSTEM_PROMPT = `You are "Angela", the official AI Voice & Customer Assistant for Journey Expert Limited (JEL).
 Production Website: https://journeyexpertbd.com
