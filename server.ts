@@ -525,6 +525,57 @@ app.post("/api/sslcommerz/sync", async (req, res) => {
   }
 });
 
+// Scoped Gemini Live token for AI Studio preview/runtime voice fallback.
+app.post("/api/gemini/live-token", async (req, res) => {
+  const origin = req.get("origin") || "";
+  const host = req.get("host") || "";
+  try {
+    if (origin && new URL(origin).host !== host) {
+      return res.status(403).json({ error: "origin_not_allowed" });
+    }
+  } catch {
+    return res.status(403).json({ error: "origin_not_allowed" });
+  }
+
+  const apiKey = process.env.GEMINI_API_KEY?.trim();
+  if (!apiKey) return res.status(503).json({ error: "live_voice_not_configured" });
+
+  const expireTime = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+  try {
+    const upstream = await fetch("https://generativelanguage.googleapis.com/v1beta/auth_tokens", {
+      method: "POST",
+      signal: AbortSignal.timeout(8000),
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": apiKey,
+      },
+      body: JSON.stringify({
+        uses: 1,
+        expireTime,
+        liveConnectConstraints: {
+          model: "models/gemini-3.1-flash-live-preview",
+          config: { responseModalities: ["AUDIO"] },
+        },
+      }),
+    });
+
+    if (!upstream.ok) {
+      console.warn("Angela AI Studio Live token status", upstream.status);
+      return res.status(upstream.status === 429 ? 429 : 502).json({
+        error: upstream.status === 429 ? "live_voice_quota_exceeded" : "live_voice_unavailable",
+      });
+    }
+
+    const data: any = await upstream.json();
+    if (!data?.name) return res.status(502).json({ error: "live_voice_unavailable" });
+    res.setHeader("Cache-Control", "no-store");
+    return res.json({ token: data.name, model: "gemini-3.1-flash-live-preview", expiresAt: expireTime });
+  } catch (error: any) {
+    console.warn("Angela AI Studio Live token error", error?.message || "unknown");
+    return res.status(503).json({ error: "live_voice_unavailable" });
+  }
+});
+
 // Utility to check if API key exists for UI status indicators
 app.get("/api/health", (req, res) => {
   const hasKey = !!process.env.GEMINI_API_KEY;
