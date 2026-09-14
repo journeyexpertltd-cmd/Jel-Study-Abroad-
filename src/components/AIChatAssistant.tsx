@@ -107,6 +107,20 @@ export function AIChatAssistant() {
         audioContextRef.current = context;
       }
       if (context.state === "suspended") await context.resume();
+      // A zero-volume Web Audio source started during the click/mic/send gesture
+      // makes later async TTS playback reliable under Chrome autoplay policy.
+      if (context.state === "running") {
+        try {
+          const buffer = context.createBuffer(1, 1, 22050);
+          const source = context.createBufferSource();
+          const gain = context.createGain();
+          gain.gain.value = 0;
+          source.buffer = buffer;
+          source.connect(gain);
+          gain.connect(context.destination);
+          source.start(0);
+        } catch { /* audio context is already usable */ }
+      }
       return context;
     } catch {
       return null;
@@ -186,6 +200,8 @@ export function AIChatAssistant() {
 
   // Text-to-speech engine with natural voice matching
   const speakText = useCallback(async (text: string, messageId?: string) => {
+    // Start Chrome audio activation immediately while the user gesture is still active.
+    const audioUnlockPromise = unlockAudio();
     const attempt = ++speechAttemptRef.current;
     stopServerAudio();
     if (typeof window === "undefined" || !window.speechSynthesis) {
@@ -227,7 +243,8 @@ export function AIChatAssistant() {
       // Select high quality voices
       let voices = window.speechSynthesis.getVoices();
       const matchesBangla = (v: SpeechSynthesisVoice) => /^bn(?:[-_]|$)/i.test(v.lang) || /bangla|bengali/i.test(v.name);
-      if (!voices.length || (hasBangla && !voices.some(matchesBangla))) {
+      // Bangla uses server TTS, so never delay it waiting for a local OS Bengali voice.
+      if (!hasBangla && !voices.length) {
         // Browsers may expose their voices after the first getVoices() call.
         await new Promise<void>((resolve) => {
           const synthesis = window.speechSynthesis;
@@ -238,7 +255,7 @@ export function AIChatAssistant() {
           };
           const onVoices = () => {
             const available = synthesis.getVoices();
-            if (hasBangla ? available.some(matchesBangla) : available.length > 0) finish();
+            if (available.length > 0) finish();
           };
           const timeout = setTimeout(finish, 1500);
           synthesis.addEventListener("voiceschanged", onVoices);
@@ -261,7 +278,7 @@ export function AIChatAssistant() {
 
           // Prefer the AudioContext unlocked by the user's open/send/mic gesture.
           // This avoids Chrome dropping async TTS playback after user activation expires.
-          const context = await unlockAudio();
+          const context = await audioUnlockPromise;
           let playedWithWebAudio = false;
           if (context?.state === "running") {
             try {
