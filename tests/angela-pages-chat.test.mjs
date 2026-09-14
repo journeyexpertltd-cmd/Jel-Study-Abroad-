@@ -43,13 +43,13 @@ test('Gemini receives bounded history and quota failures return usable fallback'
   } finally { globalThis.fetch = originalFetch; }
 });
 
-test('Explicit Bangla overrides English history and rejects an English-only model reply', async () => {
+test('Actual Bengali input overrides stale UI language and rejects an English-only model reply', async () => {
   const originalFetch = globalThis.fetch;
   try {
     let answer = 'Hello, I am Angela';
     globalThis.fetch = async (_url, options) => {
       const payload = JSON.parse(options.body);
-      assert.match(payload.systemInstruction.parts[0].text, /Respond in Bengali script/);
+      assert.match(payload.systemInstruction.parts[0].text, /Respond in natural Bengali script/);
       return Response.json({ candidates: [{ content: { parts: [{ text: answer }] } }] });
     };
     const send = () => onRequest({ request: request({ language: 'bn', messages: [{ sender: 'assistant', text: 'Hello' }, { sender: 'user', text: 'Introduce yourself' }] }), env: { GEMINI_API_KEY: 'test-only', GEMINI_MODEL: 'configured-model' } });
@@ -60,8 +60,12 @@ test('Explicit Bangla overrides English history and rejects an English-only mode
     const correctLanguage = await (await send()).json();
     assert.equal(correctLanguage.mode, 'ai');
     assert.equal(correctLanguage.reply, answer);
-    const english = await (await onRequest({ request: request({ language: 'en', message: 'পরিচয় দিন' }), env: {} })).json();
-    assert.equal(english.language, 'en');
+
+    globalThis.fetch = async () => { throw new Error('Network unavailable'); };
+    const staleEnglishMode = await (await onRequest({ request: request({ language: 'en', message: 'পরিচয় দিন' }), env: {} })).json();
+    assert.equal(staleEnglishMode.language, 'bn');
+    const actualEnglish = await (await onRequest({ request: request({ language: 'en', message: 'Introduce yourself' }), env: {} })).json();
+    assert.equal(actualEnglish.language, 'en');
   } finally { globalThis.fetch = originalFetch; }
 });
 
@@ -84,4 +88,3 @@ test('Cloudflare dispatch includes the Bengali speech function', async () => {
   const routes = JSON.parse(await readFile(new URL('../public/_routes.json', import.meta.url), 'utf8'));
   assert.ok(routes.include.includes('/angela/speech'));
 });
-
