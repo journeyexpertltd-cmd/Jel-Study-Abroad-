@@ -247,6 +247,41 @@ export function AIChatAssistant() {
       }
       if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
       if (hasBangla) {
+        // Prefer a browser-native Bengali voice when one is installed.
+        // This keeps Bangla responsive without spending a Gemini TTS request on every reply.
+        const localBanglaVoice = voices.find(matchesBangla);
+        if (localBanglaVoice) {
+          utterance.voice = localBanglaVoice;
+          utterance.lang = localBanglaVoice.lang;
+          currentUtteranceRef.current = utterance;
+          utterance.onstart = () => {
+            if (currentUtteranceRef.current !== utterance) return;
+            setVoiceState("SPEAKING");
+            setErrorMessage(null);
+            if (messageId) setActiveSpeakingId(messageId);
+          };
+          utterance.onend = () => {
+            if (currentUtteranceRef.current !== utterance) return;
+            currentUtteranceRef.current = null;
+            setVoiceState("READY");
+            setActiveSpeakingId(null);
+          };
+          utterance.onerror = (event) => {
+            if (currentUtteranceRef.current !== utterance) return;
+            currentUtteranceRef.current = null;
+            setActiveSpeakingId(null);
+            if (event.error === "canceled" || event.error === "interrupted") {
+              setVoiceState("READY");
+              return;
+            }
+            setVoiceState("ERROR");
+            setErrorMessage("বাংলা কণ্ঠ চালানো যায়নি। Listen চেপে আবার চেষ্টা করুন।");
+          };
+          window.speechSynthesis.speak(utterance);
+          return;
+        }
+
+        // No browser Bengali voice: keep the verified Gemini WAV path as fallback.
         currentUtteranceRef.current = null;
         const controller = new AbortController();
         serverSpeechRef.current = controller;
