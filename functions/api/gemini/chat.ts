@@ -2,6 +2,7 @@ type Context = { request: Request; env: Record<string, string | undefined> };
 
 const instruction = `You are Angela, JEL Study Abroad's AI assistant in Bangladesh.
 Help with study abroad and general travel enquiries in concise Bangla or English matching the user's language.
+Understand Banglish (Bengali written in Latin letters) as Bengali and answer naturally in Bengali script unless the user explicitly asks for English.
 Never invent university partnerships, prices, live availability, admission results, visa rules or processing times.
 Visa and admission decisions belong to the relevant authorities. Never guarantee outcomes.
 Do not request passport numbers, payment details, passwords or OTPs. Do not claim a booking, payment or handoff has completed.
@@ -25,7 +26,10 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
     .slice(-6).map((m: any) => ({ role: m.sender === 'user' ? 'user' : 'model', parts: [{ text: m.text.slice(0, 2500) }] }));
   if (!turns.length || turns[turns.length - 1].role !== 'user') return json({ error: 'User message required' }, 400);
   const last = turns[turns.length - 1].parts[0].text;
-  const bn = body.language === 'bn' || (body.language !== 'en' && (/[\u0980-\u09FF]/.test(last) || /\b(ami|amar|amake|apni|apnar|chai|jabo|jete|koto|kivabe|ki|keno|kobe|hobe|korbo|korte|lagbe|apnader|kothay|banglay|visa|student|university)\b/i.test(last)));
+  const hasBanglaScript = /[\u0980-\u09FF]/.test(last);
+  const looksBanglish = /\b(ami|amar|amake|apni|apnar|tumi|tomar|chai|jabo|jete|koto|kivabe|ki|keno|kobe|hobe|korbo|korte|lagbe|apnader|kothay|banglay|bolen|diben|pari|parbo|porte|bidesh|visa|student|university|ticket|flight)\b/i.test(last);
+  // Actual Bengali script always wins over a stale/manual UI language selection.
+  const bn = hasBanglaScript || body.language === 'bn' || (body.language !== 'en' && looksBanglish);
   const fallback = () => json({
     reply: bn ? 'লাইভ AI এখন সাময়িকভাবে ব্যস্ত। কয়েক সেকেন্ড পর আবার চেষ্টা করুন অথবা JEL-এর সঙ্গে +8801926400400 নম্বরে যোগাযোগ করুন।' : 'Live AI is temporarily busy. Please try again in a few seconds or contact JEL at +8801926400400.',
     mode: 'fallback', language: bn ? 'bn' : 'en', retryable: true,
@@ -55,7 +59,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
         headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY! },
         body: JSON.stringify({
           contents: turns,
-          systemInstruction: { parts: [{ text: instruction + '\nMANDATORY RESPONSE LANGUAGE: ' + (bn ? 'Respond in Bengali script. Even if the user writes English or Banglish, explain in Bengali. Keep proper names unchanged.' : 'Respond in English.') }] },
+          systemInstruction: { parts: [{ text: instruction + '\nMANDATORY RESPONSE LANGUAGE: ' + (bn ? 'Respond in natural Bengali script. Treat Banglish as Bengali. Keep proper names unchanged.' : 'Respond in English.') }] },
           generationConfig: { temperature: 0.3, maxOutputTokens: 320 },
         }),
       });
