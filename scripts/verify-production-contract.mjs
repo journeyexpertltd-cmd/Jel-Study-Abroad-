@@ -1,0 +1,46 @@
+import { readFile } from 'node:fs/promises';
+
+const read = (path) => readFile(path, 'utf8');
+const requireText = (text, needle, label) => {
+  if (!text.includes(needle)) throw new Error(`${label}: missing required contract: ${needle}`);
+};
+const forbidText = (text, needle, label) => {
+  if (text.includes(needle)) throw new Error(`${label}: forbidden legacy contract found: ${needle}`);
+};
+
+const [audio, speech, token, sitemap, redirects] = await Promise.all([
+  read('src/lib/angelaAudio.ts'),
+  read('functions/angela/speech.ts'),
+  read('functions/api/gemini/live-token.ts'),
+  read('public/sitemap.xml'),
+  read('public/_redirects'),
+]);
+
+requireText(audio, "data instanceof Blob", 'Angela browser audio');
+requireText(audio, "fetch('/api/gemini/live-token'", 'Angela browser audio');
+requireText(audio, "voiceName: 'Aoede'", 'Angela browser audio');
+requireText(audio, "response.status === 429", 'Angela browser audio');
+
+requireText(speech, "const voiceName = 'Aoede'", 'Angela TTS endpoint');
+requireText(speech, "setTimeout(() => controller.abort(), 4000)", 'Angela TTS endpoint');
+requireText(speech, "gemini-2.5-flash-preview-tts", 'Angela TTS endpoint');
+forbidText(speech, "gemini-2.5-pro-preview-tts", 'Angela TTS endpoint');
+forbidText(speech, "gemini-3.1-flash-tts-preview", 'Angela TTS endpoint');
+
+requireText(token, "request.headers.get('origin') !== url.origin", 'Angela Live token');
+requireText(token, "voiceName: 'Aoede'", 'Angela Live token');
+requireText(token, "gemini-2.5-flash-native-audio-preview-12-2025", 'Angela Live token');
+
+const locs = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]);
+if (locs.length !== 12) throw new Error(`Sitemap contract: expected 12 URLs, found ${locs.length}`);
+for (const loc of locs) {
+  if (!loc.startsWith('https://journeyexpertbd.com/')) throw new Error(`Sitemap contract: wrong domain ${loc}`);
+  if (loc !== 'https://journeyexpertbd.com/' && loc.endsWith('/')) {
+    throw new Error(`Sitemap contract: trailing slash canonical ${loc}`);
+  }
+}
+
+forbidText(redirects, '/about /about/ 301', 'Redirects');
+forbidText(redirects, '/ects-calculator /ects-calculator/ 301', 'Redirects');
+
+console.log('Production contract verified: Angela voice, fallback, domain and canonical rules are locked.');
