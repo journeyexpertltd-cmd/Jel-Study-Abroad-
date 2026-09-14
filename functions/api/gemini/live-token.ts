@@ -47,13 +47,17 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
 
     if (!upstream.ok) {
       console.warn('Angela Live token provider status', upstream.status);
-      if (upstream.status === 429) return json({ error: 'live_voice_quota_exceeded' }, 429);
-      return json({ error: 'live_voice_unavailable' }, 502);
+      if (upstream.status === 429) {
+        return json({ error: 'live_voice_quota_exceeded', providerStatus: 429 }, 429);
+      }
+      // 424 keeps Cloudflare from replacing our diagnostic JSON with a branded 502 page.
+      // Only the provider HTTP status is exposed; credentials and provider body remain private.
+      return json({ error: 'live_voice_unavailable', providerStatus: upstream.status }, 424);
     }
 
     const data: any = await upstream.json();
     const token = typeof data?.name === 'string' ? data.name : '';
-    if (!token) return json({ error: 'live_voice_unavailable' }, 502);
+    if (!token) return json({ error: 'live_voice_unavailable', providerStatus: 200 }, 424);
 
     return json({
       token,
@@ -63,7 +67,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   } catch (error) {
     if (controller.signal.aborted) return json({ error: 'live_voice_timeout' }, 503);
     console.warn('Angela Live token error', error instanceof Error ? error.message : 'unknown');
-    return json({ error: 'live_voice_unavailable' }, 502);
+    return json({ error: 'live_voice_unavailable' }, 503);
   } finally {
     clearTimeout(timer);
   }
