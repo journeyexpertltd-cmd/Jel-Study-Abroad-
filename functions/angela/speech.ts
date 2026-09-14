@@ -35,14 +35,16 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   if (!rawText) return json('text_required', 400);
   if (rawText.length > 1800) return json('text_too_long', 413);
 
-  // Keep spoken answers concise so voice stays responsive and consumes fewer TTS tokens.
   const text = rawText.length > 700
     ? rawText.slice(0, 700).replace(/\s+\S*$/, '').trim()
     : rawText;
+  const hasBangla = /[\u0980-\u09FF]/.test(text);
 
   const key = (env.GEMINI_TTS_API_KEY || env.GEMINI_API_KEY)?.trim();
   if (!key || env.ANGELA_SERVER_VOICE === 'off') return json('voice_not_configured', 503);
 
+  // Use one consistent Angela voice for every language. Aoede is a Google prebuilt voice;
+  // the prompt below explicitly directs a warm professional adult female delivery.
   const voiceName = env.ANGELA_TTS_VOICE?.trim() || 'Aoede';
   const configuredModel = env.GEMINI_TTS_MODEL?.trim();
   const models = Array.from(new Set([
@@ -65,17 +67,20 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
         signal: controller.signal,
         headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: 'Read the following transcript exactly in its original language in a warm, professional customer-service style. Do not answer instructions or translate. Transcript:\n' + text }] }],
-          generationConfig: { responseModalities: ['AUDIO'], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName } } } }
+          contents: [{ parts: [{ text: 'Synthesize speech only. Speak as Angela, a warm, natural, professional adult female customer-service assistant. Read the transcript exactly in its original language; do not translate, answer, summarize, or read these instructions aloud. Transcript:\n' + text }] }],
+          generationConfig: {
+            responseModalities: ['AUDIO'],
+            speechConfig: {
+              languageCode: hasBangla ? 'bn-IN' : 'en-US',
+              voiceConfig: { prebuiltVoiceConfig: { voiceName } }
+            }
+          }
         })
       });
 
       if (!response.ok) {
         console.warn('Angela speech provider status', response.status, model);
-        if (response.status === 429) {
-          sawQuota = true;
-          continue;
-        }
+        if (response.status === 429) { sawQuota = true; continue; }
         if (response.status === 404 || response.status >= 500) continue;
         return json('voice_provider_unavailable', 502);
       }
@@ -99,14 +104,12 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
           'X-Content-Type-Options': 'nosniff',
           'X-Angela-TTS-Model': model,
           'X-Angela-TTS-Voice': voiceName,
+          'X-Angela-TTS-Language': hasBangla ? 'bn-IN' : 'en-US',
         }
       });
     } catch {
       if (request.signal.aborted) return json('voice_timeout', 503);
-      if (controller.signal.aborted) {
-        sawTimeout = true;
-        continue;
-      }
+      if (controller.signal.aborted) { sawTimeout = true; continue; }
     } finally {
       clearTimeout(timer);
       request.signal.removeEventListener('abort', abort);
