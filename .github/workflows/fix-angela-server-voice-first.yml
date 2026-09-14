@@ -1,0 +1,55 @@
+name: Fix Angela Server Voice First
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Prefer server Angela voice for Bangla
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('src/components/AIChatAssistant.tsx')
+          s = p.read_text(encoding='utf-8')
+          old = 'if (hasBangla && !voices.some(matchesBangla)) {'
+          new = 'if (hasBangla) {'
+          if old not in s:
+              if new in s:
+                  print('Patch already applied')
+              else:
+                  raise SystemExit('Expected Angela voice branch not found')
+          else:
+              s = s.replace(old, new, 1)
+              p.write_text(s, encoding='utf-8')
+          PY
+
+      - name: Validate
+        run: |
+          npm ci
+          npm run lint
+          npm run check:seo
+          npm run build
+          grep -F 'if (hasBangla) {' src/components/AIChatAssistant.tsx
+
+      - name: Commit voice fix
+        run: |
+          if git diff --quiet -- src/components/AIChatAssistant.tsx; then
+            echo "No patch needed"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/components/AIChatAssistant.tsx
+          git commit -m "fix: prefer server Angela voice for Bangla replies"
+          git push origin HEAD:main
