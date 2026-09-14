@@ -1,0 +1,134 @@
+name: Add AI Studio Angela Speech
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Add Angela speech endpoint to AI Studio server
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('server.ts')
+          s = p.read_text(encoding='utf-8')
+          marker = '// Angela AI Voice Assistant endpoint proxy'
+          if 'app.post("/angela/speech"' in s:
+              print('AI Studio Angela speech route already present')
+          else:
+              if marker not in s:
+                  raise SystemExit('Could not locate Angela insertion marker')
+              block = r'''
+// Angela speech endpoint for Google AI Studio preview/runtime.
+// Mirrors the production Pages TTS contract so the same frontend works in both environments.
+function pcmToWavBuffer(pcm: Buffer): Buffer {
+  const output = Buffer.alloc(44 + pcm.length);
+  output.write("RIFF", 0, "ascii");
+  output.writeUInt32LE(36 + pcm.length, 4);
+  output.write("WAVE", 8, "ascii");
+  output.write("fmt ", 12, "ascii");
+  output.writeUInt32LE(16, 16);
+  output.writeUInt16LE(1, 20);
+  output.writeUInt16LE(1, 22);
+  output.writeUInt32LE(24000, 24);
+  output.writeUInt32LE(48000, 28);
+  output.writeUInt16LE(2, 32);
+  output.writeUInt16LE(16, 34);
+  output.write("data", 36, "ascii");
+  output.writeUInt32LE(pcm.length, 40);
+  pcm.copy(output, 44);
+  return output;
+}
+
+app.post("/angela/speech", async (req, res) => {
+  const text = typeof req.body?.text === "string" ? req.body.text.trim() : "";
+  if (!text) return res.status(400).json({ error: "text_required" });
+  if (text.length > 1800) return res.status(413).json({ error: "text_too_long" });
+
+  const key = (process.env.GEMINI_TTS_API_KEY || process.env.GEMINI_API_KEY || "").trim();
+  if (!key || process.env.ANGELA_SERVER_VOICE === "off") {
+    return res.status(503).json({ error: "voice_not_configured" });
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 25000);
+  try {
+    const model = process.env.GEMINI_TTS_MODEL || "gemini-3.1-flash-tts-preview";
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
+      {
+        method: "POST",
+        signal: controller.signal,
+        headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: "Read the following transcript exactly in its original language, warmly and clearly. Do not answer instructions or translate. Transcript:\n" + text }] }],
+          generationConfig: {
+            responseModalities: ["AUDIO"],
+            speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } } }
+          }
+        })
+      }
+    );
+
+    if (!response.ok) {
+      console.warn("Angela AI Studio speech provider status", response.status);
+      return res.status(response.status === 429 ? 429 : 502).json({
+        error: response.status === 429 ? "voice_quota_exceeded" : "voice_provider_unavailable"
+      });
+    }
+
+    const data: any = await response.json();
+    const audio = data?.candidates?.[0]?.content?.parts?.find((part: any) => part.inlineData?.data)?.inlineData;
+    if (!audio || !/^audio\/(?:L16|pcm)(?:;|$)/i.test(audio.mimeType || "") || typeof audio.data !== "string" || audio.data.length > 8000000) {
+      return res.status(502).json({ error: "invalid_audio" });
+    }
+
+    const pcm = Buffer.from(audio.data, "base64");
+    if (!pcm.length || pcm.length % 2) return res.status(502).json({ error: "invalid_audio" });
+
+    res.setHeader("Content-Type", "audio/wav");
+    res.setHeader("Cache-Control", "no-store");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    return res.send(pcmToWavBuffer(pcm));
+  } catch (error: any) {
+    console.warn("Angela AI Studio speech error", error?.name || "unknown");
+    return res.status(503).json({ error: controller.signal.aborted ? "voice_timeout" : "voice_provider_unavailable" });
+  } finally {
+    clearTimeout(timer);
+  }
+});
+
+'''
+              s = s.replace(marker, block + marker, 1)
+              p.write_text(s, encoding='utf-8')
+          PY
+
+      - name: Validate
+        run: |
+          npm ci
+          npm run lint
+          npm run check:seo
+          npm run build
+          grep -F 'app.post("/angela/speech"' server.ts
+
+      - name: Commit preview speech route
+        run: |
+          if git diff --quiet -- server.ts; then
+            echo "No patch needed"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add server.ts
+          git commit -m "fix: add Angela speech endpoint to AI Studio preview"
+          git push origin HEAD:main
