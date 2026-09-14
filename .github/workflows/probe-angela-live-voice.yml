@@ -1,0 +1,106 @@
+name: Probe Angela Live Voice Fallback
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: angela-live-voice-probe
+  cancel-in-progress: true
+
+jobs:
+  probe:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Wait for Cloudflare Pages propagation
+        run: sleep 75
+
+      - name: Probe production ephemeral token and Bangla Live audio
+        shell: bash
+        run: |
+          cat > /tmp/probe-live.mjs <<'EOF'
+          const origin = 'https://journeyexpertbd.com';
+          const tokenResponse = await fetch(origin + '/api/gemini/live-token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Origin: origin },
+          });
+          const tokenText = await tokenResponse.text();
+          if (!tokenResponse.ok) throw new Error(`token endpoint ${tokenResponse.status}: ${tokenText}`);
+          const tokenData = JSON.parse(tokenText);
+          if (!tokenData.token) throw new Error('token missing');
+
+          const wsUrl = 'wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContentConstrained?access_token=' + encodeURIComponent(tokenData.token);
+          const ws = new WebSocket(wsUrl);
+          let audioBytes = 0;
+          let sent = false;
+          let settled = false;
+
+          const done = (error) => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timer);
+            try { ws.close(); } catch {}
+            if (error) {
+              console.error(error);
+              process.exitCode = 1;
+            } else {
+              console.log(`Gemini Live Bangla audio probe passed: ${audioBytes} decoded bytes`);
+            }
+          };
+
+          const timer = setTimeout(() => done(new Error(`Live voice timeout; audioBytes=${audioBytes}`)), 25000);
+
+          ws.addEventListener('open', () => {
+            ws.send(JSON.stringify({
+              setup: {
+                model: 'models/gemini-3.1-flash-live-preview',
+                generationConfig: {
+                  responseModalities: ['AUDIO'],
+                  speechConfig: {
+                    voiceConfig: {
+                      prebuiltVoiceConfig: { voiceName: 'Aoede' },
+                    },
+                  },
+                },
+                systemInstruction: {
+                  parts: [{ text: 'You are Angela, a warm professional adult female speech renderer. Repeat the supplied transcript verbatim in the same language. Do not answer, translate, summarize, or add words.' }],
+                },
+              },
+            }));
+          });
+
+          ws.addEventListener('message', (event) => {
+            const data = typeof event.data === 'string' ? event.data : Buffer.from(event.data).toString('utf8');
+            let message;
+            try { message = JSON.parse(data); } catch { return; }
+            if (message.setupComplete && !sent) {
+              sent = true;
+              ws.send(JSON.stringify({
+                realtimeInput: {
+                  text: 'হ্যালো, আমি অ্যাঞ্জেলা। আমি বাংলায় কথা বলতে পারি।',
+                },
+              }));
+              return;
+            }
+            const parts = message?.serverContent?.modelTurn?.parts;
+            if (Array.isArray(parts)) {
+              for (const part of parts) {
+                const b64 = part?.inlineData?.data;
+                if (b64) audioBytes += Buffer.from(b64, 'base64').byteLength;
+              }
+            }
+            if ((message?.serverContent?.generationComplete || message?.serverContent?.turnComplete) && audioBytes > 1000) done();
+          });
+
+          ws.addEventListener('error', (event) => done(new Error('Gemini Live WebSocket error')));
+          ws.addEventListener('close', (event) => {
+            if (!settled) done(audioBytes > 1000 ? undefined : new Error(`Gemini Live closed ${event.code}; audioBytes=${audioBytes}`));
+          });
+          EOF
+          node /tmp/probe-live.mjs
