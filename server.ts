@@ -692,7 +692,8 @@ const handleAngelaChat = async (req: express.Request, res: express.Response) => 
     }
 
     const lastUserMsg = [...normalizedMessages].reverse().find((m: any) => m.sender === "user")?.text || "";
-    const isBangla = /[\u0980-\u09FF]/.test(lastUserMsg) || (language === "bn");
+    const isBanglish = /\b(ami|amar|amake|apni|apnar|tumi|tomar|chai|jabo|jete|koto|kivabe|ki|keno|kobe|kothay|hobe|korbo|korte|lagbe|bolen|diben|pari|parbo|visa|student|university|ticket|flight|banglay)\b/i.test(lastUserMsg);
+    const isBangla = /[\u0980-\u09FF]/.test(lastUserMsg) || isBanglish || (language === "bn");
 
     // Offline / fallback mode if GEMINI_API_KEY is not configured
     if (!process.env.GEMINI_API_KEY) {
@@ -748,23 +749,71 @@ const handleAngelaChat = async (req: express.Request, res: express.Response) => 
       parts: [{ text: m.text }]
     }));
 
-    const response = await ai.models.generateContent({
-      model: "gemini-3.8-flash",
-      contents,
-      config: {
-        systemInstruction: ANGELA_SYSTEM_PROMPT,
-        temperature: 0.7,
-      }
-    });
+    const candidateModels = ["gemini-3.8-flash", "gemini-3.5-flash-lite"];
+    let reply = "";
+    let lastModelError: unknown = null;
 
-    const reply = response.text || "I am here to help you. For direct assistance, please contact our JEL team at +8801926400400.";
-    res.json({ reply });
+    for (const model of candidateModels) {
+      try {
+        const response = await ai.models.generateContent({
+          model,
+          contents,
+          config: {
+            systemInstruction: ANGELA_SYSTEM_PROMPT + "\nMandatory response language: " + (isBangla ? "Respond in natural Bengali/Banglish-friendly Bengali. Keep proper names unchanged." : "Respond in clear English."),
+            temperature: 0.35,
+          }
+        });
+        reply = (response.text || "").trim();
+        if (reply) {
+          res.json({ reply, mode: "ai", provider: "gemini", providerModel: model, language: isBangla ? "bn" : "en" });
+          return;
+        }
+      } catch (modelError: any) {
+        lastModelError = modelError;
+        console.warn("Angela Gemini model request failed", model, modelError?.name || "unknown");
+      }
+    }
+
+    try {
+      const gatewayResponse = await fetch("https://journeyexpertltd.com/api/ai/voice-agent", {
+        method: "POST",
+        signal: AbortSignal.timeout(11000),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: lastUserMsg,
+          language: isBangla ? "bn" : "en",
+          history: normalizedMessages.slice(-6).map((m: any) => ({ role: m.sender === "user" ? "user" : "assistant", content: String(m.text || "").slice(0, 2500) }))
+        })
+      });
+      if (gatewayResponse.ok) {
+        const gatewayData: any = await gatewayResponse.json();
+        const gatewayReply = typeof gatewayData?.reply === "string" ? gatewayData.reply.trim() : "";
+        const degraded = gatewayData?.mode === "fallback" || gatewayData?.usedSources?.includes?.("JEL safe fallback");
+        if (gatewayReply && !degraded) {
+          res.json({ reply: gatewayReply, mode: "ai", provider: "jel-gateway", language: isBangla ? "bn" : "en" });
+          return;
+        }
+      }
+    } catch (gatewayError: any) {
+      console.warn("Angela gateway request failed", gatewayError?.name || "unknown");
+    }
+
+    throw lastModelError || new Error("Angela providers returned no usable response");
   } catch (error: any) {
     console.error("Angela Gemini Chat backend exception:", error);
     // Never expose stack traces to customers (Phase 12 error handling rule)
-    res.status(500).json({ 
-      error: "I'm temporarily unable to respond. Please try again or contact JEL directly via WhatsApp at +8801926400400.",
-      reply: "I'm temporarily unable to process your request. Please connect with our counselors directly via WhatsApp at +8801926400400 or call +8802 9830404." 
+    const fallbackMessages = Array.isArray(req.body?.messages) ? req.body.messages : [];
+    const fallbackInput = typeof req.body?.message === "string"
+      ? req.body.message
+      : [...fallbackMessages].reverse().find((m: any) => m?.sender === "user")?.text || "";
+    const fallbackBn = req.body?.language === "bn" || /[\u0980-\u09FF]/.test(fallbackInput) || /\b(ami|amar|apni|chai|jabo|koto|kivabe|ki|hobe|lagbe|banglay|visa|student|university)\b/i.test(fallbackInput);
+    res.status(200).json({
+      reply: fallbackBn
+        ? "অ্যাঞ্জেলার লাইভ AI সংযোগটি এই মুহূর্তে সাময়িকভাবে ব্যস্ত। কয়েক সেকেন্ড পর আবার চেষ্টা করুন। জরুরি সহায়তার জন্য JEL-এর WhatsApp/Hotline +8801926400400।"
+        : "Angela's live AI connection is temporarily busy. Please try again in a few seconds. For urgent help, contact JEL via WhatsApp/Hotline at +8801926400400.",
+      mode: "fallback",
+      retryable: true,
+      language: fallbackBn ? "bn" : "en"
     });
   }
 };
