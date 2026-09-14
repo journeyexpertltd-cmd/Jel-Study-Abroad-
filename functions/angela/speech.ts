@@ -43,8 +43,6 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   const key = (env.GEMINI_TTS_API_KEY || env.GEMINI_API_KEY)?.trim();
   if (!key || env.ANGELA_SERVER_VOICE === 'off') return json('voice_not_configured', 503);
 
-  // Use one consistent Angela voice for every language. Aoede is a Google prebuilt voice;
-  // the prompt below explicitly directs a warm professional adult female delivery.
   const voiceName = env.ANGELA_TTS_VOICE?.trim() || 'Aoede';
   const configuredModel = env.GEMINI_TTS_MODEL?.trim();
   const models = Array.from(new Set([
@@ -67,13 +65,12 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
         signal: controller.signal,
         headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: 'Synthesize speech only. Speak as Angela, a warm, natural, professional adult female customer-service assistant. Read the transcript exactly in its original language; do not translate, answer, summarize, or read these instructions aloud. Transcript:\n' + text }] }],
+          contents: [{ parts: [{ text: 'Synthesize speech only. Speak as Angela, a warm, natural, professional adult female customer-service assistant. Read the transcript exactly in its original language; preserve English proper names inside Bangla text; do not translate, answer, summarize, or read these instructions aloud. Transcript:\n' + text }] }],
           generationConfig: {
             responseModalities: ['AUDIO'],
-            speechConfig: {
-              languageCode: hasBangla ? 'bn-IN' : 'en-US',
-              voiceConfig: { prebuiltVoiceConfig: { voiceName } }
-            }
+            // Gemini TTS detects the input language automatically. Keeping languageCode unset
+            // makes mixed Bangla + English proper names more robust.
+            speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName } } }
           }
         })
       });
@@ -104,7 +101,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
           'X-Content-Type-Options': 'nosniff',
           'X-Angela-TTS-Model': model,
           'X-Angela-TTS-Voice': voiceName,
-          'X-Angela-TTS-Language': hasBangla ? 'bn-IN' : 'en-US',
+          'X-Angela-TTS-Language': hasBangla ? 'bn-auto' : 'en-auto',
         }
       });
     } catch {
