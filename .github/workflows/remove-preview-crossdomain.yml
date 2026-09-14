@@ -1,0 +1,55 @@
+name: Remove Angela Preview Cross-Domain Fallback
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Remove cross-domain fallback from AI Studio server
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('server.ts')
+          s = p.read_text(encoding='utf-8')
+          start = s.find('    try {\n      const gatewayResponse = await fetch("https://journeyexpertltd.com/api/ai/voice-agent"')
+          end_marker = '    throw lastModelError || new Error("Angela providers returned no usable response");'
+          if start == -1:
+              print('Cross-domain gateway block already absent')
+          else:
+              end = s.find(end_marker, start)
+              if end == -1:
+                  raise SystemExit('Could not safely locate end of Angela gateway block')
+              s = s[:start] + end_marker + s[end + len(end_marker):]
+              p.write_text(s, encoding='utf-8')
+          PY
+
+      - name: Validate
+        run: |
+          npm ci
+          npm run lint
+          npm run check:seo
+          npm run build
+          ! grep -RInE 'journeyexpertltd\.com|journeyexpertlimited\.com' dist index.html public
+
+      - name: Commit safe handler
+        run: |
+          if git diff --quiet -- server.ts; then
+            echo "No patch needed"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add server.ts
+          git commit -m "fix: keep Angela preview fallbacks within Study Abroad domain"
+          git push origin HEAD:main
