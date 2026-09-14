@@ -20,7 +20,7 @@ test('Speech produces a playable PCM WAV and maps quota errors without exposing 
  const original = globalThis.fetch;
  try {
  globalThis.fetch = async (url, options) => {
- assert.match(url, /gemini-2.5-flash-preview-tts:generateContent$/);
+ assert.match(url, /gemini-3\.1-flash-tts-preview:generateContent$/);
  assert.equal(options.headers['x-goog-api-key'], 'test-key');
  const body = JSON.parse(options.body);
  assert.deepEqual(body.generationConfig.responseModalities, ['AUDIO']);
