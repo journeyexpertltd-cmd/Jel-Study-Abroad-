@@ -95,6 +95,27 @@ jobs:
           ! grep -q 'লাইভ AI এখন উপলব্ধ নেই' "$body"
           echo "Angela production AI probe passed"
 
+      - name: Check live Angela speech response
+        if: github.event_name == 'workflow_run'
+        shell: bash
+        run: |
+          set -euo pipefail
+          headers="$(mktemp)"
+          audio="$(mktemp)"
+          trap 'rm -f "$headers" "$audio"' EXIT
+          curl --fail --silent --show-error \
+            --max-time 30 \
+            --dump-header "$headers" \
+            --header 'Content-Type: application/json' \
+            --header 'Origin: https://journeyexpertbd.com' \
+            --data '{"text":"হ্যালো, আমি অ্যাঞ্জেলা।"}' \
+            --output "$audio" \
+            https://journeyexpertbd.com/angela/speech
+          grep -qi '^content-type: audio/wav' "$headers"
+          test "$(wc -c < "$audio")" -gt 1000
+          test "$(head -c 4 "$audio")" = "RIFF"
+          echo "Angela production voice probe passed"
+
       - name: Check security headers and corporate isolation
         shell: bash
         run: |
@@ -121,6 +142,7 @@ jobs:
             echo "- Trigger: ${{ github.event_name }}"
             echo "- Commit: ${{ github.sha }}"
             echo "- Angela: production AI endpoint is probed for a real non-fallback Bangla response."
+            echo "- Voice: production speech endpoint is probed for a valid WAV after successful CI deployments."
             echo "- Failure behavior: this workflow fails and uses the existing GitHub Actions failure notifications."
             echo "- Production changes: none; this workflow is read-only."
           } >> "$GITHUB_STEP_SUMMARY"
