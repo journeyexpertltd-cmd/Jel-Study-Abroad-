@@ -30,9 +30,8 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
     reply: bn ? 'লাইভ AI এখন উপলব্ধ নেই। স্টাডি অ্যাব্রোড বা ভ্রমণের বিষয়ে যাচাইকৃত পরামর্শের জন্য JEL-এর সঙ্গে +8801926400400 নম্বরে যোগাযোগ করুন। আপনি কোন দেশে যেতে চান?' : 'Live AI is currently unavailable. For verified study abroad or travel guidance, contact JEL at +8801926400400. Which country are you considering?',
     mode: 'fallback', language: bn ? 'bn' : 'en',
   });
-  // Both company sites use the existing company-owned Angela gateway by default.
-  // Its Gemini credential stays in the Worker and is never sent to this browser.
-  if (!env.GEMINI_MODEL) {
+  // Use the company gateway only when this Pages project has no local Gemini key.
+  if (!env.GEMINI_API_KEY) {
     try {
       const response = await fetch('https://journeyexpertltd.com/api/ai/voice-agent', {
         method: 'POST', signal: AbortSignal.timeout(17000),
@@ -46,7 +45,6 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
       return json({ reply: data.reply.slice(0, 1800), mode: degraded ? 'fallback' : 'ai', language: bn ? 'bn' : 'en' });
     } catch { return fallback(); }
   }
-  if (!env.GEMINI_API_KEY) return fallback();
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 15000);
   try {
