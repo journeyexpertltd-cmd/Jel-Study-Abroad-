@@ -1,5 +1,6 @@
 const MAX_SPEECH_CHARS = 700;
 const MAX_CACHE_ENTRIES = 12;
+const LIVE_FALLBACK_MODEL = 'gemini-2.5-flash-native-audio-preview-12-2025';
 const speechCache = new Map<string, Blob>();
 
 // Angela uses the verified server voice for Bangla so the result is consistent
@@ -88,7 +89,7 @@ async function fetchAngelaLiveSpeech(text: string, signal: AbortSignal): Promise
 
   const tokenData = await tokenResponse.json();
   const token = typeof tokenData?.token === 'string' ? tokenData.token : '';
-  const model = typeof tokenData?.model === 'string' ? tokenData.model : 'gemini-3.1-flash-live-preview';
+  const model = typeof tokenData?.model === 'string' ? tokenData.model : LIVE_FALLBACK_MODEL;
   if (!token) throw new Error('live_voice_unavailable');
 
   return await new Promise<Blob>((resolve, reject) => {
@@ -132,10 +133,12 @@ async function fetchAngelaLiveSpeech(text: string, signal: AbortSignal): Promise
       socket.send(JSON.stringify({
         setup: {
           model: `models/${model}`,
-          responseModalities: ['AUDIO'],
-          speechConfig: {
-            voiceConfig: {
-              prebuiltVoiceConfig: { voiceName: 'Aoede' },
+          generationConfig: {
+            responseModalities: ['AUDIO'],
+            speechConfig: {
+              voiceConfig: {
+                prebuiltVoiceConfig: { voiceName: 'Aoede' },
+              },
             },
           },
           systemInstruction: {
