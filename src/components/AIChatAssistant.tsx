@@ -114,6 +114,7 @@ export function AIChatAssistant() {
   };
   const requestRef = useRef<AbortController | null>(null);
   const enabledRef = useRef(isVoiceEnabled);
+  const autoRecognitionLangRef = useRef<"bn-BD" | "en-US">("bn-BD");
   enabledRef.current = isVoiceEnabled;
   const cancelPending = () => {
     requestRef.current?.abort();
@@ -247,41 +248,7 @@ export function AIChatAssistant() {
       }
       if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
       if (hasBangla) {
-        // Prefer a browser-native Bengali voice when one is installed.
-        // This keeps Bangla responsive without spending a Gemini TTS request on every reply.
-        const localBanglaVoice = voices.find(matchesBangla);
-        if (localBanglaVoice) {
-          utterance.voice = localBanglaVoice;
-          utterance.lang = localBanglaVoice.lang;
-          currentUtteranceRef.current = utterance;
-          utterance.onstart = () => {
-            if (currentUtteranceRef.current !== utterance) return;
-            setVoiceState("SPEAKING");
-            setErrorMessage(null);
-            if (messageId) setActiveSpeakingId(messageId);
-          };
-          utterance.onend = () => {
-            if (currentUtteranceRef.current !== utterance) return;
-            currentUtteranceRef.current = null;
-            setVoiceState("READY");
-            setActiveSpeakingId(null);
-          };
-          utterance.onerror = (event) => {
-            if (currentUtteranceRef.current !== utterance) return;
-            currentUtteranceRef.current = null;
-            setActiveSpeakingId(null);
-            if (event.error === "canceled" || event.error === "interrupted") {
-              setVoiceState("READY");
-              return;
-            }
-            setVoiceState("ERROR");
-            setErrorMessage("বাংলা কণ্ঠ চালানো যায়নি। Listen চেপে আবার চেষ্টা করুন।");
-          };
-          window.speechSynthesis.speak(utterance);
-          return;
-        }
-
-        // No browser Bengali voice: keep the verified Gemini WAV path as fallback.
+        // Use the fixed server TTS voice first for Bengali so Auto/Bangla never picks a random local male voice.
         currentUtteranceRef.current = null;
         const controller = new AbortController();
         serverSpeechRef.current = controller;
@@ -346,15 +313,19 @@ export function AIChatAssistant() {
           if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
           stopServerAudio(); setActiveSpeakingId(null);
 
-          // Keep Angela audible when Gemini TTS is quota-limited or temporarily unavailable.
-          const browserVoice = voices.find(matchesBangla);
-          if (browserVoice) {
-            utterance.voice = browserVoice;
-            utterance.lang = browserVoice.lang;
-          } else {
-            // Let the browser choose its best Bengali-capable voice if no explicit match is exposed.
-            utterance.lang = "bn-BD";
+          // Emergency fallback: use only a likely female Bengali system voice.
+          // If one is not available, do not substitute a random male voice.
+          const browserVoice = voices.find((voice) =>
+            matchesBangla(voice) && /nabanita|female|woman|zira|aria|jenny|sonia|samantha|victoria|karen|moira|fiona|ava|allison|susan|kathy/i.test(voice.name)
+          );
+          if (!browserVoice) {
+            currentUtteranceRef.current = null;
+            setVoiceState("ERROR");
+            setErrorMessage("বাংলা কণ্ঠটি সাময়িকভাবে পাওয়া যাচ্ছে না। একটু পরে Listen চাপুন।");
+            return;
           }
+          utterance.voice = browserVoice;
+          utterance.lang = browserVoice.lang;
           currentUtteranceRef.current = utterance;
           utterance.onstart = () => {
             if (currentUtteranceRef.current !== utterance) return;
@@ -488,7 +459,8 @@ export function AIChatAssistant() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           messages: historyContext,
-          language: languageMode 
+          language: languageMode,
+          source: triggeredByVoice ? "voice" : "text"
         })
       });
 
@@ -571,8 +543,8 @@ export function AIChatAssistant() {
       } else if (languageMode === "en") {
         recognition.lang = "en-US";
       } else {
-        // In auto mode, default to bn-BD which also handles English words gracefully
-        recognition.lang = "bn-BD";
+        // Web Speech API has no true multilingual auto-detect. Adapt from the last successful Auto transcript.
+        recognition.lang = autoRecognitionLangRef.current;
       }
 
       recognition.onstart = () => {
@@ -618,6 +590,11 @@ export function AIChatAssistant() {
       recognition.onend = () => {
         const spoken = finalTranscript.trim() || latestInterim.trim();
         if (spoken) {
+          if (languageMode === "auto") {
+            const transcriptHasBangla = /[\u0980-\u09FF]/.test(spoken);
+            const transcriptLooksBanglish = /\b(ami|amar|amake|apni|apnar|tumi|tomar|chai|jabo|jete|koto|kivabe|ki|keno|kobe|hobe|korbo|korte|lagbe|bolen|diben|pari|parbo|porte|bidesh)\b/i.test(spoken);
+            autoRecognitionLangRef.current = transcriptHasBangla || transcriptLooksBanglish ? "bn-BD" : "en-US";
+          }
           handleSendMessage(spoken, true);
         } else {
           setVoiceState("READY");
