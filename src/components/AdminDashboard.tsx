@@ -35,6 +35,13 @@ export function AdminDashboard({ setActiveTab }: AdminDashboardProps = {}) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [recoveryMode, setRecoveryMode] = useState(() => {
+    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    return hash.get("type") === "recovery";
+  });
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [recoveryMessage, setRecoveryMessage] = useState("");
 
   const loadAuthorizedWorkspace = useCallback(async () => {
     setLoading(true);
@@ -79,9 +86,13 @@ export function AdminDashboard({ setActiveTab }: AdminDashboardProps = {}) {
   }, []);
 
   useEffect(() => {
+    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    if (hash.get("type") === "recovery") setRecoveryMode(true);
+
     loadAuthorizedWorkspace();
-    const { data: listener } = supabase.auth.onAuthStateChange(() => {
-      loadAuthorizedWorkspace();
+    const { data: listener } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") setRecoveryMode(true);
+      if (event !== "PASSWORD_RECOVERY") loadAuthorizedWorkspace();
     });
     return () => listener.subscription.unsubscribe();
   }, [loadAuthorizedWorkspace]);
@@ -101,11 +112,58 @@ export function AdminDashboard({ setActiveTab }: AdminDashboardProps = {}) {
     setSubmitting(false);
   };
 
+  const handlePasswordUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setRecoveryMessage("");
+    if (newPassword.length < 8) {
+      setError("Use a password with at least 8 characters.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setError("The two passwords do not match.");
+      return;
+    }
+    setSubmitting(true);
+    const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
+    setNewPassword("");
+    setConfirmPassword("");
+    if (updateError) {
+      setError(updateError.message);
+      setSubmitting(false);
+      return;
+    }
+    window.history.replaceState(null, "", "/admin");
+    setRecoveryMode(false);
+    setRecoveryMessage("Password updated successfully. Your secure CRM session is ready.");
+    await loadAuthorizedWorkspace();
+    setSubmitting(false);
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setProfile(null);
     setLeads([]);
   };
+
+  if (recoveryMode) {
+    return (
+      <section className="min-h-[65vh] flex items-center justify-center py-12">
+        <div className="w-full max-w-md bg-white rounded-3xl border border-slate-200 shadow-xl p-7 md:p-9 text-left">
+          <div className="h-12 w-12 rounded-2xl bg-[#0B5D3B]/10 flex items-center justify-center mb-5"><ShieldCheck className="h-6 w-6 text-[#0B5D3B]" /></div>
+          <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#D4AF37]">Journey Expert Ltd.</p>
+          <h1 className="text-2xl font-black text-slate-900 mt-1">Set New CRM Password</h1>
+          <p className="text-sm text-slate-500 mt-2">Choose a new password for your authenticated JEL CRM account.</p>
+          <form onSubmit={handlePasswordUpdate} className="mt-7 space-y-4">
+            <div><label className="block text-xs font-bold text-slate-700 mb-1.5">New password</label><input type="password" autoComplete="new-password" minLength={8} required value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#0B5D3B]/30" /></div>
+            <div><label className="block text-xs font-bold text-slate-700 mb-1.5">Confirm new password</label><input type="password" autoComplete="new-password" minLength={8} required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#0B5D3B]/30" /></div>
+            {error && <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-xs font-semibold text-red-700">{error}</div>}
+            <button disabled={submitting} className="w-full rounded-xl bg-[#0B5D3B] text-white py-3.5 text-sm font-black hover:bg-[#08472e] disabled:opacity-60">{submitting ? "Updating…" : "Update password"}</button>
+          </form>
+        </div>
+      </section>
+    );
+  }
 
   if (loading && !sessionReady) {
     return <div className="min-h-[55vh] flex items-center justify-center text-sm font-bold text-[#0B5D3B]">Verifying secure CRM session…</div>;
@@ -115,25 +173,16 @@ export function AdminDashboard({ setActiveTab }: AdminDashboardProps = {}) {
     return (
       <section className="min-h-[65vh] flex items-center justify-center py-12">
         <div className="w-full max-w-md bg-white rounded-3xl border border-slate-200 shadow-xl p-7 md:p-9 text-left">
-          <div className="h-12 w-12 rounded-2xl bg-[#0B5D3B]/10 flex items-center justify-center mb-5">
-            <Lock className="h-6 w-6 text-[#0B5D3B]" />
-          </div>
+          <div className="h-12 w-12 rounded-2xl bg-[#0B5D3B]/10 flex items-center justify-center mb-5"><Lock className="h-6 w-6 text-[#0B5D3B]" /></div>
           <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#D4AF37]">Journey Expert Ltd.</p>
           <h1 className="text-2xl font-black text-slate-900 mt-1">Counselor CRM Login</h1>
           <p className="text-sm text-slate-500 mt-2">Authorized staff only. Sign in with your Supabase CRM account.</p>
+          {recoveryMessage && <div className="mt-4 rounded-xl bg-green-50 border border-green-200 px-4 py-3 text-xs font-semibold text-green-700">{recoveryMessage}</div>}
           <form onSubmit={handleLogin} className="mt-7 space-y-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">Email</label>
-              <input type="email" autoComplete="username" required value={email} onChange={(e) => setEmail(e.target.value)} className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#0B5D3B]/30" placeholder="you@journeyexpertbd.com" />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">Password</label>
-              <input type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#0B5D3B]/30" placeholder="Your secure password" />
-            </div>
+            <div><label className="block text-xs font-bold text-slate-700 mb-1.5">Email</label><input type="email" autoComplete="username" required value={email} onChange={(e) => setEmail(e.target.value)} className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#0B5D3B]/30" placeholder="you@journeyexpertbd.com" /></div>
+            <div><label className="block text-xs font-bold text-slate-700 mb-1.5">Password</label><input type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#0B5D3B]/30" placeholder="Your secure password" /></div>
             {error && <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-xs font-semibold text-red-700">{error}</div>}
-            <button disabled={submitting} className="w-full rounded-xl bg-[#0B5D3B] text-white py-3.5 text-sm font-black hover:bg-[#08472e] disabled:opacity-60">
-              {submitting ? "Signing in…" : "Sign in to CRM"}
-            </button>
+            <button disabled={submitting} className="w-full rounded-xl bg-[#0B5D3B] text-white py-3.5 text-sm font-black hover:bg-[#08472e] disabled:opacity-60">{submitting ? "Signing in…" : "Sign in to CRM"}</button>
           </form>
           <button type="button" onClick={() => setActiveTab?.("home")} className="w-full mt-3 text-xs font-bold text-slate-500 hover:text-slate-800">Return to website</button>
         </div>
@@ -145,38 +194,13 @@ export function AdminDashboard({ setActiveTab }: AdminDashboardProps = {}) {
     <section className="py-6 text-left">
       <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
         <div className="p-6 md:p-8 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 text-[#0B5D3B]">
-              <ShieldCheck className="h-5 w-5" />
-              <span className="text-xs font-black uppercase tracking-wider">Authenticated CRM</span>
-            </div>
-            <h1 className="text-2xl font-black text-slate-900 mt-2">Lead Management</h1>
-            <p className="text-xs text-slate-500 mt-1">{profile.full_name || profile.email} · {profile.role}</p>
-          </div>
-          <div className="flex gap-2">
-            <button onClick={loadAuthorizedWorkspace} className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold flex items-center gap-2 hover:bg-slate-50"><RefreshCw className="h-4 w-4" /> Refresh</button>
-            <button onClick={handleLogout} className="rounded-xl bg-slate-900 text-white px-4 py-2.5 text-xs font-bold flex items-center gap-2"><LogOut className="h-4 w-4" /> Logout</button>
-          </div>
+          <div><div className="flex items-center gap-2 text-[#0B5D3B]"><ShieldCheck className="h-5 w-5" /><span className="text-xs font-black uppercase tracking-wider">Authenticated CRM</span></div><h1 className="text-2xl font-black text-slate-900 mt-2">Lead Management</h1><p className="text-xs text-slate-500 mt-1">{profile.full_name || profile.email} · {profile.role}</p></div>
+          <div className="flex gap-2"><button onClick={loadAuthorizedWorkspace} className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold flex items-center gap-2 hover:bg-slate-50"><RefreshCw className="h-4 w-4" /> Refresh</button><button onClick={handleLogout} className="rounded-xl bg-slate-900 text-white px-4 py-2.5 text-xs font-bold flex items-center gap-2"><LogOut className="h-4 w-4" /> Logout</button></div>
         </div>
-
         <div className="p-6 md:p-8">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-7">
-            <div className="rounded-2xl bg-slate-50 border border-slate-100 p-5"><Users className="h-5 w-5 text-[#0B5D3B]" /><div className="text-3xl font-black mt-3">{leads.length}</div><div className="text-xs text-slate-500 font-bold">Total CRM Leads</div></div>
-            <div className="rounded-2xl bg-slate-50 border border-slate-100 p-5"><div className="text-3xl font-black">{leads.filter((l) => (l.status || "New") === "New").length}</div><div className="text-xs text-slate-500 font-bold mt-1">New Leads</div></div>
-            <div className="rounded-2xl bg-slate-50 border border-slate-100 p-5"><div className="text-sm font-black text-[#0B5D3B]">LIVE DATABASE</div><div className="text-xs text-slate-500 font-bold mt-2">Supabase · RLS protected</div></div>
-          </div>
-
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-7"><div className="rounded-2xl bg-slate-50 border border-slate-100 p-5"><Users className="h-5 w-5 text-[#0B5D3B]" /><div className="text-3xl font-black mt-3">{leads.length}</div><div className="text-xs text-slate-500 font-bold">Total CRM Leads</div></div><div className="rounded-2xl bg-slate-50 border border-slate-100 p-5"><div className="text-3xl font-black">{leads.filter((l) => (l.status || "New") === "New").length}</div><div className="text-xs text-slate-500 font-bold mt-1">New Leads</div></div><div className="rounded-2xl bg-slate-50 border border-slate-100 p-5"><div className="text-sm font-black text-[#0B5D3B]">LIVE DATABASE</div><div className="text-xs text-slate-500 font-bold mt-2">Supabase · RLS protected</div></div></div>
           {error && <div className="mb-5 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-xs font-semibold text-red-700">{error}</div>}
-
-          <div className="overflow-x-auto border border-slate-200 rounded-2xl">
-            <table className="min-w-full text-sm">
-              <thead className="bg-slate-50 text-slate-600 text-xs uppercase"><tr><th className="px-4 py-3 text-left">Name</th><th className="px-4 py-3 text-left">Contact</th><th className="px-4 py-3 text-left">Country</th><th className="px-4 py-3 text-left">Source</th><th className="px-4 py-3 text-left">Status</th><th className="px-4 py-3 text-left">Created</th></tr></thead>
-              <tbody className="divide-y divide-slate-100">
-                {leads.map((lead) => <tr key={lead.id} className="hover:bg-slate-50"><td className="px-4 py-3 font-bold text-slate-900">{lead.name || "—"}</td><td className="px-4 py-3 text-xs"><div>{lead.phone || "—"}</div><div className="text-slate-400">{lead.email || "—"}</div></td><td className="px-4 py-3">{lead.preferred_country || "—"}</td><td className="px-4 py-3">{lead.source || "website"}</td><td className="px-4 py-3"><span className="rounded-full bg-[#0B5D3B]/10 text-[#0B5D3B] px-2.5 py-1 text-xs font-bold">{lead.status || "New"}</span></td><td className="px-4 py-3 text-xs text-slate-500">{lead.created_at ? new Date(lead.created_at).toLocaleString() : "—"}</td></tr>)}
-                {!leads.length && <tr><td colSpan={6} className="px-4 py-12 text-center text-sm text-slate-500">No CRM leads yet. New production leads will appear here after server-side capture is connected.</td></tr>}
-              </tbody>
-            </table>
-          </div>
+          <div className="overflow-x-auto border border-slate-200 rounded-2xl"><table className="min-w-full text-sm"><thead className="bg-slate-50 text-slate-600 text-xs uppercase"><tr><th className="px-4 py-3 text-left">Name</th><th className="px-4 py-3 text-left">Contact</th><th className="px-4 py-3 text-left">Country</th><th className="px-4 py-3 text-left">Source</th><th className="px-4 py-3 text-left">Status</th><th className="px-4 py-3 text-left">Created</th></tr></thead><tbody className="divide-y divide-slate-100">{leads.map((lead) => <tr key={lead.id} className="hover:bg-slate-50"><td className="px-4 py-3 font-bold text-slate-900">{lead.name || "—"}</td><td className="px-4 py-3 text-xs"><div>{lead.phone || "—"}</div><div className="text-slate-400">{lead.email || "—"}</div></td><td className="px-4 py-3">{lead.preferred_country || "—"}</td><td className="px-4 py-3">{lead.source || "website"}</td><td className="px-4 py-3"><span className="rounded-full bg-[#0B5D3B]/10 text-[#0B5D3B] px-2.5 py-1 text-xs font-bold">{lead.status || "New"}</span></td><td className="px-4 py-3 text-xs text-slate-500">{lead.created_at ? new Date(lead.created_at).toLocaleString() : "—"}</td></tr>)}{!leads.length && <tr><td colSpan={6} className="px-4 py-12 text-center text-sm text-slate-500">No CRM leads yet. New production leads will appear here after server-side capture is connected.</td></tr>}</tbody></table></div>
         </div>
       </div>
     </section>
