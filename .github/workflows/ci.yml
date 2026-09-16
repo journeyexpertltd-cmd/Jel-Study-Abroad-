@@ -35,8 +35,8 @@ jobs:
       - name: Type-check application
         run: npm run lint
 
-      - name: Test Pages chat API
-        run: node --experimental-strip-types --test tests/angela-pages-chat.test.mjs tests/angela-speech.test.mjs tests/angela-live-token.test.mjs
+      - name: Test Pages APIs and security contracts
+        run: node --experimental-strip-types --test tests/angela-pages-chat.test.mjs tests/angela-speech.test.mjs tests/angela-live-token.test.mjs tests/security-contract.test.mjs
 
       - name: Run SEO and domain safety checks
         run: npm run check:seo
@@ -71,6 +71,7 @@ jobs:
             echo "- Build command: \`npm run build\`"
             echo "- Production target: \`https://journeyexpertbd.com\`"
             echo "- Angela voice contract: protected by automated regression checks."
+            echo "- CRM/student auth: protected by security contract tests."
             echo "- Canonical URL contract: no trailing slash except the homepage."
             echo "- Cloudflare deployment: triggered by the connected Pages GitHub integration after a successful push to \`main\`."
           } >> "$GITHUB_STEP_SUMMARY"

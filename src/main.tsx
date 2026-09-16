@@ -3,12 +3,11 @@ import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 
-// Supabase password-recovery emails may return to the configured Site URL (/)
-// with credentials in the URL fragment. Route that recovery session to the
-// CRM before App chooses its initial view, while preserving the fragment so
-// the Supabase client can exchange it for the recovery session.
+// Admin recovery emails may still return to the Supabase Site URL (/).
+// Route only root recovery sessions to /admin before React chooses its view.
+// Student recovery links explicitly target /student-portal and must remain there.
 const recoveryHash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
-if (recoveryHash.get('type') === 'recovery' && window.location.pathname !== '/admin') {
+if (recoveryHash.get('type') === 'recovery' && window.location.pathname === '/') {
   window.history.replaceState(null, '', `/admin${window.location.search}${window.location.hash}`);
 }
 

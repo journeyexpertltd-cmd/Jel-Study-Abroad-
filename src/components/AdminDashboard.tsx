@@ -26,6 +26,8 @@ type LeadRow = {
   message: string | null;
 };
 
+const CRM_ROLES = new Set(["super_admin", "admin", "counsellor", "counselor", "visa_officer"]);
+
 export function AdminDashboard({ setActiveTab }: AdminDashboardProps = {}) {
   const [loading, setLoading] = useState(true);
   const [sessionReady, setSessionReady] = useState(false);
@@ -34,20 +36,28 @@ export function AdminDashboard({ setActiveTab }: AdminDashboardProps = {}) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [showForgot, setShowForgot] = useState(false);
   const [recoveryMode, setRecoveryMode] = useState(() => {
     const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
     return hash.get("type") === "recovery";
   });
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [recoveryMessage, setRecoveryMessage] = useState("");
 
   const loadAuthorizedWorkspace = useCallback(async () => {
     setLoading(true);
     setError("");
 
-    const { data: sessionData } = await supabase.auth.getSession();
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError) {
+      setError("Unable to verify the CRM session.");
+      setSessionReady(true);
+      setLoading(false);
+      return;
+    }
+
     const user = sessionData.session?.user;
     if (!user) {
       setProfile(null);
@@ -63,7 +73,7 @@ export function AdminDashboard({ setActiveTab }: AdminDashboardProps = {}) {
       .eq("id", user.id)
       .single();
 
-    if (staffError || !staff || !staff.is_active || !["super_admin", "admin"].includes(staff.role)) {
+    if (staffError || !staff || !staff.is_active || !CRM_ROLES.has(String(staff.role || "").toLowerCase())) {
       await supabase.auth.signOut();
       setProfile(null);
       setLeads([]);
@@ -79,7 +89,7 @@ export function AdminDashboard({ setActiveTab }: AdminDashboardProps = {}) {
       .select("id,created_at,name,email,phone,source,status,preferred_country,education_level,message")
       .order("created_at", { ascending: false });
 
-    if (leadError) setError(`CRM data error: ${leadError.message}`);
+    if (leadError) setError("CRM data could not be loaded. Check database policies and try Refresh.");
     setLeads((leadRows || []) as LeadRow[]);
     setSessionReady(true);
     setLoading(false);
@@ -89,10 +99,14 @@ export function AdminDashboard({ setActiveTab }: AdminDashboardProps = {}) {
     const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
     if (hash.get("type") === "recovery") setRecoveryMode(true);
 
-    loadAuthorizedWorkspace();
+    void loadAuthorizedWorkspace();
     const { data: listener } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY") setRecoveryMode(true);
-      if (event !== "PASSWORD_RECOVERY") loadAuthorizedWorkspace();
+      if (event === "PASSWORD_RECOVERY") {
+        setRecoveryMode(true);
+        setLoading(false);
+        return;
+      }
+      void loadAuthorizedWorkspace();
     });
     return () => listener.subscription.unsubscribe();
   }, [loadAuthorizedWorkspace]);
@@ -101,10 +115,11 @@ export function AdminDashboard({ setActiveTab }: AdminDashboardProps = {}) {
     e.preventDefault();
     setSubmitting(true);
     setError("");
+    setNotice("");
     const { error: signInError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
     setPassword("");
     if (signInError) {
-      setError(signInError.message);
+      setError("Sign-in failed. Check the email/password or use Forgot password.");
       setSubmitting(false);
       return;
     }
@@ -112,10 +127,27 @@ export function AdminDashboard({ setActiveTab }: AdminDashboardProps = {}) {
     setSubmitting(false);
   };
 
+  const handleRecoveryRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim()) {
+      setError("Enter the staff email address first.");
+      return;
+    }
+    setSubmitting(true);
+    setError("");
+    const { error: recoveryError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${window.location.origin}/admin`,
+    });
+    if (recoveryError) console.warn("CRM recovery request failed", recoveryError.message);
+    setNotice("If the email is registered, a secure password-recovery link has been sent.");
+    setShowForgot(false);
+    setSubmitting(false);
+  };
+
   const handlePasswordUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setRecoveryMessage("");
+    setNotice("");
     if (newPassword.length < 8) {
       setError("Use a password with at least 8 characters.");
       return;
@@ -129,13 +161,13 @@ export function AdminDashboard({ setActiveTab }: AdminDashboardProps = {}) {
     setNewPassword("");
     setConfirmPassword("");
     if (updateError) {
-      setError(updateError.message);
+      setError(updateError.message || "Password update failed.");
       setSubmitting(false);
       return;
     }
     window.history.replaceState(null, "", "/admin");
     setRecoveryMode(false);
-    setRecoveryMessage("Password updated successfully. Your secure CRM session is ready.");
+    setNotice("Password updated successfully. Your secure CRM session is ready.");
     await loadAuthorizedWorkspace();
     setSubmitting(false);
   };
@@ -144,6 +176,7 @@ export function AdminDashboard({ setActiveTab }: AdminDashboardProps = {}) {
     await supabase.auth.signOut();
     setProfile(null);
     setLeads([]);
+    setNotice("");
   };
 
   if (recoveryMode) {
@@ -153,7 +186,7 @@ export function AdminDashboard({ setActiveTab }: AdminDashboardProps = {}) {
           <div className="h-12 w-12 rounded-2xl bg-[#0B5D3B]/10 flex items-center justify-center mb-5"><ShieldCheck className="h-6 w-6 text-[#0B5D3B]" /></div>
           <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#D4AF37]">Journey Expert Ltd.</p>
           <h1 className="text-2xl font-black text-slate-900 mt-1">Set New CRM Password</h1>
-          <p className="text-sm text-slate-500 mt-2">Choose a new password for your authenticated JEL CRM account.</p>
+          <p className="text-sm text-slate-500 mt-2">Choose a new password for your authenticated JEL staff account.</p>
           <form onSubmit={handlePasswordUpdate} className="mt-7 space-y-4">
             <div><label className="block text-xs font-bold text-slate-700 mb-1.5">New password</label><input type="password" autoComplete="new-password" minLength={8} required value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#0B5D3B]/30" /></div>
             <div><label className="block text-xs font-bold text-slate-700 mb-1.5">Confirm new password</label><input type="password" autoComplete="new-password" minLength={8} required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#0B5D3B]/30" /></div>
@@ -176,14 +209,24 @@ export function AdminDashboard({ setActiveTab }: AdminDashboardProps = {}) {
           <div className="h-12 w-12 rounded-2xl bg-[#0B5D3B]/10 flex items-center justify-center mb-5"><Lock className="h-6 w-6 text-[#0B5D3B]" /></div>
           <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#D4AF37]">Journey Expert Ltd.</p>
           <h1 className="text-2xl font-black text-slate-900 mt-1">Counselor CRM Login</h1>
-          <p className="text-sm text-slate-500 mt-2">Authorized staff only. Sign in with your Supabase CRM account.</p>
-          {recoveryMessage && <div className="mt-4 rounded-xl bg-green-50 border border-green-200 px-4 py-3 text-xs font-semibold text-green-700">{recoveryMessage}</div>}
-          <form onSubmit={handleLogin} className="mt-7 space-y-4">
-            <div><label className="block text-xs font-bold text-slate-700 mb-1.5">Email</label><input type="email" autoComplete="username" required value={email} onChange={(e) => setEmail(e.target.value)} className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#0B5D3B]/30" placeholder="you@journeyexpertbd.com" /></div>
-            <div><label className="block text-xs font-bold text-slate-700 mb-1.5">Password</label><input type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#0B5D3B]/30" placeholder="Your secure password" /></div>
-            {error && <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-xs font-semibold text-red-700">{error}</div>}
-            <button disabled={submitting} className="w-full rounded-xl bg-[#0B5D3B] text-white py-3.5 text-sm font-black hover:bg-[#08472e] disabled:opacity-60">{submitting ? "Signing in…" : "Sign in to CRM"}</button>
-          </form>
+          <p className="text-sm text-slate-500 mt-2">Authorized staff only. Authentication and access control are enforced through Supabase Auth and staff profiles.</p>
+          {notice && <div className="mt-4 rounded-xl bg-green-50 border border-green-200 px-4 py-3 text-xs font-semibold text-green-700">{notice}</div>}
+          {showForgot ? (
+            <form onSubmit={handleRecoveryRequest} className="mt-7 space-y-4">
+              <div><label className="block text-xs font-bold text-slate-700 mb-1.5">Staff email</label><input type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm" placeholder="staff@example.com" /></div>
+              {error && <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-xs font-semibold text-red-700">{error}</div>}
+              <button disabled={submitting} className="w-full rounded-xl bg-[#0B5D3B] text-white py-3.5 text-sm font-black disabled:opacity-60">{submitting ? "Sending…" : "Send recovery link"}</button>
+              <button type="button" onClick={() => { setShowForgot(false); setError(""); }} className="w-full text-xs font-bold text-slate-500">Back to sign in</button>
+            </form>
+          ) : (
+            <form onSubmit={handleLogin} className="mt-7 space-y-4">
+              <div><label className="block text-xs font-bold text-slate-700 mb-1.5">Email</label><input type="email" autoComplete="username" required value={email} onChange={(e) => setEmail(e.target.value)} className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#0B5D3B]/30" placeholder="staff@example.com" /></div>
+              <div><label className="block text-xs font-bold text-slate-700 mb-1.5">Password</label><input type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#0B5D3B]/30" placeholder="Your secure password" /></div>
+              {error && <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-xs font-semibold text-red-700">{error}</div>}
+              <button disabled={submitting} className="w-full rounded-xl bg-[#0B5D3B] text-white py-3.5 text-sm font-black hover:bg-[#08472e] disabled:opacity-60">{submitting ? "Signing in…" : "Sign in to CRM"}</button>
+              <button type="button" onClick={() => { setShowForgot(true); setError(""); setNotice(""); }} className="w-full text-xs font-bold text-[#0B5D3B] hover:underline">Forgot password?</button>
+            </form>
+          )}
           <button type="button" onClick={() => setActiveTab?.("home")} className="w-full mt-3 text-xs font-bold text-slate-500 hover:text-slate-800">Return to website</button>
         </div>
       </section>
@@ -199,8 +242,9 @@ export function AdminDashboard({ setActiveTab }: AdminDashboardProps = {}) {
         </div>
         <div className="p-6 md:p-8">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-7"><div className="rounded-2xl bg-slate-50 border border-slate-100 p-5"><Users className="h-5 w-5 text-[#0B5D3B]" /><div className="text-3xl font-black mt-3">{leads.length}</div><div className="text-xs text-slate-500 font-bold">Total CRM Leads</div></div><div className="rounded-2xl bg-slate-50 border border-slate-100 p-5"><div className="text-3xl font-black">{leads.filter((l) => (l.status || "New") === "New").length}</div><div className="text-xs text-slate-500 font-bold mt-1">New Leads</div></div><div className="rounded-2xl bg-slate-50 border border-slate-100 p-5"><div className="text-sm font-black text-[#0B5D3B]">LIVE DATABASE</div><div className="text-xs text-slate-500 font-bold mt-2">Supabase · RLS protected</div></div></div>
+          {notice && <div className="mb-5 rounded-xl bg-green-50 border border-green-200 px-4 py-3 text-xs font-semibold text-green-700">{notice}</div>}
           {error && <div className="mb-5 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-xs font-semibold text-red-700">{error}</div>}
-          <div className="overflow-x-auto border border-slate-200 rounded-2xl"><table className="min-w-full text-sm"><thead className="bg-slate-50 text-slate-600 text-xs uppercase"><tr><th className="px-4 py-3 text-left">Name</th><th className="px-4 py-3 text-left">Contact</th><th className="px-4 py-3 text-left">Country</th><th className="px-4 py-3 text-left">Source</th><th className="px-4 py-3 text-left">Status</th><th className="px-4 py-3 text-left">Created</th></tr></thead><tbody className="divide-y divide-slate-100">{leads.map((lead) => <tr key={lead.id} className="hover:bg-slate-50"><td className="px-4 py-3 font-bold text-slate-900">{lead.name || "—"}</td><td className="px-4 py-3 text-xs"><div>{lead.phone || "—"}</div><div className="text-slate-400">{lead.email || "—"}</div></td><td className="px-4 py-3">{lead.preferred_country || "—"}</td><td className="px-4 py-3">{lead.source || "website"}</td><td className="px-4 py-3"><span className="rounded-full bg-[#0B5D3B]/10 text-[#0B5D3B] px-2.5 py-1 text-xs font-bold">{lead.status || "New"}</span></td><td className="px-4 py-3 text-xs text-slate-500">{lead.created_at ? new Date(lead.created_at).toLocaleString() : "—"}</td></tr>)}{!leads.length && <tr><td colSpan={6} className="px-4 py-12 text-center text-sm text-slate-500">No CRM leads yet. New production leads will appear here after server-side capture is connected.</td></tr>}</tbody></table></div>
+          <div className="overflow-x-auto border border-slate-200 rounded-2xl"><table className="min-w-full text-sm"><thead className="bg-slate-50 text-slate-600 text-xs uppercase"><tr><th className="px-4 py-3 text-left">Name</th><th className="px-4 py-3 text-left">Contact</th><th className="px-4 py-3 text-left">Country</th><th className="px-4 py-3 text-left">Source</th><th className="px-4 py-3 text-left">Status</th><th className="px-4 py-3 text-left">Created</th></tr></thead><tbody className="divide-y divide-slate-100">{leads.map((lead) => <tr key={lead.id} className="hover:bg-slate-50"><td className="px-4 py-3 font-bold text-slate-900">{lead.name || "—"}</td><td className="px-4 py-3 text-xs"><div>{lead.phone || "—"}</div><div className="text-slate-400">{lead.email || "—"}</div></td><td className="px-4 py-3">{lead.preferred_country || "—"}</td><td className="px-4 py-3">{lead.source || "website"}</td><td className="px-4 py-3"><span className="rounded-full bg-[#0B5D3B]/10 text-[#0B5D3B] px-2.5 py-1 text-xs font-bold">{lead.status || "New"}</span></td><td className="px-4 py-3 text-xs text-slate-500">{lead.created_at ? new Date(lead.created_at).toLocaleString() : "—"}</td></tr>)}{!leads.length && <tr><td colSpan={6} className="px-4 py-12 text-center text-sm text-slate-500">No CRM leads yet.</td></tr>}</tbody></table></div>
         </div>
       </div>
     </section>

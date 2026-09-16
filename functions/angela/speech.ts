@@ -43,12 +43,15 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   const key = (env.GEMINI_TTS_API_KEY || env.GEMINI_API_KEY)?.trim();
   if (!key || env.ANGELA_SERVER_VOICE === 'off') return json('voice_not_configured', 503);
 
-  // Production baseline: keep one fast TTS attempt, then let the browser use the
-  // already-proven Gemini Live fallback. This avoids serial 10s model waits.
+  // Gemini TTS commonly needs more than four seconds for a cold production request.
+  // Keep a single provider attempt, but allow a bounded 12-second window before the
+  // client switches to the Gemini Live/browser fallback path.
   const voiceName = 'Aoede';
   const model = env.GEMINI_TTS_MODEL?.trim() || 'gemini-2.5-flash-preview-tts';
+  const configuredTimeout = Number(env.ANGELA_TTS_TIMEOUT_MS || '12000');
+  const timeoutMs = Number.isFinite(configuredTimeout) ? Math.min(15000, Math.max(5000, configuredTimeout)) : 12000;
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 4000);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   const abort = () => controller.abort();
   request.signal.addEventListener('abort', abort, { once: true });
 
