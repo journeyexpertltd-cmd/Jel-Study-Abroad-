@@ -1,9 +1,6 @@
 name: Study Abroad Live Monitor
 
 on:
-  workflow_run:
-    workflows: ["Study Abroad CI"]
-    types: [completed]
   schedule:
     - cron: "17 2 * * *"
   workflow_dispatch:
@@ -18,16 +15,9 @@ concurrency:
 jobs:
   monitor:
     name: Verify production availability and isolation
-    if: >-
-      github.event_name != 'workflow_run' ||
-      github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Wait for Pages propagation after CI
-        if: github.event_name == 'workflow_run'
-        run: sleep 60
-
       - name: Check canonical public routes
         shell: bash
         run: |
@@ -126,7 +116,7 @@ jobs:
           echo "Angela production Bangla response probe passed"
 
       - name: Check live Angela speech response
-        if: always() && !cancelled() && github.event_name == 'workflow_run'
+        if: always() && !cancelled()
         shell: bash
         run: |
           set -euo pipefail
@@ -192,10 +182,11 @@ jobs:
             echo "- Target: https://journeyexpertbd.com"
             echo "- Trigger: ${{ github.event_name }}"
             echo "- Commit: ${{ github.sha }}"
+            echo "- Schedule: once every 24 hours; manual runs remain available."
             echo "- Public routes, admin/student portal entry routes, sitemap, robots and API health are verified."
             echo "- CRM: the production lead endpoint is probed with a non-persisting validation request."
             echo "- Angela: production AI endpoint is probed for a real non-fallback Bangla response."
-            echo "- Voice: production speech endpoint is probed for a valid WAV after successful CI deployments."
+            echo "- Voice: production speech endpoint is probed for a valid WAV."
             echo "- Failure behavior: this workflow fails and uses GitHub Actions failure notifications."
             echo "- Production changes: none; this workflow is read-only."
           } >> "$GITHUB_STEP_SUMMARY"
