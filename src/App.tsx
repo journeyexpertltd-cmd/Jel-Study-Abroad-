@@ -40,6 +40,12 @@ const EctsCalculator = lazy(() => import("./components/EctsCalculator").then((m)
 
 const jelLogo = "/assets/images/jel-study-abroad-official-v2.png";
 
+const verifiedSocialLinks = [
+  { label: "Facebook", href: "https://www.facebook.com/journeyexpertltd" },
+  { label: "Instagram", href: "https://www.instagram.com/journeyexpertltd/" },
+  { label: "WhatsApp", href: "https://wa.me/8801926400400" },
+];
+
 const tabToPath: Record<string, string> = {
   home: "/",
   about: "/about",
@@ -181,6 +187,10 @@ export default function App() {
         name: "Journey Expert Ltd.",
         url: "https://journeyexpertbd.com",
         logo: "https://journeyexpertbd.com/assets/images/jel-study-abroad-official-v2.png",
+        sameAs: [
+          "https://www.facebook.com/journeyexpertltd",
+          "https://www.instagram.com/journeyexpertltd/",
+        ],
         contactPoint: { "@type": "ContactPoint", telephone: "+8801926400400", contactType: "customer service", areaServed: "BD", availableLanguage: ["en", "bn"] },
       },
       {
@@ -275,7 +285,7 @@ export default function App() {
           <div><img src={jelLogo} alt="JEL Study Abroad" className="h-12 w-auto bg-white rounded-xl p-2" /><p className="text-xs text-slate-400 mt-4 leading-relaxed">JEL Study Abroad is a brand of Journey Expert Ltd., providing study-abroad counseling, admissions support and related travel services from Dhaka, Bangladesh.</p></div>
           <div><h4 className="font-black text-sm">Study destinations</h4><div className="mt-3 space-y-2 text-xs text-slate-400">{["United Kingdom", "Canada", "Australia", "United States", "Ireland", "Germany"].map((country) => <button key={country} onClick={() => { setExploreCountry(country); navigate("countries"); }} className="block hover:text-white">Study in {country}</button>)}</div></div>
           <div><h4 className="font-black text-sm">Quick links</h4><div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-400">{menuItems.map(([id, label]) => <button key={id} onClick={() => navigate(id)} className="text-left hover:text-white">{label}</button>)}</div></div>
-          <div><h4 className="font-black text-sm">Contact</h4><div className="mt-3 space-y-2 text-xs text-slate-400"><div className="flex gap-2"><MapPin className="h-4 w-4 shrink-0" />189/A, Abdul Motin Complex, Nabisco Mor, Tejgaon, Dhaka, Bangladesh</div><div className="flex gap-2"><Phone className="h-4 w-4" />+8801926400400</div><div className="flex gap-2"><Globe className="h-4 w-4" />journeyexpertbd.com</div></div></div>
+          <div><h4 className="font-black text-sm">Contact & social</h4><div className="mt-3 space-y-2 text-xs text-slate-400"><div className="flex gap-2"><MapPin className="h-4 w-4 shrink-0" />189/A, Abdul Motin Complex, Nabisco Mor, Tejgaon, Dhaka, Bangladesh</div><div className="flex gap-2"><Phone className="h-4 w-4" />+8801926400400</div><div className="flex gap-2"><Globe className="h-4 w-4" />journeyexpertbd.com</div></div><div className="mt-4 flex flex-wrap gap-2">{verifiedSocialLinks.map((social) => <a key={social.label} href={social.href} target="_blank" rel="noopener noreferrer" className="rounded-lg border border-slate-700 px-3 py-2 text-[11px] font-bold text-slate-300 hover:text-white hover:border-slate-500" aria-label={`Journey Expert Ltd. ${social.label}`}>{social.label}</a>)}</div></div>
         </div>
         <div className="max-w-[1600px] mx-auto mt-8 pt-6 border-t border-slate-800 text-[11px] text-slate-500 flex flex-col md:flex-row justify-between gap-2"><span>© {new Date().getFullYear()} Journey Expert Ltd. / JEL Study Abroad.</span><span>Information is guidance only; admissions, scholarships and visas are subject to third-party decisions.</span></div>
       </footer>
