@@ -38,7 +38,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   if (!env.GEMINI_API_KEY) {
     try {
       const response = await fetch('https://journeyexpertltd.com/api/ai/voice-agent', {
-        method: 'POST', signal: AbortSignal.timeout(12000),
+        method: 'POST', signal: AbortSignal.timeout(8000),
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: last, language: bn ? 'bn' : 'en', history: turns.slice(0, -1).map((turn: any) => ({ role: turn.role === 'model' ? 'assistant' : 'user', content: turn.parts[0].text })) }),
       });
@@ -51,12 +51,12 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   }
 
   const primaryModel = env.GEMINI_MODEL || 'gemini-3.8-flash';
-  const makeRequest = async (model: string): Promise<Response | null> => {
+  const makeRequest = async (model: string, timeoutMs: number): Promise<Response | null> => {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 8000);
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
       const voiceNote = fromVoice
-        ? '\nVOICE TRANSCRIPT NOTE: The latest user message came from speech recognition and may contain small phonetic or transcription errors. Infer the likely intended Bangla, Banglish, or English question only when the intent is reasonably clear. If it is ambiguous, ask one short clarification question instead of inventing meaning.'
+        ? '\nVOICE TRANSCRIPT NOTE: The latest user message came from speech recognition and may contain small phonetic or transcription errors. Infer the likely intended Bangla, Banglish, or English question only when the intent is reasonably clear. If it is ambiguous, ask one short clarification question instead of inventing meaning. Keep spoken answers concise: normally 60-90 words unless the user explicitly asks for detail.'
         : '';
       return await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
         method: 'POST', signal: controller.signal,
@@ -64,7 +64,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
         body: JSON.stringify({
           contents: turns,
           systemInstruction: { parts: [{ text: instruction + voiceNote + '\nMANDATORY RESPONSE LANGUAGE: ' + (bn ? 'Respond in natural Bengali script. Treat Banglish as Bengali. Keep proper names unchanged.' : 'Respond in English.') }] },
-          generationConfig: { temperature: 0.3, maxOutputTokens: 320 },
+          generationConfig: { temperature: 0.3, maxOutputTokens: fromVoice ? 180 : 280 },
         }),
       });
     } catch (error: any) {
@@ -75,10 +75,13 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
     }
   };
 
-  let response = await makeRequest(primaryModel);
+  // Fast failover: keep the primary window short enough for conversational voice,
+  // then give the lightweight fallback a second bounded chance. Worst-case model
+  // wait is now about 9.5s instead of roughly 16s.
+  let response = await makeRequest(primaryModel, 5500);
   let providerModel = primaryModel;
   if ((!response || !response.ok) && primaryModel !== 'gemini-3.5-flash-lite') {
-    response = await makeRequest('gemini-3.5-flash-lite');
+    response = await makeRequest('gemini-3.5-flash-lite', 4000);
     providerModel = 'gemini-3.5-flash-lite';
   }
   if (!response || !response.ok) return fallback();
