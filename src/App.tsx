@@ -1,8 +1,19 @@
-import React, { lazy, Suspense, useEffect, useState } from "react";
-import { 
-  GraduationCap, Brain, ShieldCheck, Calendar, Users, Phone, MessageSquare, 
-  Star, Mail, MapPin, Globe, Menu, X, ArrowRight, Eye, ShieldAlert, Search, 
-  Check, Sparkles, Sun, Moon, Calculator 
+import React, { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import {
+  Brain,
+  Calculator,
+  Calendar,
+  Globe,
+  Mail,
+  MapPin,
+  Menu,
+  Moon,
+  Phone,
+  Search,
+  ShieldCheck,
+  Sun,
+  Users,
+  X,
 } from "lucide-react";
 import { AIChatAssistant } from "./components/AIChatAssistant";
 import { SearchModal } from "./components/SearchModal";
@@ -29,1060 +40,247 @@ const EctsCalculator = lazy(() => import("./components/EctsCalculator").then((m)
 
 const jelLogo = "/assets/images/jel-study-abroad-official-v2.png";
 
+const tabToPath: Record<string, string> = {
+  home: "/",
+  about: "/about",
+  services: "/services",
+  countries: "/destinations",
+  universities: "/partners",
+  scholarships: "/scholarships",
+  blog: "/blogs",
+  portal: "/student-portal",
+  contact: "/contact",
+  finder: "/finder",
+  checker: "/checker",
+  booking: "/booking",
+  admin: "/admin",
+  franchise: "/franchise",
+  partnerSync: "/partnersync",
+  scholarshipMatcher: "/scholarshipmatcher",
+  admissionPredictor: "/admissionpredictor",
+  globalMarketplace: "/globalmarketplace",
+  ects: "/ects-calculator",
+};
+
+const pathToTab: Record<string, string> = {
+  "": "home",
+  home: "home",
+  about: "about",
+  services: "services",
+  countries: "countries",
+  destinations: "countries",
+  universities: "universities",
+  partners: "universities",
+  scholarships: "scholarships",
+  blog: "blog",
+  blogs: "blog",
+  portal: "portal",
+  "student-portal": "portal",
+  contact: "contact",
+  finder: "finder",
+  checker: "checker",
+  booking: "booking",
+  admin: "admin",
+  franchise: "franchise",
+  partnersync: "partnerSync",
+  scholarshipmatcher: "scholarshipMatcher",
+  admissionpredictor: "admissionPredictor",
+  globalmarketplace: "globalMarketplace",
+  ects: "ects",
+  "ects-calculator": "ects",
+  ectscalculator: "ects",
+};
+
+const getTabFromLocation = () => {
+  const path = window.location.pathname.replace(/^\/|\/$/g, "").toLowerCase();
+  const params = new URLSearchParams(window.location.search);
+  const requested = params.get("activeTab") || params.get("tab");
+  if (requested && pathToTab[requested.toLowerCase()]) return pathToTab[requested.toLowerCase()];
+  return pathToTab[path] || "home";
+};
+
 export default function App() {
-  // Helper to parse clean paths or activeTab query param
-  const getInitialTab = (): string => {
-    const path = window.location.pathname.replace(/^\/|\/$/g, "").toLowerCase();
-    const params = new URLSearchParams(window.location.search);
-    const tabParam = params.get("activeTab") || params.get("tab");
-
-    const validTabs: Record<string, string> = {
-      "": "home",
-      "home": "home",
-      "about": "about",
-      "services": "services",
-      "countries": "countries",
-      "destinations": "countries",
-      "universities": "universities",
-      "partners": "universities",
-      "scholarships": "scholarships",
-      "blog": "blog",
-      "blogs": "blog",
-      "portal": "portal",
-      "student-portal": "portal",
-      "contact": "contact",
-      "finder": "finder",
-      "checker": "checker",
-      "booking": "booking",
-      "admin": "admin",
-      "franchise": "franchise",
-      "partnersync": "partnerSync",
-      "scholarshipmatcher": "scholarshipMatcher",
-      "admissionpredictor": "admissionPredictor",
-      "globalmarketplace": "globalMarketplace",
-      "ects": "ects",
-      "ects-calculator": "ects",
-      "ectscalculator": "ects"
-    };
-
-    if (tabParam && validTabs[tabParam.toLowerCase()]) {
-      return validTabs[tabParam.toLowerCase()];
-    }
-    if (path && validTabs[path]) {
-      return validTabs[path];
-    }
-    return "home";
-  };
-
-  const [activeTab, setActiveTab] = useState<string>(getInitialTab);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
-  
-  const [darkMode, setDarkMode] = useState<boolean>(() => {
-    return localStorage.getItem("jel_theme") === "dark" || 
-      (!localStorage.getItem("jel_theme") && window.matchMedia("(prefers-color-scheme: dark)").matches);
-  });
-
-  // Sync dark class with document element
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("jel_theme", "dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("jel_theme", "light");
-    }
-  }, [darkMode]);
-  
-  // Sync activeTab to clean URL pathnames
-  useEffect(() => {
-    const pathMap: Record<string, string> = {
-      "home": "/",
-      "about": "/about",
-      "services": "/services",
-      "countries": "/destinations",
-      "universities": "/partners",
-      "scholarships": "/scholarships",
-      "blog": "/blogs",
-      "portal": "/student-portal",
-      "contact": "/contact",
-      "finder": "/finder",
-      "checker": "/checker",
-      "booking": "/booking",
-      "admin": "/admin",
-      "franchise": "/franchise",
-      "partnerSync": "/partnersync",
-      "scholarshipMatcher": "/scholarshipmatcher",
-      "admissionPredictor": "/admissionpredictor",
-      "globalMarketplace": "/globalmarketplace",
-      "ects": "/ects-calculator"
-    };
-
-    const currentPath = window.location.pathname;
-    const targetPath = pathMap[activeTab] || "/";
-
-    if (currentPath !== targetPath) {
-      window.history.pushState(null, "", targetPath);
-    }
-  }, [activeTab]);
-
-  // Handle popstate for browser back/forward navigation
-  useEffect(() => {
-    const handlePopState = () => {
-      setActiveTab(getInitialTab());
-    };
-    window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
-  }, []);
-  
-  // Search parameters targeting specific sub-screens
-  const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
-  const [uniSearchTerm, setUniSearchTerm] = useState<string>("");
-  const [schSearchTerm, setSchSearchTerm] = useState<string>("");
-  const [blogSearchTerm, setBlogSearchTerm] = useState<string>("");
+  const [activeTab, setActiveTab] = useState(getTabFromLocation);
+  const [mobileMenu, setMobileMenu] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [uniSearch, setUniSearch] = useState("");
+  const [scholarshipSearch, setScholarshipSearch] = useState("");
+  const [blogSearch, setBlogSearch] = useState("");
   const [initialBlogId, setInitialBlogId] = useState<string | null>(null);
+  const [bookingUniversity, setBookingUniversity] = useState("");
+  const [bookingCountry, setBookingCountry] = useState("");
+  const [exploreCountry, setExploreCountry] = useState("United Kingdom");
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem("jel_theme") === "dark" || (!localStorage.getItem("jel_theme") && window.matchMedia("(prefers-color-scheme: dark)").matches));
 
-  // Conversion Features States
-  const [showExitIntent, setShowExitIntent] = useState<boolean>(false);
-  const [exitForm, setExitForm] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    destination: "United Kingdom"
-  });
-  const [exitSubmitted, setExitSubmitted] = useState<boolean>(false);
-  const [exitSubmitting, setExitSubmitting] = useState<boolean>(false);
-
-  const [newsletterEmail, setNewsletterEmail] = useState<string>("");
-  const [newsletterJoined, setNewsletterJoined] = useState<boolean>(false);
-
-  // Global Ctrl+K / Cmd+K listener to trigger search modal
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        setIsSearchOpen(true);
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+    document.documentElement.classList.toggle("dark", darkMode);
+    localStorage.setItem("jel_theme", darkMode ? "dark" : "light");
+  }, [darkMode]);
 
-  // Dynamic Document Title and Meta Description for SEO & Accessibility
   useEffect(() => {
-    const titleMap: Record<string, { title: string; desc: string }> = {
-      home: {
-        title: "Study Abroad Consultancy in Bangladesh | JEL Study Abroad",
-        desc: "JEL Study Abroad is a Dhaka-based consultancy helping Bangladeshi students with UK, Canada, Australia, USA, Germany and Ireland university admissions, scholarships and student visa guidance."
-      },
-      about: {
-        title: "About JEL Study Abroad | Dhaka Student Visa Consultants",
-        desc: "Learn about JEL Study Abroad, our Dhaka counseling team, university partnerships and ethical student visa guidance for Bangladeshi applicants."
-      },
-      services: {
-        title: "Study Abroad Services | Admissions, Scholarships & Student Visas",
-        desc: "Explore JEL Study Abroad services for university applications, scholarships, SOP review, IELTS guidance and student visa preparation from Bangladesh."
-      },
-      countries: {
-        title: "Study Destinations for Bangladeshi Students | UK, Canada & Australia",
-        desc: "Compare study destinations including the UK, Canada, Australia, USA, Germany and Ireland with JEL Study Abroad admission and visa guidance."
-      },
-      universities: {
-        title: "Partner Universities for Bangladeshi Students | JEL Study Abroad",
-        desc: "Explore JEL Study Abroad partner universities and admission pathways for Bangladeshi students seeking trusted international education options."
-      },
-      blog: {
-        title: "Study Abroad Guides & Student Visa Updates | JEL Study Abroad",
-        desc: "Read practical study abroad guides, scholarship updates, IELTS advice and student visa information for Bangladeshi applicants."
-      },
-      contact: {
-        title: "Contact JEL Study Abroad | Student Visa Consultancy in Dhaka",
-        desc: "Contact JEL Study Abroad at our Tejgaon, Dhaka office for university admissions, scholarships and student visa counseling."
-      },
-      booking: {
-        title: "Book Free Counseling Session | JEL Study Abroad Tejgaon Dhaka",
-        desc: "Book a 1-on-1 expert study abroad counseling seat with JEL senior counselors. Zero processing fees for initial assessment."
-      },
-      finder: {
-        title: "AI Course Finder & University Search | JEL Study Abroad",
-        desc: "Search thousands of courses across top universities in UK, USA, Canada, Australia, and Germany with smart tuition & entry criteria filters."
-      },
-      checker: {
-        title: "Student Visa Eligibility & Financial Checker | JEL Study Abroad",
-        desc: "Instant eligibility analysis for UK, Canada, Australia, and USA student visas. Evaluate academic gap, GPA, and bank solvency requirements."
-      },
-      scholarships: {
-        title: "100% Study Abroad Scholarships 2026/2027 | JEL Study Abroad",
-        desc: "Explore full and partial merit scholarships for Bangladeshi students across UK, USA, Canada, Australia, and European partner universities."
-      },
-      admission: {
-        title: "AI University Admission Chance Predictor | JEL Study Abroad",
-        desc: "Calculate your admission probability for global universities based on your GPA, IELTS/PTE score, and work experience."
-      },
-      sop: {
-        title: "AI Statement of Purpose (SOP) Writer & Auditor | JEL Study Abroad",
-        desc: "Generate and refine high-converting Statements of Purpose (SOP) tailored for UK CAS, US Embassy interviews, and Canadian study permits."
-      },
-      visa: {
-        title: "Student Visa Document Checklist & Verification | JEL Study Abroad",
-        desc: "Comprehensive visa document checklists for UK Student Visa, Canada Study Permit, Australian Subclass 500, and US F-1 Visa."
-      },
-      franchise: {
-        title: "Franchise & Partner Network | Journey Expert Ltd.",
-        desc: "Join Bangladesh's leading student counseling franchise network. Partner with JEL Study Abroad to empower students across district centers."
-      },
-      marketplace: {
-        title: "Global B2B Education Marketplace & University Sync | JEL",
-        desc: "Connect directly with university admissions officers and official study abroad representatives through JEL B2B marketplace."
-      },
-      invoices: {
-        title: "Student Fee Invoice & Payment Portal | Journey Expert Ltd.",
-        desc: "Secure online tuition fee and service deposit payment gateway for JEL Study Abroad students."
-      },
-      portal: {
-        title: "Student Application Tracking Portal | JEL Study Abroad",
-        desc: "Track your university offer letters, CAS issuance, visa application status, and document upload progress in real-time."
-      },
-      admin: {
-        title: "Counselor CRM & Lead Board | JEL Study Abroad",
-        desc: "Internal CRM workspace for JEL counselors to manage student applications, consultation schedules, and university sync."
-      },
-      ects: {
-        title: "ECTS Calculator | Estimate Your ECTS Credits | JEL Study Abroad",
-        desc: "Use the JEL Study Abroad ECTS Calculator to estimate your academic credits in ECTS and understand your potential study-abroad options in Europe and beyond."
-      }
-    };
-
-    const currentMeta = titleMap[activeTab] || titleMap.home;
-    const pathMap: Record<string, string> = {
-      home: "/",
-      about: "/about",
-      services: "/services",
-      countries: "/destinations",
-      universities: "/partners",
-      scholarships: "/scholarships",
-      blog: "/blogs",
-      portal: "/student-portal",
-      contact: "/contact",
-      finder: "/finder",
-      checker: "/checker",
-      booking: "/booking",
-      ects: "/ects-calculator"
-    };
-    const canonicalUrl = `https://journeyexpertbd.com${pathMap[activeTab] || "/"}`;
-    document.title = currentMeta.title;
-
-    const setMeta = (selector: string, attribute: string, value: string) => {
-      const element = document.querySelector(selector);
-      if (element) element.setAttribute(attribute, value);
-    };
-    setMeta('meta[name="description"]', "content", currentMeta.desc);
-    setMeta('meta[property="og:title"]', "content", currentMeta.title);
-    setMeta('meta[property="og:description"]', "content", currentMeta.desc);
-    setMeta('meta[property="og:url"]', "content", canonicalUrl);
-    setMeta('meta[name="twitter:title"]', "content", currentMeta.title);
-    setMeta('meta[name="twitter:description"]', "content", currentMeta.desc);
-    setMeta('meta[name="twitter:url"]', "content", canonicalUrl);
-    setMeta('link[rel="canonical"]', "href", canonicalUrl);
-    setMeta('link[rel="alternate"][hreflang="en-BD"]', "href", canonicalUrl);
-    setMeta('link[rel="alternate"][hreflang="x-default"]', "href", canonicalUrl);
+    const target = tabToPath[activeTab] || "/";
+    if (window.location.pathname !== target) window.history.pushState(null, "", target);
   }, [activeTab]);
 
-  // SEO Schema.org Ingestion
   useEffect(() => {
-    const schemas = [
+    const onPop = () => setActiveTab(getTabFromLocation());
+    const onKey = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener("popstate", onPop);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("popstate", onPop);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, []);
+
+  const metadata = useMemo<Record<string, { title: string; desc: string }>>(() => ({
+    home: { title: "Study Abroad Consultancy in Bangladesh | JEL Study Abroad", desc: "JEL Study Abroad helps Bangladeshi students with university admissions, scholarships, student visa preparation and study-abroad planning." },
+    about: { title: "About JEL Study Abroad | Journey Expert Ltd.", desc: "Learn about JEL Study Abroad, a brand of Journey Expert Ltd., and its student counseling and international education services in Dhaka." },
+    services: { title: "Study Abroad Services | JEL Study Abroad", desc: "Explore university application, scholarship guidance, SOP support, English test guidance and student visa preparation services." },
+    countries: { title: "Study Destinations | JEL Study Abroad", desc: "Explore study options for the UK, Canada, Australia, USA, Ireland, Germany and other destinations." },
+    universities: { title: "University & Education Partners | JEL Study Abroad", desc: "Explore university and education partner information and study pathways available through JEL Study Abroad." },
+    scholarships: { title: "Study Abroad Scholarships 2026/2027 | JEL Study Abroad", desc: "Explore available full and partial scholarship opportunities and eligibility guidance for international study." },
+    blog: { title: "Study Abroad Guides & Updates | JEL Study Abroad", desc: "Read study-abroad, admissions, scholarship and student visa guidance for Bangladeshi applicants." },
+    contact: { title: "Contact JEL Study Abroad | Tejgaon, Dhaka", desc: "Contact JEL Study Abroad in Tejgaon, Dhaka for admissions, scholarships and student visa counseling." },
+    booking: { title: "Book a Study Abroad Consultation | JEL Study Abroad", desc: "Submit a consultation request for a JEL counselor to review your study-abroad profile." },
+    finder: { title: "AI Course Finder | JEL Study Abroad", desc: "Use JEL study-planning tools to explore courses and university options by destination and profile." },
+    checker: { title: "Student Visa Eligibility Planning Tool | JEL Study Abroad", desc: "Review common academic, language and financial factors used in student visa preparation." },
+    portal: { title: "Student Portal | JEL Study Abroad", desc: "Secure JEL student authentication, profile, application tracking and private document workspace." },
+    admin: { title: "Counselor CRM | Journey Expert Ltd.", desc: "Internal authenticated CRM workspace for authorized Journey Expert Ltd. staff." },
+    franchise: { title: "Franchise & Partner Network | Journey Expert Ltd.", desc: "Information about Journey Expert Ltd. business and education partnership opportunities." },
+    ects: { title: "ECTS Calculator | JEL Study Abroad", desc: "Estimate academic credit conversion to ECTS for study planning in Europe and other destinations." },
+  }), []);
+
+  useEffect(() => {
+    const current = metadata[activeTab] || metadata.home;
+    const canonical = `https://journeyexpertbd.com${tabToPath[activeTab] || "/"}`;
+    document.title = current.title;
+    const setMeta = (selector: string, attr: string, value: string) => document.querySelector(selector)?.setAttribute(attr, value);
+    setMeta('meta[name="description"]', "content", current.desc);
+    setMeta('meta[property="og:title"]', "content", current.title);
+    setMeta('meta[property="og:description"]', "content", current.desc);
+    setMeta('meta[property="og:url"]', "content", canonical);
+    setMeta('meta[name="twitter:title"]', "content", current.title);
+    setMeta('meta[name="twitter:description"]', "content", current.desc);
+    setMeta('meta[name="twitter:url"]', "content", canonical);
+    setMeta('link[rel="canonical"]', "href", canonical);
+    setMeta('link[rel="alternate"][hreflang="en-BD"]', "href", canonical);
+    setMeta('link[rel="alternate"][hreflang="x-default"]', "href", canonical);
+  }, [activeTab, metadata]);
+
+  useEffect(() => {
+    const schema = [
       {
         "@context": "https://schema.org",
         "@type": "Organization",
-        "name": "JEL Study Abroad",
-        "url": "https://journeyexpertbd.com",
-        "logo": "https://journeyexpertbd.com/assets/images/jel-study-abroad-official-v2.png",
-        "contactPoint": {
-          "@type": "ContactPoint",
-          "telephone": "+8801926400400",
-          "contactType": "customer service",
-          "areaServed": "BD",
-          "availableLanguage": ["en", "bn"]
-        },
-        "sameAs": [
-          "https://m.me/JourneyExpert"
-        ]
-      },
-      {
-        "@context": "https://schema.org",
-        "@type": "WebSite",
-        "name": "JEL Study Abroad",
-        "url": "https://journeyexpertbd.com"
+        name: "Journey Expert Ltd.",
+        url: "https://journeyexpertbd.com",
+        logo: "https://journeyexpertbd.com/assets/images/jel-study-abroad-official-v2.png",
+        contactPoint: { "@type": "ContactPoint", telephone: "+8801926400400", contactType: "customer service", areaServed: "BD", availableLanguage: ["en", "bn"] },
       },
       {
         "@context": "https://schema.org",
         "@type": "LocalBusiness",
-        "name": "JEL Study Abroad (Journey Expert Ltd.)",
-        "image": "https://journeyexpertbd.com/assets/images/jel-study-abroad-official-v2.png",
-        "url": "https://journeyexpertbd.com",
-        "telephone": "+8801926400400",
-        "email": "journeyexpertbd@gmail.com",
-        "address": {
-          "@type": "PostalAddress",
-          "streetAddress": "189/A, Abdul Motin Complex, Nabisco Mor, Tejgaon",
-          "addressLocality": "Dhaka",
-          "postalCode": "1208",
-          "addressCountry": "BD"
-        }
+        name: "JEL Study Abroad (Journey Expert Ltd.)",
+        url: "https://journeyexpertbd.com",
+        telephone: "+8801926400400",
+        email: "journeyexpertbd@gmail.com",
+        address: { "@type": "PostalAddress", streetAddress: "189/A, Abdul Motin Complex, Nabisco Mor, Tejgaon", addressLocality: "Dhaka", addressCountry: "BD" },
       },
-      {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How do I start my student application process with JEL Study Abroad?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "The steps are straightforward: First, fill out our consultation page, or book an appointment to walk into our Tejgaon office with your passports and transcripts. Our counselors will evaluate your academic history, gap, language scores, and budget, recommending the safe, moderate, and dream universities matching your target."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do you offer conditional offer letters if my IELTS/PTE is missing?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes! Many of our partner universities across the UK, Australia, and Canada can issue a Conditional Offer Letter while you prepare your IELTS/PTE exam. Once you submit the satisfactory score, the offer letter is converted to Unconditional, making you eligible to pay the tuition deposit."
-            }
-          }
-        ]
-      }
     ];
-
     const script = document.createElement("script");
     script.type = "application/ld+json";
-    script.innerHTML = JSON.stringify(schemas);
+    script.text = JSON.stringify(schema);
     document.head.appendChild(script);
-
-    return () => {
-      document.head.removeChild(script);
-    };
+    return () => script.remove();
   }, []);
 
-  // Exit Intent Event Listener removed to avoid annoying popups on load. Handled strictly via Floating button click.
-  
-  // Transfers between AI finder, country explore, and booking forms
-  const [courseFinderUni, setCourseFinderUni] = useState<string>("");
-  const [courseFinderCountry, setCourseFinderCountry] = useState<string>("");
-  const [exploreCountryName, setExploreCountryName] = useState<string>("United Kingdom");
-
-  const handlePreSelectCourse = (uniName: string, country: string) => {
-    setCourseFinderUni(uniName);
-    setCourseFinderCountry(country);
-    setActiveTab("booking");
+  const navigate = (tab: string) => {
+    setActiveTab(tab);
+    setMobileMenu(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handlePreSelectCountry = (countryName: string) => {
-    setExploreCountryName(countryName);
-  };
-
-  const handleClearPreSelected = () => {
-    setCourseFinderUni("");
-    setCourseFinderCountry("");
-  };
-
-  const handleExitFormSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!exitForm.name || !exitForm.phone) return;
-    
-    setExitSubmitting(true);
-    
-    const dateStr = new Date().toLocaleString("en-US", { timeZone: "Asia/Dhaka" }) + " (Dhaka Time)";
-    const newLead = {
-      id: "lead-exit-" + Date.now(),
-      fullName: exitForm.name,
-      email: exitForm.email || "no-email@jel.com",
-      mobileNumber: exitForm.phone,
-      preferredCountry: exitForm.destination,
-      educationLevel: "Bachelor's Degree",
-      message: "Lead acquired via study success pack exit-intent popup.",
-      status: "New",
-      notes: "Acquired through study blueprint success exit capture.",
-      createdAt: dateStr
-    };
-
-    // Save lead locally
-    let existingLeads = [];
-    const saved = localStorage.getItem("jel_consult_leads");
-    if (saved) {
-      try {
-        existingLeads = JSON.parse(saved);
-      } catch (err) {
-        existingLeads = [];
-      }
-    }
-    localStorage.setItem("jel_consult_leads", JSON.stringify([newLead, ...existingLeads]));
-
-    // Attempt sync
-    try {
-      await fetch("/api/supabase/booking", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newLead)
-      });
-    } catch (err) {
-      console.warn("Cached locally, offline or backend not fully live.");
-    }
-
-    setTimeout(() => {
-      setExitSubmitting(false);
-      setExitSubmitted(true);
-      setExitForm({ name: "", email: "", phone: "", destination: "United Kingdom" });
-    }, 800);
-  };
-
-  const handleNewsletterSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newsletterEmail.trim()) return;
-    setNewsletterJoined(true);
-    setNewsletterEmail("");
-    setTimeout(() => {
-      setNewsletterJoined(false);
-    }, 4000);
-  };
-
   const menuItems = [
-    { id: "home", label: "Home" },
-    { id: "about", label: "About Us" },
-    { id: "services", label: "Services" },
-    { id: "countries", label: "Destinations" },
-    { id: "universities", label: "Partners" },
-    { id: "scholarships", label: "Scholarships" },
-    { id: "blog", label: "Guides & Blogs" },
-    { id: "portal", label: "Student Portal" },
-    { id: "contact", label: "Contact Us" }
+    ["home", "Home"], ["about", "About Us"], ["services", "Services"], ["countries", "Destinations"], ["universities", "Partners"], ["scholarships", "Scholarships"], ["blog", "Guides & Blogs"], ["portal", "Student Portal"], ["contact", "Contact Us"],
+  ];
+  const tools = [
+    { id: "finder", label: "Course Finder", icon: Brain },
+    { id: "ects", label: "ECTS Calculator", icon: Calculator },
+    { id: "checker", label: "Eligibility Planner", icon: ShieldCheck },
+    { id: "booking", label: "Book Consultation", icon: Calendar },
+    { id: "admin", label: "Counselor CRM", icon: Users },
   ];
 
-  const aiToolsItems = [
-    { id: "finder", label: "Smart Course Finder", icon: Brain, desc: "AI Matcher" },
-    { id: "ects", label: "ECTS Calculator", icon: Calculator, desc: "Credit Conversion" },
-    { id: "checker", label: "GTE Visa Eligibility", icon: ShieldCheck, desc: "Visa Simulator" },
-    { id: "booking", label: "Book Consultation", icon: Calendar, desc: "Free seat" },
-    { id: "admin", label: "Counselors CRM", icon: Users, desc: "Lead Board" },
-    { id: "franchise", label: "Franchise Hub", icon: Users, desc: "Multi-Agent" },
-    { id: "partnerSync", label: "Partner API Sync", icon: Globe, desc: "Uni Indexer" },
-    { id: "scholarshipMatcher", label: "Scholarship Matcher", icon: Sparkles, desc: "Funding AI" },
-    { id: "admissionPredictor", label: "Admission Predictor", icon: Brain, desc: "Visa Prob" },
-    { id: "globalMarketplace", label: "Global Marketplace", icon: Globe, desc: "B2B Market" }
-  ];
+  const renderMain = () => (
+    <Suspense fallback={<div className="min-h-[45vh] flex items-center justify-center text-sm font-bold text-[#0B5D3B]">Loading JEL Study Abroad…</div>}>
+      {activeTab === "home" && <HomeView setActiveTab={setActiveTab} onPreSelectCountry={(country) => { setExploreCountry(country); }} />}
+      {activeTab === "about" && <AboutView />}
+      {activeTab === "services" && <ServicesView />}
+      {activeTab === "countries" && <CountriesView selectedCountryName={exploreCountry} />}
+      {activeTab === "universities" && <UniversitiesView initialSearchTerm={uniSearch} onPreSelectCourse={(university, country) => { setBookingUniversity(university); setBookingCountry(country); navigate("booking"); }} />}
+      {activeTab === "scholarships" && <ScholarshipsView initialSearchTerm={scholarshipSearch} />}
+      {activeTab === "blog" && <BlogView initialSearchTerm={blogSearch} initialBlogId={initialBlogId} onClearInitialBlog={() => { setInitialBlogId(null); setBlogSearch(""); }} />}
+      {activeTab === "contact" && <ContactView />}
+      {activeTab === "finder" && <SmartCourseFinder onPreSelectCourse={(university, country) => { setBookingUniversity(university); setBookingCountry(country); navigate("booking"); }} />}
+      {activeTab === "checker" && <EligibilityChecker />}
+      {activeTab === "booking" && <ConsultationBooking preSelectedUniversity={bookingUniversity} preSelectedCountry={bookingCountry} onClearPreSelected={() => { setBookingUniversity(""); setBookingCountry(""); }} setActiveTab={setActiveTab} />}
+      {activeTab === "portal" && <StudentPortal setActiveTab={setActiveTab} onPreSelectCountry={setExploreCountry} />}
+      {activeTab === "admin" && <AdminDashboard setActiveTab={setActiveTab} />}
+      {activeTab === "franchise" && <MultiAgentFranchise />}
+      {activeTab === "partnerSync" && <UniversityIntegration />}
+      {activeTab === "scholarshipMatcher" && <ScholarshipMatching />}
+      {activeTab === "admissionPredictor" && <AdmissionPrediction />}
+      {activeTab === "globalMarketplace" && <GlobalMarketplace />}
+      {activeTab === "ects" && <EctsCalculator setActiveTab={setActiveTab} onPreSelectCountry={setExploreCountry} />}
+    </Suspense>
+  );
 
   return (
-    <div className={`min-h-screen bg-[#F8F9FA] dark:bg-slate-950 text-[#1F2937] dark:text-slate-100 flex flex-col font-sans selection:bg-[#0B5D3B] selection:text-white ${darkMode ? "dark" : ""}`} id="jel-root-app">
-      
-      {/* 1. Header Premium Contact Bar */}
-      <header className="bg-[#0B5D3B] text-white text-[11px] py-2 relative z-40 font-medium border-b border-white/10">
-        <div className="max-w-[1600px] w-full mx-auto flex flex-col md:flex-row justify-between items-center gap-2 px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 md:gap-6">
-            <span className="flex items-center gap-1.5 opacity-90">
-              <MapPin className="h-3.5 w-3.5 text-[#D4AF37]" /> 
-              <span>Nabisco Mor, Tejgaon, Dhaka</span>
-            </span>
-            <span className="flex items-center gap-1.5 opacity-90">
-              <Mail className="h-3.5 w-3.5 text-[#D4AF37]" /> 
-              <span>journeyexpertbd@gmail.com</span>
-            </span>
-          </div>
-          <div className="flex flex-wrap items-center justify-center md:justify-end gap-4 md:gap-6">
-            <a href="tel:+8801926400400" className="hover:text-[#D4AF37] transition-colors flex items-center gap-1 opacity-95">
-              📞 Call: +8801926400400
-            </a>
-            <a href="https://wa.me/8801926400400" target="_blank" rel="noreferrer" className="hover:text-[#D4AF37] transition-colors flex items-center gap-1 text-green-400 font-bold">
-              🟢 WhatsApp: +8801926400400
-            </a>
-            <span className="text-[#D4AF37] font-bold bg-white/10 px-2.5 py-0.5 rounded border border-white/10">
-              ★ 98% Visa Success Rate
-            </span>
-          </div>
+    <div className={`min-h-screen bg-[#F8F9FA] dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex flex-col ${darkMode ? "dark" : ""}`}>
+      <header className="bg-[#0B5D3B] text-white text-[11px] py-2 border-b border-white/10">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-2">
+          <div className="flex flex-wrap justify-center gap-4"><span className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5 text-[#D4AF37]" /> Nabisco Mor, Tejgaon, Dhaka</span><span className="flex items-center gap-1.5"><Mail className="h-3.5 w-3.5 text-[#D4AF37]" /> journeyexpertbd@gmail.com</span></div>
+          <div className="flex flex-wrap justify-center gap-4"><a href="tel:+8801926400400" className="hover:text-[#D4AF37]">Call +8801926400400</a><a href="https://wa.me/8801926400400" target="_blank" rel="noreferrer" className="hover:text-[#D4AF37]">WhatsApp</a><span className="text-[#D4AF37] font-bold">Admissions & visa guidance · No outcome guarantees</span></div>
         </div>
       </header>
 
-      {/* 2. Sticky Luxury Navigation Menu */}
-      <nav className="bg-white/90 backdrop-blur-md border-b border-slate-100 sticky top-0 z-30 shadow-sm" id="main-navigation-bar">
-        <div className="max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 h-16 md:h-20 flex items-center justify-between">
-          
-          {/* Logo Brand Segment */}
-          <div 
-            onClick={() => { setActiveTab("home"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-            className="flex items-center gap-3 cursor-pointer group text-left select-none animate-fade-in"
-          >
-            <img 
-              src={jelLogo} 
-              alt="JEL Study Abroad - A Brand Of Journey Expert Ltd." 
-              className="h-10 md:h-12 lg:h-14 max-w-[220px] w-auto object-contain object-center transition-all duration-300 group-hover:scale-105 filter drop-shadow-sm"
-              referrerPolicy="no-referrer"
-              onError={(e) => {
-                e.currentTarget.style.display = "none";
-                const parent = e.currentTarget.parentElement;
-                if (parent && !parent.querySelector(".logo-fallback")) {
-                  const fallback = document.createElement("div");
-                  fallback.className = "logo-fallback text-left";
-                  fallback.innerHTML = '<span className="text-lg font-black text-[#0B5D3B] tracking-tight">JEL <span className="text-[#D4AF37]">Study Abroad</span></span><span className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest">Journey Expert Ltd.</span>';
-                  parent.appendChild(fallback);
-                }
-              }}
-            />
-            <div className="flex flex-col">
-              <span className="text-lg md:text-xl font-black text-[#0B5D3B] tracking-tight leading-none">
-                JEL <span className="text-[#D4AF37]">Study Abroad</span>
-              </span>
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-tight mt-0.5">
-                Journey Expert Ltd.
-              </span>
-            </div>
-          </div>
-
-          {/* Desktop Sitemap Menu */}
-          <div className="hidden lg:flex items-center space-x-6">
-            {menuItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => {
-                  setActiveTab(item.id);
-                  window.scrollTo({ top: 0, behavior: "smooth" });
-                }}
-                className={`text-xs uppercase tracking-wider font-extrabold transition-colors cursor-pointer ${
-                  activeTab === item.id 
-                    ? "text-[#0B5D3B] border-b-2 border-[#D4AF37] pb-1" 
-                    : "text-slate-600 hover:text-[#0B5D3B]"
-                }`}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Mobile menu trigger and container */}
-          <div className="flex items-center space-x-3">
-            {/* Mobile menu trigger */}
-            <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="lg:hidden p-2 text-slate-600 hover:text-slate-900 focus:outline-none cursor-pointer"
-            >
-              {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </button>
-          </div>
-
+      <nav className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md sticky top-0 z-40 border-b border-slate-200 dark:border-slate-800 shadow-sm">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 h-16 md:h-20 flex items-center justify-between gap-5">
+          <button onClick={() => navigate("home")} className="flex items-center gap-3 text-left shrink-0"><img src={jelLogo} alt="JEL Study Abroad" className="h-10 md:h-12 w-auto object-contain" /><div className="hidden sm:block"><div className="font-black text-[#0B5D3B] dark:text-emerald-400">JEL Study Abroad</div><div className="text-[10px] uppercase tracking-wider text-slate-500">A Brand of Journey Expert Ltd.</div></div></button>
+          <div className="hidden xl:flex items-center gap-5">{menuItems.map(([id, label]) => <button key={id} onClick={() => navigate(id)} className={`text-xs font-black uppercase tracking-wide ${activeTab === id ? "text-[#0B5D3B] border-b-2 border-[#D4AF37] pb-1" : "text-slate-600 dark:text-slate-300 hover:text-[#0B5D3B]"}`}>{label}</button>)}</div>
+          <div className="flex items-center gap-2"><button onClick={() => setSearchOpen(true)} aria-label="Search" className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700"><Search className="h-4 w-4" /></button><button onClick={() => setDarkMode((value) => !value)} aria-label="Toggle theme" className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700">{darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}</button><button onClick={() => setMobileMenu((value) => !value)} aria-label="Menu" className="xl:hidden p-2.5">{mobileMenu ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}</button></div>
         </div>
-
-        {/* Mobile menu panel */}
-        {isMobileMenuOpen && (
-          <div className="lg:hidden border-t border-slate-100 bg-white/95 backdrop-blur-md py-4 px-6 space-y-4 shadow-inner text-left animate-in slide-in-from-top duration-300">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <img 
-                src={jelLogo} 
-                alt="JEL Study Abroad" 
-                className="h-9 w-auto object-contain"
-                referrerPolicy="no-referrer"
-              />
-              <span className="text-[10px] font-bold text-[#0B5D3B] bg-[#0B5D3B]/10 px-2 py-0.5 rounded-full">
-                Tejgaon, Dhaka
-              </span>
-            </div>
-            <div className="flex flex-col space-y-3">
-              {menuItems.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    setActiveTab(item.id);
-                    setIsMobileMenuOpen(false);
-                    window.scrollTo({ top: 0, behavior: "smooth" });
-                  }}
-                  className={`text-xs uppercase tracking-wider font-bold py-2 border-b border-slate-50 text-left cursor-pointer ${
-                    activeTab === item.id ? "text-[#0B5D3B] font-black" : "text-slate-600 hover:text-slate-900"
-                  }`}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
-
-            <div className="border-t border-slate-100 pt-3 space-y-2">
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">JEL Intelligent Tools</span>
-              <div className="grid grid-cols-2 gap-2">
-                {aiToolsItems.map((tool) => (
-                  <button
-                    key={tool.id}
-                    onClick={() => {
-                      setActiveTab(tool.id);
-                      setIsMobileMenuOpen(false);
-                      window.scrollTo({ top: 0, behavior: "smooth" });
-                    }}
-                    className={`p-2 rounded-xl text-left border flex flex-col justify-between h-16 cursor-pointer ${
-                      activeTab === tool.id
-                        ? "bg-[#D4AF37]/15 border-[#D4AF37]/40 text-[#0B5D3B]"
-                        : "bg-slate-50 border-slate-100 text-slate-700 hover:bg-slate-100"
-                    }`}
-                  >
-                    <tool.icon className="h-4 w-4 text-[#0B5D3B]" />
-                    <div>
-                      <p className="text-[10px] font-mono leading-none text-slate-400">{tool.desc}</p>
-                      <p className="text-[11px] font-bold mt-1 leading-none">{tool.label}</p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
+        {mobileMenu && <div className="xl:hidden px-5 pb-5 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800"><div className="grid grid-cols-2 gap-2 pt-4">{menuItems.map(([id, label]) => <button key={id} onClick={() => navigate(id)} className="rounded-xl border border-slate-200 dark:border-slate-700 p-3 text-left text-xs font-bold">{label}</button>)}</div></div>}
       </nav>
-      
-      {/* 3. Global AI & CRM Floating Bar Actions */}
-      <section className="bg-[#0B5D3B] text-white py-4 px-6 md:px-10 rounded-3xl w-full max-w-[1600px] mx-auto mt-4 mb-6 border border-white/10 shadow-lg shadow-[#0B5D3B]/10 relative overflow-hidden" id="ai-quick-tools-bar">
-        <div className="absolute right-0 top-0 h-32 w-32 rounded-full bg-[#D4AF37] opacity-15 blur-2xl"></div>
-        <div className="max-w-[1600px] mx-auto flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div className="flex items-center space-x-3">
-            <div className="bg-[#D4AF37]/20 p-2.5 rounded-2xl">
-              <Brain className="h-6 w-6 text-[#D4AF37] animate-pulse" />
-            </div>
-            <div>
-              <h3 className="font-display font-medium text-sm md:text-base tracking-wide text-white">Need immediate profile evaluation?</h3>
-              <p className="text-xs text-slate-300">Run our certified GTE assessment engines below.</p>
-            </div>
-          </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            {aiToolsItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => {
-                  setActiveTab(item.id);
-                  window.scrollTo({ top: 0, behavior: "smooth" });
-                }}
-                className={`py-2 px-4 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer ${
-                  activeTab === item.id
-                    ? "bg-[#D4AF37] hover:bg-yellow-500 text-slate-950 shadow-lg shadow-[#D4AF37]/25 scale-105"
-                    : "bg-white/10 text-white hover:bg-white/20"
-                }`}
-              >
-                <item.icon className="h-4 w-4 shrink-0 text-white" />
-                <span>{item.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
+      <section className="max-w-[1600px] w-[calc(100%-2rem)] mx-auto mt-4 bg-[#0B5D3B] text-white rounded-2xl px-4 md:px-6 py-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div><div className="text-sm font-black">AI-assisted study planning and secure JEL services</div><div className="text-xs text-white/70 mt-1">Use planning tools as guidance; final admissions and visa decisions are made by the relevant institutions and authorities.</div></div>
+        <div className="flex flex-wrap gap-2">{tools.map((tool) => { const Icon = tool.icon; return <button key={tool.id} onClick={() => navigate(tool.id)} className={`rounded-xl px-3 py-2 text-xs font-black flex items-center gap-2 ${activeTab === tool.id ? "bg-[#D4AF37] text-slate-950" : "bg-white/10 hover:bg-white/20"}`}><Icon className="h-4 w-4" />{tool.label}</button>; })}</div>
       </section>
 
-      {/* 4. Main Page View Render */}
-      <main className="flex-1 w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pb-16 relative z-10" id="main-content-canvas">
-        <Suspense fallback={<div className="min-h-[40vh] flex items-center justify-center text-sm font-semibold text-[#0B5D3B]">Loading JEL Study Abroad…</div>}>
-        {activeTab === "home" && (
-          <HomeView 
-            setActiveTab={setActiveTab} 
-            onPreSelectCountry={handlePreSelectCountry} 
-          />
-        )}
-        {activeTab === "about" && <AboutView />}
-        {activeTab === "services" && <ServicesView />}
-        {activeTab === "countries" && (
-          <CountriesView selectedCountryName={exploreCountryName} />
-        )}
-        {activeTab === "universities" && (
-          <UniversitiesView 
-            onPreSelectCourse={handlePreSelectCourse} 
-            initialSearchTerm={uniSearchTerm} 
-          />
-        )}
-        {activeTab === "scholarships" && (
-          <ScholarshipsView 
-            initialSearchTerm={schSearchTerm} 
-          />
-        )}
-        {activeTab === "blog" && (
-          <BlogView 
-            initialSearchTerm={blogSearchTerm}
-            initialBlogId={initialBlogId}
-            onClearInitialBlog={() => {
-              setInitialBlogId(null);
-              setBlogSearchTerm("");
-            }}
-          />
-        )}
-        {activeTab === "contact" && <ContactView />}
-        
-        {/* Core AI matched tools */}
-        {activeTab === "finder" && (
-          <SmartCourseFinder onPreSelectCourse={handlePreSelectCourse} />
-        )}
-        {activeTab === "checker" && <EligibilityChecker />}
-        {activeTab === "booking" && (
-          <ConsultationBooking
-            preSelectedUniversity={courseFinderUni}
-            preSelectedCountry={courseFinderCountry}
-            onClearPreSelected={handleClearPreSelected}
-            setActiveTab={setActiveTab}
-          />
-        )}
-        {activeTab === "portal" && (
-          <StudentPortal setActiveTab={setActiveTab} onPreSelectCountry={handlePreSelectCountry} />
-        )}
-        {activeTab === "admin" && <AdminDashboard setActiveTab={setActiveTab} />}
-        {activeTab === "franchise" && <MultiAgentFranchise />}
-        {activeTab === "partnerSync" && <UniversityIntegration />}
-        {activeTab === "scholarshipMatcher" && <ScholarshipMatching />}
-        {activeTab === "admissionPredictor" && <AdmissionPrediction />}
-        {activeTab === "globalMarketplace" && <GlobalMarketplace />}
-        {activeTab === "ects" && (
-          <EctsCalculator 
-            setActiveTab={setActiveTab} 
-            onPreSelectCountry={handlePreSelectCountry} 
-          />
-        )}
-        </Suspense>
-      </main>
-
-      {/* 5. Persistent Companion AI Chat widget, Sticky Book Consultation & Floating WhatsApp */}
+      <main className="flex-1 w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24">{renderMain()}</main>
       <AIChatAssistant />
-      
-      {/* Sticky Book Consultation Trigger Left */}
-      {activeTab !== "booking" && (
-        <div className="fixed bottom-6 left-6 z-40">
-          <button
-            onClick={() => {
-              setActiveTab("booking");
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }}
-            className="bg-[#D4AF37] hover:bg-yellow-500 text-slate-950 font-black py-3.5 px-6 rounded-2xl shadow-2xl transition-all duration-300 hover:scale-105 flex items-center gap-2 border border-yellow-400 cursor-pointer text-xs uppercase tracking-wider font-display"
-          >
-            <Calendar className="h-4.5 w-4.5 text-slate-950 shrink-0" />
-            <span>Book Assessment</span>
-          </button>
+
+      <a href="https://wa.me/8801926400400" target="_blank" rel="noreferrer" className="fixed bottom-6 right-6 z-30 h-12 w-12 rounded-full bg-[#25D366] text-white shadow-xl flex items-center justify-center" aria-label="WhatsApp JEL"><Phone className="h-5 w-5" /></a>
+      {activeTab !== "booking" && <button onClick={() => navigate("booking")} className="fixed bottom-6 left-6 z-30 rounded-xl bg-[#D4AF37] text-slate-950 shadow-xl px-5 py-3 text-xs font-black flex items-center gap-2"><Calendar className="h-4 w-4" /> Book Consultation</button>}
+
+      <footer className="bg-slate-950 text-white rounded-t-[32px] px-5 py-10">
+        <div className="max-w-[1600px] mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 text-left">
+          <div><img src={jelLogo} alt="JEL Study Abroad" className="h-12 w-auto bg-white rounded-xl p-2" /><p className="text-xs text-slate-400 mt-4 leading-relaxed">JEL Study Abroad is a brand of Journey Expert Ltd., providing study-abroad counseling, admissions support and related travel services from Dhaka, Bangladesh.</p></div>
+          <div><h4 className="font-black text-sm">Study destinations</h4><div className="mt-3 space-y-2 text-xs text-slate-400">{["United Kingdom", "Canada", "Australia", "United States", "Ireland", "Germany"].map((country) => <button key={country} onClick={() => { setExploreCountry(country); navigate("countries"); }} className="block hover:text-white">Study in {country}</button>)}</div></div>
+          <div><h4 className="font-black text-sm">Quick links</h4><div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-400">{menuItems.map(([id, label]) => <button key={id} onClick={() => navigate(id)} className="text-left hover:text-white">{label}</button>)}</div></div>
+          <div><h4 className="font-black text-sm">Contact</h4><div className="mt-3 space-y-2 text-xs text-slate-400"><div className="flex gap-2"><MapPin className="h-4 w-4 shrink-0" />189/A, Abdul Motin Complex, Nabisco Mor, Tejgaon, Dhaka, Bangladesh</div><div className="flex gap-2"><Phone className="h-4 w-4" />+8801926400400</div><div className="flex gap-2"><Globe className="h-4 w-4" />journeyexpertbd.com</div></div></div>
         </div>
-      )}
-
-      {/* Floating WhatsApp Right */}
-      <a 
-        href="https://wa.me/8801926400400" 
-        target="_blank" 
-        rel="noreferrer" 
-        className="fixed bottom-6 right-6 bg-[#25D366] hover:bg-[#20ba59] text-white p-4 rounded-full shadow-2xl transition-all duration-300 hover:scale-110 z-40 flex items-center justify-center group"
-        title="Chat with WhatsApp Advisor"
-        id="floating-whatsapp-trigger"
-      >
-        <Phone className="h-6 w-6 text-white" />
-        <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-500 ease-out text-xs font-bold uppercase tracking-wider pl-0 group-hover:pl-2 whitespace-nowrap">
-          WhatsApp Advisor
-        </span>
-      </a>
-
-      {/* 6. Premium Humanized Footer */}
-      <footer className="bg-slate-950 text-white pt-12 pb-8 border-t border-slate-900 px-4 sm:px-6 lg:px-8 mt-auto rounded-t-[40px]" id="jel-footer">
-        <div className="max-w-[1600px] w-full mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 text-left mb-8">
-          
-           {/* Brand Col */}
-          <div className="space-y-4">
-            <div className="flex flex-col items-start group select-none">
-              <div className="bg-white px-4 py-2.5 rounded-xl flex items-center justify-center shadow-sm transition-all duration-300 hover:scale-105">
-                <img 
-                  src={jelLogo} 
-                  alt="JEL Study Abroad" 
-                  className="h-10 w-auto object-contain"
-                  referrerPolicy="no-referrer"
-                  onError={(e) => {
-                    e.currentTarget.onerror = null;
-                    e.currentTarget.style.display = "none";
-                  }}
-                />
-              </div>
-            </div>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              JEL Study Abroad is a premium division of <strong>Journey Expert Ltd.</strong> (Govt Trade License: TRAD/DNCC/008823/2022). Incorporated under the Companies Act (Reg: C-200004/2025). Registered Travel Agency (No: 0017180) under the Ministry of Civil Aviation and Tourism, Government of Bangladesh.
-            </p>
-            <div className="flex items-center space-x-3 text-xs text-[#D4AF37]">
-              <span className="h-2 w-2 bg-green-400 rounded-full animate-ping"></span>
-              <span className="font-mono uppercase font-bold text-[10px]">Ministry Registered Group</span>
-            </div>
-          </div>
-
-          {/* Destination Col */}
-          <div className="space-y-4">
-            <h4 className="font-display font-semibold text-white text-sm tracking-wider uppercase border-l-2 border-[#D4AF37] pl-3">Study Destinations</h4>
-            <ul className="space-y-2 text-xs text-slate-400 font-medium">
-              {["United Kingdom", "Canada", "Australia", "United States", "Ireland", "Germany"].map((c) => (
-                <li key={c}>
-                  <button 
-                    onClick={() => { handlePreSelectCountry(c); setActiveTab("countries"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-                    className="hover:text-white transition cursor-pointer"
-                  >
-                    Study in {c}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Sitemap Col */}
-          <div className="space-y-4">
-            <h4 className="font-display font-semibold text-white text-sm tracking-wider uppercase border-l-2 border-[#D4AF37] pl-3">Sitemap Links</h4>
-            <div className="grid grid-cols-2 gap-2 text-xs text-slate-400">
-              {menuItems.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => { setActiveTab(item.id); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-                  className="hover:text-white transition text-left cursor-pointer"
-                >
-                  {item.label}
-                </button>
-              ))}
-              <button 
-                onClick={() => { setActiveTab("admin"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-                className="hover:text-amber-400 transition text-left font-bold cursor-pointer"
-              >
-                Counselor CRM
-              </button>
-            </div>
-          </div>
-
-          {/* Newsletter Signup & physical Address Col */}
-          <div className="space-y-4">
-            <h4 className="font-display font-semibold text-white text-sm tracking-wider uppercase border-l-2 border-[#D4AF37] pl-3">Stay Updated</h4>
-            <p className="text-xs text-slate-400 leading-normal">
-              Subscribe to critical intake dates, visa threshold guidelines, and custom scholarship updates directly.
-            </p>
-
-            {newsletterJoined ? (
-              <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 text-left animate-in fade-in duration-300">
-                <p className="text-emerald-400 text-xs font-bold flex items-center gap-1.5 leading-none">
-                  <Check className="h-3.5 w-3.5" />
-                  <span>Joined Success Catalog!</span>
-                </p>
-              </div>
-            ) : (
-              <form onSubmit={handleNewsletterSubmit} className="flex gap-1">
-                <input
-                  type="email"
-                  required
-                  value={newsletterEmail}
-                  onChange={(e) => setNewsletterEmail(e.target.value)}
-                  placeholder="Enter email address"
-                  className="bg-white/5 border border-white/10 text-white rounded-lg p-2.5 text-xs focus:outline-none focus:border-[#D4AF37] w-full"
-                />
-                <button 
-                  type="submit" 
-                  className="bg-[#D4AF37] text-slate-950 font-bold px-4 rounded-lg hover:bg-yellow-500 transition text-xs cursor-pointer"
-                >
-                  Join
-                </button>
-              </form>
-            )}
-
-            <div className="text-xs text-slate-400 space-y-1.5 pt-1">
-              <p className="leading-relaxed font-light">📍 Abdul Motin Complex, 189/A, Nabisco Mor, Tejgaon, Dhaka, Bangladesh.</p>
-              <p className="font-mono text-[10px] text-slate-500">📞 Hotline: +8801926400400</p>
-              <p className="font-mono text-[10px] text-[#D4AF37]">
-                🌐 Web: <a href="https://journeyexpertbd.com" target="_blank" rel="noreferrer" className="hover:underline">www.journeyexpertbd.com</a>
-              </p>
-            </div>
-          </div>
-
-        </div>
-
-        {/* Footer Legal credits */}
-        <div className="max-w-[1600px] w-full mx-auto border-t border-slate-900 pt-6 flex flex-col md:flex-row items-center justify-between text-[11px] text-slate-500 gap-4">
-          <p>© {new Date().getFullYear()} JEL Study Abroad. All Rights Reserved. A concern of Journey Expert Ltd.</p>
-          <div className="flex flex-wrap items-center justify-center md:justify-end gap-x-4 gap-y-1 font-mono font-bold text-[#D4AF37]">
-            <span>LIC: TRAD/DNCC/008823/2022</span>
-            <span>•</span>
-            <span>INC: C-200004/2025</span>
-            <span>•</span>
-            <span>TA REG: 0017180</span>
-            <span>•</span>
-            <span>SSL Secured Connection</span>
-          </div>
-        </div>
+        <div className="max-w-[1600px] mx-auto mt-8 pt-6 border-t border-slate-800 text-[11px] text-slate-500 flex flex-col md:flex-row justify-between gap-2"><span>© {new Date().getFullYear()} Journey Expert Ltd. / JEL Study Abroad.</span><span>Information is guidance only; admissions, scholarships and visas are subject to third-party decisions.</span></div>
       </footer>
 
-      {/* JEL Global Registry Search Panel */}
-      <SearchModal
-        isOpen={isSearchOpen}
-        onClose={() => setIsSearchOpen(false)}
-        setActiveTab={setActiveTab}
-        setUniversitySearch={setUniSearchTerm}
-        setScholarshipSearch={setSchSearchTerm}
-        setBlogSearch={setBlogSearchTerm}
-        setInitialBlogId={setInitialBlogId}
-      />
-
-      {/* 7. Conversion Rate Exit Intent Popup Modal */}
-      {showExitIntent && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-          <div className="bg-white rounded-[32px] overflow-hidden shadow-2xl border border-slate-100 max-w-lg w-full text-left relative animate-in zoom-in-95 duration-200">
-            
-            {/* Header banner background */}
-            <div className="bg-gradient-to-br from-[#0B5D3B] to-[#042a1a] p-8 text-white relative">
-              <span className="text-[9px] font-mono tracking-widest font-black uppercase text-yellow-300 block mb-1">
-                ★ Exclusive Student Opportunity Pack
-              </span>
-              <h3 className="text-2xl font-display font-black leading-tight">Get JEL Study Abroad Blueprint Guide for Free</h3>
-              <p className="text-xs text-slate-300 mt-2 font-light leading-relaxed">
-                Before you go, secure our highly requested PDF roadmap containing CA fund structures, Statement of Purpose samples, and UK/Canada biometric visa checklists.
-              </p>
-              
-              <button
-                onClick={() => setShowExitIntent(false)}
-                className="absolute top-6 right-6 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 p-1.5 rounded-lg transition-colors cursor-pointer"
-                title="Close"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="p-8 space-y-4">
-              {exitSubmitted ? (
-                <div className="text-center py-6 space-y-4 animate-in zoom-in-95 duration-200">
-                  <div className="mx-auto h-12 w-12 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 shadow-sm">
-                    <Check className="h-6 w-6" />
-                  </div>
-                  <h4 className="font-display font-bold text-slate-900 text-lg">Your Success Guide Is Queued!</h4>
-                  <p className="text-xs text-slate-600 max-w-sm mx-auto leading-relaxed">
-                    We have successfully added your contact to our priority catalog. Our Tejgaon office team will dispatch your free resource pack and coordinates within 2 hours!
-                  </p>
-                  <button
-                    onClick={() => setShowExitIntent(false)}
-                    className="bg-[#0B5D3B] text-white px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
-                  >
-                    Return to Page
-                  </button>
-                </div>
-              ) : (
-                <form onSubmit={handleExitFormSubmit} className="space-y-4">
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono block">Your Name *</label>
-                    <input
-                      type="text"
-                      required
-                      value={exitForm.name}
-                      onChange={(e) => setExitForm(prev => ({ ...prev, name: e.target.value }))}
-                      placeholder="e.g., Ahsan Kabir"
-                      className="w-full border border-slate-200 rounded-xl p-3 text-xs text-slate-700 focus:ring-1 focus:ring-[#0B5D3B] focus:border-[#0B5D3B] outline-none"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono block">Mobile Number *</label>
-                    <input
-                      type="tel"
-                      required
-                      value={exitForm.phone}
-                      onChange={(e) => setExitForm(prev => ({ ...prev, phone: e.target.value }))}
-                      placeholder="e.g., +88017XXXXXXXX"
-                      className="w-full border border-slate-200 rounded-xl p-3 text-xs text-slate-700 focus:ring-1 focus:ring-[#0B5D3B] focus:border-[#0B5D3B] outline-none"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono block">Preferred Study Destination</label>
-                    <select
-                      value={exitForm.destination}
-                      onChange={(e) => setExitForm(prev => ({ ...prev, destination: e.target.value }))}
-                      className="w-full border border-slate-200 bg-white rounded-xl p-3 text-xs text-slate-700 focus:ring-1 focus:ring-[#0B5D3B] focus:border-[#0B5D3B] outline-none"
-                    >
-                      <option value="United Kingdom">United Kingdom</option>
-                      <option value="Canada">Canada</option>
-                      <option value="Australia">Australia</option>
-                      <option value="United States">United States</option>
-                      <option value="Germany">Germany</option>
-                      <option value="Ireland">Ireland</option>
-                    </select>
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={exitSubmitting}
-                    className="w-full bg-[#0B5D3B] hover:bg-[#074028] text-white py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-300 shadow-md flex items-center justify-center space-x-2 cursor-pointer mt-4"
-                  >
-                    {exitSubmitting ? (
-                      <span>Reserving...</span>
-                    ) : (
-                      <>
-                        <span>Get My Success Pack Now</span>
-                        <Sparkles className="h-4 w-4 text-[#D4AF37]" />
-                      </>
-                    )}
-                  </button>
-                </form>
-              )}
-            </div>
-
-          </div>
-        </div>
-      )}
-
-      {/* 8. JEL Floating Premium Conversion Bar (Positioned bottom-left to prevent overlap with Angela on right) */}
-      <div className="fixed bottom-6 left-4 sm:left-6 flex flex-col items-start space-y-3 z-40 fade-in pointer-events-auto" id="floating-conversion-widget">
-        {/* Floating "Get Free Guide" Button */}
-        <button
-          onClick={() => setShowExitIntent(true)}
-          className="group bg-gradient-to-r from-[#0B5D3B] to-[#D4AF37] hover:from-[#074028] hover:to-yellow-500 text-white font-extrabold px-4 py-2.5 rounded-full text-[10px] sm:text-[11px] uppercase tracking-wider transition-all duration-300 hover:scale-105 shadow-xl flex items-center space-x-1.5 cursor-pointer border border-[#D4AF37]/30"
-          title="Get Free Study Abroad Guide"
-        >
-          <Sparkles className="h-3.5 w-3.5 text-yellow-300 animate-spin group-hover:scale-125 transition-transform duration-300" style={{ animationDuration: '4s' }} />
-          <span>Get Free Guide</span>
-        </button>
-
-        <div className="flex flex-row md:flex-col items-center gap-2 bg-white/90 dark:bg-slate-900/95 backdrop-blur-md p-2 rounded-full shadow-2xl border border-slate-100 dark:border-slate-800">
-          {/* WhatsApp Action */}
-          <a
-            href="https://wa.me/8801926400400"
-            target="_blank"
-            rel="noreferrer"
-            title="WhatsApp Support"
-            aria-label="WhatsApp Support"
-            className="group relative h-10 w-10 sm:h-11 sm:w-11 bg-[#25D366] hover:bg-[#1ebd53] text-white rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-md"
-          >
-            <Phone className="h-4 w-4 sm:h-4.5 sm:w-4.5 transition-transform duration-300 group-hover:scale-125" />
-            <span className="absolute left-full ml-3 top-1/2 -translate-y-1/2 hidden md:group-hover:block px-2.5 py-1 text-[11px] font-medium text-white bg-slate-900 dark:bg-slate-800 rounded-md whitespace-nowrap shadow-lg pointer-events-none transition-opacity duration-200 z-50">
-              WhatsApp Support
-            </span>
-          </a>
-
-          {/* Messenger Action */}
-          <a
-            href="https://m.me/JourneyExpert"
-            target="_blank"
-            rel="noreferrer"
-            title="Messenger Chat"
-            aria-label="Messenger Chat"
-            className="group relative h-10 w-10 sm:h-11 sm:w-11 bg-[#0084FF] hover:bg-[#0076e4] text-white rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-md"
-          >
-            <MessageSquare className="h-4 w-4 sm:h-4.5 sm:w-4.5 fill-white transition-transform duration-300 group-hover:scale-125" />
-            <span className="absolute left-full ml-3 top-1/2 -translate-y-1/2 hidden md:group-hover:block px-2.5 py-1 text-[11px] font-medium text-white bg-slate-900 dark:bg-slate-800 rounded-md whitespace-nowrap shadow-lg pointer-events-none transition-opacity duration-200 z-50">
-              Messenger Chat
-            </span>
-          </a>
-
-          {/* Hotline Action */}
-          <a
-            href="tel:+8801926400400"
-            title="Helpline"
-            aria-label="Helpline"
-            className="group relative h-10 w-10 sm:h-11 sm:w-11 bg-[#0B5D3B] hover:bg-[#074028] text-white rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-md"
-          >
-            <Phone className="h-4 w-4 sm:h-4.5 sm:w-4.5 fill-white transition-transform duration-300 group-hover:scale-125" />
-            <span className="absolute left-full ml-3 top-1/2 -translate-y-1/2 hidden md:group-hover:block px-2.5 py-1 text-[11px] font-medium text-white bg-slate-900 dark:bg-slate-800 rounded-md whitespace-nowrap shadow-lg pointer-events-none transition-opacity duration-200 z-50">
-              Helpline
-            </span>
-          </a>
-
-          {/* Back To Top Action */}
-          <button
-            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-            title="Scroll to top"
-            aria-label="Scroll to top"
-            className="group relative h-10 w-10 sm:h-11 sm:w-11 bg-slate-900 dark:bg-slate-700 hover:bg-slate-800 dark:hover:bg-slate-600 text-white rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-md cursor-pointer"
-          >
-            <span className="transition-transform duration-300 group-hover:scale-125 inline-block text-xs">▲</span>
-            <span className="absolute left-full ml-3 top-1/2 -translate-y-1/2 hidden md:group-hover:block px-2.5 py-1 text-[11px] font-medium text-white bg-slate-900 dark:bg-slate-800 rounded-md whitespace-nowrap shadow-lg pointer-events-none transition-opacity duration-200 z-50">
-              Scroll to top
-            </span>
-          </button>
-        </div>
-      </div>
-
+      <SearchModal isOpen={searchOpen} onClose={() => setSearchOpen(false)} setActiveTab={setActiveTab} setUniversitySearch={setUniSearch} setScholarshipSearch={setScholarshipSearch} setBlogSearch={setBlogSearch} setInitialBlogId={setInitialBlogId} />
     </div>
   );
 }

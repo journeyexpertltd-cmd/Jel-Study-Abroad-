@@ -26,17 +26,45 @@ test('admin recovery and student recovery stay on separate production routes', (
 
 test('public lead capture is server-side and uses controlled CRM fields', () => {
   const endpoint = read('functions/api/supabase/booking.ts');
+  const booking = read('src/components/ConsultationBooking.tsx');
   assert.match(endpoint, /submit_public_lead/);
   assert.match(endpoint, /status: 'New'/);
   assert.equal(endpoint.includes('service_role'), false, 'never hard-code a service-role secret');
   assert.equal(endpoint.includes('full_name:'), false, 'legacy leads schema must not be reintroduced');
   assert.equal(endpoint.includes('mobile_number:'), false, 'legacy leads schema must not be reintroduced');
+  assert.equal(booking.includes('jel_consult_leads'), false, 'consultation booking must not treat localStorage as CRM');
+  assert.match(booking, /!response\.ok \|\| body\?\.success !== true/);
 });
 
-test('versioned migration keeps student storage private and RLS enabled', () => {
-  const sql = read('supabase/migrations/20260916_production_crm_storage.sql');
-  assert.match(sql, /alter table public\.leads enable row level security/i);
-  assert.match(sql, /'student-documents',[\s\S]*false,/i);
-  assert.match(sql, /grant execute on function public\.submit_public_lead/i);
-  assert.match(sql, /revoke all on table public\.leads from anon/i);
+test('versioned migrations keep CRM and student storage private with RLS', () => {
+  const crmSql = read('supabase/migrations/20260916_production_crm_storage.sql');
+  const studentSql = read('supabase/migrations/20260916_student_applications.sql');
+  assert.match(crmSql, /alter table public\.leads enable row level security/i);
+  assert.match(crmSql, /'student-documents',[\s\S]*false,/i);
+  assert.match(crmSql, /grant execute on function public\.submit_public_lead/i);
+  assert.match(crmSql, /revoke all on table public\.leads from anon/i);
+  assert.match(studentSql, /alter table public\.students enable row level security/i);
+  assert.match(studentSql, /alter table public\.applications enable row level security/i);
+  assert.match(studentSql, /raw_user_meta_data->>'role'/i);
+});
+
+test('student tracker and document vault expose real authenticated flows, not simulators', () => {
+  const tracker = read('src/components/StudentApplicationTracker.tsx');
+  const vault = read('src/components/SecureDocumentVault.tsx');
+  assert.equal(tracker.includes('adminSimulator'), false);
+  assert.equal(tracker.includes('/api/admin/update-status'), false);
+  assert.equal(vault.includes('INITIAL_DOCUMENTS'), false);
+  assert.equal(vault.includes('handleSimulatedUpload'), false);
+  assert.match(vault, /supabase\.storage\.from\(BUCKET\)/);
+  assert.match(vault, /createSignedUrl/);
+});
+
+test('public UI contains no unsupported visa-success or scholarship-guarantee claims', () => {
+  const app = read('src/App.tsx');
+  const booking = read('src/components/ConsultationBooking.tsx');
+  for (const forbidden of ['98% Visa Success Rate', '98.2% Visa Conversion', '100% Study Abroad Scholarships', "Bangladesh's leading student counseling franchise"] ) {
+    assert.equal(app.includes(forbidden), false, `unsupported claim in App.tsx: ${forbidden}`);
+    assert.equal(booking.includes(forbidden), false, `unsupported claim in ConsultationBooking.tsx: ${forbidden}`);
+  }
+  assert.match(app, /No outcome guarantees/);
 });
