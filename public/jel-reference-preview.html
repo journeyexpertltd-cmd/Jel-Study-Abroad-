@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>JEL Study Abroad — Reference Design Preview</title>
+  <style>
+    :root{
+      --bg:#001a12;--bg2:#003324;--mint:#dffdf0;--mint2:#93f6c5;--green:#10d486;--yellow:#f5ca36;--ink:#eafbf3;--muted:#a9c7ba;--line:rgba(255,255,255,.14);--glass:rgba(11,42,31,.78)
+    }
+    *{box-sizing:border-box} html{scroll-behavior:smooth} body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#061913;color:var(--ink)}
+    a{text-decoration:none;color:inherit} button{font:inherit}
+    .page{min-height:100vh;background:radial-gradient(circle at 70% 25%,rgba(18,145,92,.22),transparent 32%),radial-gradient(circle at 18% 70%,rgba(0,90,60,.2),transparent 32%),linear-gradient(135deg,#00150e 0%,#001d14 42%,#003425 100%)}
+    .nav{position:sticky;top:0;z-index:20;background:rgba(0,22,15,.82);backdrop-filter:blur(18px);border-bottom:1px solid rgba(255,255,255,.08)}
+    .nav-inner{max-width:1480px;margin:auto;height:112px;padding:0 48px;display:flex;align-items:center;justify-content:space-between;gap:32px}
+    .brand{display:flex;align-items:center;gap:16px}.logo-box{width:58px;height:58px;border-radius:16px;background:white;display:grid;place-items:center;box-shadow:0 15px 40px rgba(0,0,0,.22)}.logo-box img{width:46px;height:46px;object-fit:contain}.brand-title{font-weight:800;font-size:23px;letter-spacing:-.02em}.brand-sub{font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:#b9d2c6;margin-top:3px}
+    .nav-links{display:flex;align-items:center;gap:34px;color:#d4e8dd;font-weight:600;font-size:18px}.nav-links a:hover{color:white}.apply{border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:16px 24px;background:rgba(255,255,255,.05);font-weight:800}.apply:hover{background:rgba(255,255,255,.1)}
+    .hero{max-width:1480px;margin:auto;min-height:760px;padding:92px 48px 70px;display:grid;grid-template-columns:1.02fr .98fr;gap:64px;align-items:center}.eyebrow{display:inline-flex;align-items:center;gap:12px;border:1px solid rgba(69,255,169,.23);background:rgba(0,97,60,.18);border-radius:999px;padding:11px 17px;color:#c3e9d8;font-weight:700;letter-spacing:.08em;font-size:14px;text-transform:uppercase}.dot{width:11px;height:11px;border-radius:50%;background:#11dd8a;box-shadow:0 0 18px rgba(17,221,138,.7)}
+    h1{font-size:clamp(58px,6.6vw,104px);line-height:.92;letter-spacing:-.065em;margin:36px 0 24px;font-weight:900;max-width:780px}.grad{background:linear-gradient(90deg,#7ef3be 15%,#95efaa 45%,#f6d143 92%);-webkit-background-clip:text;background-clip:text;color:transparent}.lead{font-size:23px;line-height:1.65;color:#b9d2c6;max-width:760px}.hero-actions{display:flex;gap:16px;flex-wrap:wrap;margin-top:38px}.btn{display:inline-flex;align-items:center;gap:10px;padding:16px 22px;border-radius:14px;font-weight:800;border:1px solid var(--line);transition:.25s}.btn-primary{background:#ecfff6;color:#053324}.btn-secondary{background:rgba(255,255,255,.05);color:white}.btn:hover{transform:translateY(-2px)}
+    .visual-wrap{position:relative;min-height:560px;display:flex;align-items:center;justify-content:center;perspective:1200px}.visual-card{position:relative;width:min(100%,620px);height:510px;border-radius:46px;background:linear-gradient(145deg,#f8fbfa,#dfece7);box-shadow:0 45px 120px rgba(0,0,0,.38);transform:rotateY(-5deg) rotateX(1deg);overflow:hidden}.visual-card:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 70% 30%,rgba(24,176,111,.17),transparent 34%),linear-gradient(140deg,transparent 0 58%,rgba(7,70,49,.08));}.logo-stage{position:absolute;inset:96px 70px 78px;background:white;display:grid;place-items:center;box-shadow:0 20px 45px rgba(15,55,42,.12)}.logo-stage img{width:72%;max-height:280px;object-fit:contain;animation:float 5s ease-in-out infinite}.float-card{position:absolute;right:-28px;top:70px;width:210px;border:1px solid rgba(255,255,255,.14);background:rgba(5,36,26,.89);backdrop-filter:blur(18px);border-radius:24px;padding:24px;box-shadow:0 25px 55px rgba(0,0,0,.25);animation:float2 6.5s ease-in-out infinite}.float-card.bottom{left:-70px;right:auto;top:auto;bottom:22px;width:230px;animation-delay:-2s}.pill-dot{width:12px;height:12px;background:#f1c331;border-radius:50%;box-shadow:0 0 14px rgba(241,195,49,.6);margin-bottom:16px}.float-title{font-size:18px;font-weight:800}.float-sub{margin-top:7px;color:#9dbcae;font-size:15px;line-height:1.45}
+    @keyframes float{50%{transform:translateY(-10px) scale(1.015)}} @keyframes float2{50%{transform:translateY(12px)}}
+    .trust{border-top:1px solid rgba(255,255,255,.08);border-bottom:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.025)}.trust-inner{max-width:1480px;margin:auto;padding:30px 48px;display:grid;grid-template-columns:repeat(4,1fr);gap:20px}.trust-card{padding:22px;border-radius:20px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03)}.trust-kicker{font-size:13px;color:#8fb6a5;text-transform:uppercase;letter-spacing:.12em}.trust-title{margin-top:8px;font-size:21px;font-weight:800}
+    .section{max-width:1480px;margin:auto;padding:92px 48px}.section-head{display:flex;justify-content:space-between;gap:32px;align-items:end;margin-bottom:34px}.kicker{color:#7fe4b2;font-weight:800;text-transform:uppercase;letter-spacing:.13em;font-size:13px}.section h2{font-size:clamp(38px,4vw,64px);line-height:1;letter-spacing:-.04em;margin:10px 0 0}.section p.sub{max-width:640px;color:#9fc0b1;line-height:1.7;font-size:17px}
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}.card{position:relative;overflow:hidden;padding:28px;border-radius:26px;border:1px solid rgba(255,255,255,.09);background:linear-gradient(145deg,rgba(255,255,255,.06),rgba(255,255,255,.025));min-height:210px;transition:.25s}.card:hover{transform:translateY(-5px);border-color:rgba(126,243,190,.35)}.icon{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:rgba(126,243,190,.12);border:1px solid rgba(126,243,190,.18);font-size:22px}.card h3{font-size:22px;margin:22px 0 10px}.card p{margin:0;color:#9fbcaf;line-height:1.65}.country-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:14px}.country{padding:22px 18px;border-radius:22px;border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.035);text-align:left;transition:.2s}.country:hover{background:rgba(255,255,255,.065);transform:translateY(-4px)}.flag{font-size:28px}.country b{display:block;font-size:16px;margin-top:14px}.country span{display:block;color:#94b7a7;font-size:13px;margin-top:5px}
+    .process{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}.step{padding:26px;border-radius:24px;border:1px solid rgba(255,255,255,.08);background:#052a1e}.num{font-size:13px;font-weight:900;color:#f5ca36;letter-spacing:.14em}.step h3{font-size:20px;margin:22px 0 10px}.step p{margin:0;color:#99b7a8;line-height:1.6}
+    .integrated{max-width:1480px;margin:30px auto 0;padding:0 48px 92px}.integrated-box{display:grid;grid-template-columns:1.2fr .8fr;gap:22px;border:1px solid rgba(255,255,255,.1);border-radius:30px;padding:38px;background:linear-gradient(120deg,rgba(16,212,134,.11),rgba(255,255,255,.02))}.integrated h3{font-size:34px;margin:0}.integrated p{color:#a7c4b6;line-height:1.7}.chips{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}.chip{border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:9px 13px;font-size:13px;color:#cde8da;background:rgba(255,255,255,.035)}.backend{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.backend a{padding:18px;border-radius:18px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);font-weight:700}.backend small{display:block;color:#8eae9f;margin-top:5px;font-weight:500}
+    .footer{border-top:1px solid rgba(255,255,255,.08);padding:28px 48px 40px;color:#88a99a}.footer-inner{max-width:1480px;margin:auto;display:flex;justify-content:space-between;gap:30px;flex-wrap:wrap}.preview-note{position:fixed;left:16px;bottom:16px;z-index:50;background:#f5ca36;color:#102f25;padding:10px 14px;border-radius:999px;font-size:12px;font-weight:900;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+    @media(max-width:1080px){.nav-inner{padding:0 26px}.nav-links a:not(.apply){display:none}.hero{grid-template-columns:1fr;padding:70px 26px}.visual-wrap{min-height:480px}.trust-inner,.section,.integrated{padding-left:26px;padding-right:26px}.grid{grid-template-columns:repeat(2,1fr)}.country-grid{grid-template-columns:repeat(3,1fr)}.process{grid-template-columns:repeat(2,1fr)}.integrated-box{grid-template-columns:1fr}}
+    @media(max-width:650px){.nav-inner{height:88px}.brand-title{font-size:18px}.brand-sub{display:none}.logo-box{width:48px;height:48px}.logo-box img{width:38px;height:38px}.apply{padding:11px 15px;font-size:14px}.hero{padding-top:48px;gap:30px;min-height:auto}.lead{font-size:18px}.visual-wrap{min-height:390px}.visual-card{height:360px;border-radius:28px}.logo-stage{inset:66px 34px 54px}.float-card{right:-4px;top:34px;width:155px;padding:16px}.float-card.bottom{left:-2px;bottom:12px;width:175px}.trust-inner{grid-template-columns:1fr 1fr}.grid,.country-grid,.process{grid-template-columns:1fr}.section{padding-top:66px;padding-bottom:66px}.section-head{display:block}.integrated-box{padding:24px}.backend{grid-template-columns:1fr}.footer{padding-left:26px;padding-right:26px}}
+  </style>
+</head>
+<body>
+<div class="page">
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="brand" href="/">
+        <span class="logo-box"><img src="/assets/images/jel-study-abroad-official-v2.png" alt="JEL Study Abroad logo"></span>
+        <span><div class="brand-title">JEL Study Abroad</div><div class="brand-sub">A Brand of Journey Expert Limited</div></span>
+      </a>
+      <div class="nav-links">
+        <a href="#destinations">Destinations</a>
+        <a href="#process">How it works</a>
+        <a class="apply" href="/booking">Apply now ↗</a>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <section class="hero">
+      <div>
+        <div class="eyebrow"><span class="dot"></span> Global admissions guidance</div>
+        <h1>Your ambition.<br>A world of <span class="grad">possibilities.</span></h1>
+        <p class="lead">From profile assessment and university selection to visa guidance and pre-departure support—move forward with a clear, expert-led plan.</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="/booking">Book free counselling →</a>
+          <a class="btn btn-secondary" href="/student-portal">Student portal</a>
+        </div>
+      </div>
+      <div class="visual-wrap">
+        <div class="visual-card">
+          <div class="logo-stage"><img src="/assets/images/jel-study-abroad-official-v2.png" alt="JEL Study Abroad"></div>
+        </div>
+        <div class="float-card"><div class="pill-dot"></div><div class="float-title">Study globally</div><div class="float-sub">Build your future with a guided admissions plan.</div></div>
+        <div class="float-card bottom"><div class="pill-dot"></div><div class="float-title">Human + AI support</div><div class="float-sub">Counsellor-led guidance supported by Angela AI.</div></div>
+      </div>
+    </section>
+
+    <section class="trust">
+      <div class="trust-inner">
+        <div class="trust-card"><div class="trust-kicker">Planning</div><div class="trust-title">Profile-first guidance</div></div>
+        <div class="trust-card"><div class="trust-kicker">Applications</div><div class="trust-title">Structured submission support</div></div>
+        <div class="trust-card"><div class="trust-kicker">Visa</div><div class="trust-title">Documentation preparation</div></div>
+        <div class="trust-card"><div class="trust-kicker">Support</div><div class="trust-title">Pre-departure & ongoing help</div></div>
+      </div>
+    </section>
+
+    <section class="section" id="destinations">
+      <div class="section-head"><div><div class="kicker">Destinations</div><h2>Explore the world with a clearer plan.</h2></div><p class="sub">Use the new frontend experience while keeping the existing JEL destination routes and backend-connected counselling flow.</p></div>
+      <div class="country-grid">
+        <a class="country" href="/destinations"><span class="flag">🇬🇧</span><b>United Kingdom</b><span>Programs & intakes</span></a>
+        <a class="country" href="/destinations"><span class="flag">🇨🇦</span><b>Canada</b><span>Study pathways</span></a>
+        <a class="country" href="/destinations"><span class="flag">🇦🇺</span><b>Australia</b><span>Universities & courses</span></a>
+        <a class="country" href="/destinations"><span class="flag">🇺🇸</span><b>USA</b><span>Global opportunities</span></a>
+        <a class="country" href="/destinations"><span class="flag">🇮🇪</span><b>Ireland</b><span>Technology & business</span></a>
+        <a class="country" href="/destinations"><span class="flag">🇩🇪</span><b>Germany</b><span>European study options</span></a>
+      </div>
+    </section>
+
+    <section class="section" style="padding-top:20px">
+      <div class="section-head"><div><div class="kicker">Services</div><h2>One connected study journey.</h2></div><p class="sub">These cards are frontend-only presentation. Final production version will call the same existing routes and APIs already used by the website.</p></div>
+      <div class="grid">
+        <a class="card" href="/services"><div class="icon">◎</div><h3>Student counselling</h3><p>Profile review, destination planning and structured next steps.</p></a>
+        <a class="card" href="/finder"><div class="icon">⌕</div><h3>Course & university finder</h3><p>Use the existing planning tools inside the new design shell.</p></a>
+        <a class="card" href="/scholarships"><div class="icon">✦</div><h3>Scholarship guidance</h3><p>Review available opportunities and preparation requirements.</p></a>
+        <a class="card" href="/services"><div class="icon">▤</div><h3>Application support</h3><p>Document preparation, submission tracking and follow-up.</p></a>
+        <a class="card" href="/checker"><div class="icon">✓</div><h3>Visa preparation</h3><p>Eligibility planning and document guidance without outcome guarantees.</p></a>
+        <a class="card" href="/student-portal"><div class="icon">↗</div><h3>Student portal</h3><p>Keep the existing secure login, tracker and document workspace.</p></a>
+      </div>
+    </section>
+
+    <section class="section" id="process" style="padding-top:20px">
+      <div class="section-head"><div><div class="kicker">How it works</div><h2>Simple steps. Existing backend.</h2></div><p class="sub">The final frontend will visually change, but the current database, authentication, CRM, storage, lead capture and Angela services remain connected.</p></div>
+      <div class="process">
+        <div class="step"><div class="num">01 — COUNSELLING</div><h3>Tell us your goal</h3><p>Start with your academic profile, budget and preferred destination.</p></div>
+        <div class="step"><div class="num">02 — SHORTLIST</div><h3>Build your plan</h3><p>Compare suitable programs, universities and entry requirements.</p></div>
+        <div class="step"><div class="num">03 — APPLY</div><h3>Prepare & submit</h3><p>Use the existing application and lead-management workflow.</p></div>
+        <div class="step"><div class="num">04 — PROGRESS</div><h3>Track the journey</h3><p>Continue through offer, visa preparation and pre-departure support.</p></div>
+      </div>
+    </section>
+
+    <section class="integrated">
+      <div class="integrated-box">
+        <div><div class="kicker">Backend integration plan</div><h3>New frontend. Same trusted system underneath.</h3><p>This preview demonstrates the visual layer only. On approval, the production React homepage will use the same existing Supabase/CRM/auth/storage/Angela/API infrastructure—no data migration, no database reset and no credential changes.</p><div class="chips"><span class="chip">Supabase Auth</span><span class="chip">CRM Leads</span><span class="chip">Student Portal</span><span class="chip">Private Storage</span><span class="chip">Angela AI</span><span class="chip">SEO Routes</span></div></div>
+        <div class="backend"><a href="/booking">Book counselling<small>Existing lead flow</small></a><a href="/admin">Counsellor CRM<small>Existing admin route</small></a><a href="/student-portal">Student portal<small>Existing secure auth</small></a><a href="/finder">Course finder<small>Existing tool route</small></a></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer"><div class="footer-inner"><span>JEL Study Abroad · Journey Expert Ltd.</span><span>Preview only · No production homepage replacement yet</span></div></footer>
+</div>
+<div class="preview-note">DESIGN PREVIEW — NOT FINAL</div>
+</body>
+</html>
