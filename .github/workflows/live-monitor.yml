@@ -119,14 +119,14 @@ jobs:
             --data '{"message":"ami UK te masters korte chai, ki ki documents lagbe?","language":"auto"}' \
             --output "$body" \
             https://journeyexpertbd.com/api/gemini/chat
-          grep -Eq '"mode":"(ai|fallback)"' "$body"
+          grep -q '"mode":"ai"' "$body"
           grep -q '"language":"bn"' "$body"
           grep -Pq '[\x{0980}-\x{09FF}]' "$body"
           ! grep -Eq 'â|Ã|Â|ï¿½|�|à¦|à§' "$body"
           echo "Angela production Bangla response probe passed"
 
       - name: Check live Angela speech response
-        if: github.event_name == 'workflow_run'
+        if: always() && !cancelled() && github.event_name == 'workflow_run'
         shell: bash
         run: |
           set -euo pipefail
@@ -159,13 +159,15 @@ jobs:
               https://journeyexpertbd.com/api/gemini/live-token
             grep -q '"token"' "$token_body"
             grep -q '"model"' "$token_body"
-            echo "Angela browser live-voice fallback probe passed"
+            echo "::error::Primary voice unavailable ($status). Backup token issued, but audio generation is not verified."
+            exit 1
           else
             echo "Unexpected Angela speech status: $status" >&2
             exit 1
           fi
 
       - name: Check security headers and corporate isolation
+        if: always() && !cancelled()
         shell: bash
         run: |
           set -euo pipefail
