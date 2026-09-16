@@ -53,6 +53,9 @@ jobs:
           test -f dist/server.cjs
           test -f dist/about/index.html
           test -f dist/ects-calculator/index.html
+          test -f dist/jel-3d-preview.html
+          grep -q 'noindex,nofollow,noarchive' dist/jel-3d-preview.html
+          grep -q 'JEL Study Abroad' dist/jel-3d-preview.html
           grep -q 'https://journeyexpertbd.com/about"' dist/about/index.html
           grep -q 'https://journeyexpertbd.com/ects-calculator"' dist/ects-calculator/index.html
           ! grep -q 'https://journeyexpertbd.com/about/' dist/about/index.html
@@ -70,6 +73,7 @@ jobs:
             echo "- Ref: \`${{ github.ref_name }}\`"
             echo "- Build command: \`npm run build\`"
             echo "- Production target: \`https://journeyexpertbd.com\`"
+            echo "- 3D preview artifact: \`dist/jel-3d-preview.html\` verified."
             echo "- Angela voice contract: protected by automated regression checks."
             echo "- CRM/student auth: protected by security contract tests."
             echo "- Canonical URL contract: no trailing slash except the homepage."
