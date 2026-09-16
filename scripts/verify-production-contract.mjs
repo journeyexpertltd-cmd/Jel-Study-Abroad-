@@ -22,7 +22,9 @@ requireText(audio, "voiceName: 'Aoede'", 'Angela browser audio');
 requireText(audio, "response.status === 429", 'Angela browser audio');
 
 requireText(speech, "const voiceName = 'Aoede'", 'Angela TTS endpoint');
-requireText(speech, "setTimeout(() => controller.abort(), 4000)", 'Angela TTS endpoint');
+requireText(speech, "ANGELA_TTS_TIMEOUT_MS", 'Angela TTS endpoint');
+requireText(speech, "Math.min(15000, Math.max(5000, configuredTimeout))", 'Angela TTS endpoint');
+forbidText(speech, "setTimeout(() => controller.abort(), 4000)", 'Angela TTS endpoint');
 requireText(speech, "gemini-2.5-flash-preview-tts", 'Angela TTS endpoint');
 forbidText(speech, "gemini-2.5-pro-preview-tts", 'Angela TTS endpoint');
 forbidText(speech, "gemini-3.1-flash-tts-preview", 'Angela TTS endpoint');
@@ -43,4 +45,4 @@ for (const loc of locs) {
 forbidText(redirects, '/about /about/ 301', 'Redirects');
 forbidText(redirects, '/ects-calculator /ects-calculator/ 301', 'Redirects');
 
-console.log('Production contract verified: Angela voice, fallback, domain and canonical rules are locked.');
+console.log('Production contract verified: Angela voice, bounded fallback timing, domain and canonical rules are locked.');
