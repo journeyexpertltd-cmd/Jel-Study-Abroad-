@@ -36,6 +36,30 @@ test('public lead capture is server-side and uses controlled CRM fields', () => 
   assert.match(booking, /!response\.ok \|\| body\?\.success !== true/);
 });
 
+test('student intake uses the controlled CRM endpoint and explicit consent', () => {
+  const intake = read('src/components/StudentApplicationForm.tsx');
+  const app = read('src/App.tsx');
+  assert.match(intake, /fetch\("\/api\/supabase\/booking"/);
+  assert.match(intake, /source: "student_portal"/);
+  assert.match(intake, /form\.consent/);
+  assert.match(intake, /does not guarantee admission, scholarship or visa approval/i);
+  assert.match(app, /"study-abroad\/apply": "apply"/);
+});
+
+test('course finder fails safely without invented live university data', () => {
+  const finder = read('src/components/SmartCourseFinder.tsx');
+  const endpoint = read('functions/api/gemini/course-finder.ts');
+  const server = read('server.ts');
+  assert.match(finder, /do not represent live seats/i);
+  assert.match(finder, /Counselor verification required/);
+  assert.match(endpoint, /Never claim live seats/);
+  assert.match(server, /course_planning_temporarily_unavailable/);
+  for (const forbidden of ['high visa success prospects', 'direct pathway rights to Australia PR', 'high acceptance rates']) {
+    assert.equal(finder.includes(forbidden), false, `unsupported course finder claim: ${forbidden}`);
+    assert.equal(endpoint.includes(forbidden), false, `unsupported endpoint claim: ${forbidden}`);
+  }
+});
+
 test('versioned migrations keep CRM and student storage private with RLS', () => {
   const crmSql = read('supabase/migrations/20260916_production_crm_storage.sql');
   const studentSql = read('supabase/migrations/20260916_student_applications.sql');

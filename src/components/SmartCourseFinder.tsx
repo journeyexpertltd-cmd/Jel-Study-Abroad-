@@ -1,258 +1,125 @@
 import React, { useState } from "react";
-import { Search, GraduationCap, MapPin, DollarSign, Brain, RefreshCw, ChevronRight, Check } from "lucide-react";
-import { CourseRecommendation } from "../types";
+import {
+  AlertCircle,
+  ArrowRight,
+  BrainCircuit,
+  CheckCircle2,
+  CircleDollarSign,
+  Clock3,
+  GraduationCap,
+  MapPin,
+  RefreshCw,
+  Search,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react";
+import type { CourseRecommendation } from "../types";
 
 interface SmartCourseFinderProps {
   onPreSelectCourse: (uniName: string, country: string) => void;
 }
 
+const countries = ["United Kingdom", "Australia", "Canada", "United States", "Ireland", "New Zealand", "Malaysia", "Germany / Europe"];
+const levels = ["Foundation / Pathway", "Diploma", "Bachelor's Degree", "Master's Degree", "PhD / Doctorate"];
+const budgets = ["Lower-cost options", "Mid-range options", "Premium options", "Scholarship-focused", "Not decided"];
+
+const isRecommendation = (value: unknown): value is CourseRecommendation => {
+  if (!value || typeof value !== "object") return false;
+  const item = value as Record<string, unknown>;
+  return ["courseName", "university", "country", "duration", "approxTuition", "reason"].every((key) => typeof item[key] === "string" && item[key].trim().length > 0);
+};
+
 export function SmartCourseFinder({ onPreSelectCourse }: SmartCourseFinderProps) {
   const [preferredCountry, setPreferredCountry] = useState("United Kingdom");
   const [educationLevel, setEducationLevel] = useState("Master's Degree");
-  const [budgetRange, setBudgetRange] = useState("Medium (£15,000 - £25,000 / year)");
+  const [budgetRange, setBudgetRange] = useState("Mid-range options");
   const [interestArea, setInterestArea] = useState("");
   const [gpa, setGpa] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [recommendations, setRecommendations] = useState<CourseRecommendation[] | null>(null);
+  const [recommendations, setRecommendations] = useState<CourseRecommendation[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
-  const handleFindCourses = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleFindCourses = async (event: React.FormEvent) => {
+    event.preventDefault();
     if (!interestArea.trim() || !gpa.trim()) {
-      setError("Please fill out your interest area and current GPA/grades first!");
+      setError("Add your subject interest and latest academic result to create a planning shortlist.");
       return;
     }
 
     setIsLoading(true);
     setError(null);
-    setRecommendations(null);
-
+    setRecommendations([]);
     try {
       const response = await fetch("/api/gemini/course-finder", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ preferredCountry, educationLevel, budgetRange, interestArea, gpa })
+        body: JSON.stringify({ preferredCountry, educationLevel, budgetRange, interestArea: interestArea.trim(), gpa: gpa.trim() }),
       });
-
-      if (!response.ok) {
-        throw new Error("Failed to search matching universities");
-      }
-
-      const data = await response.json();
-      setRecommendations(data);
-    } catch (err: any) {
-      console.error(err);
-      setError("We encountered an issue preparing the analysis. Local safe fallback data was loaded instead.");
-      // safe fallback data
-      setRecommendations([
-        {
-          courseName: `B.Sc / M.Sc in ${interestArea || "Applied Science"}`,
-          university: "University of Greenwich",
-          country: preferredCountry,
-          duration: educationLevel.toLowerCase().includes("master") ? "1 Year" : "3-4 Years",
-          approxTuition: "£16,500 / year",
-          reason: `Excellent fit for GPA of ${gpa}. This program has robust modules designed around your field of study in ${interestArea}. Also meets your budget targets with high visa success prospects.`
-        },
-        {
-          courseName: `M.Sc / Executive MBA in ${interestArea || "Management"}`,
-          university: "Coventry University",
-          country: preferredCountry,
-          duration: "1 Year",
-          approxTuition: "£15,000 / year",
-          reason: "An innovative pathway providing exceptional regional internships, low document-deposit mandates, and a robust syllabus."
-        }
-      ]);
+      if (!response.ok) throw new Error("service_unavailable");
+      const data: unknown = await response.json();
+      if (!Array.isArray(data)) throw new Error("invalid_response");
+      const verifiedShape = data.filter(isRecommendation).slice(0, 3);
+      if (!verifiedShape.length) throw new Error("empty_response");
+      setRecommendations(verifiedShape);
+    } catch {
+      setError("The planning engine is temporarily unavailable. Your information was not submitted or saved. You can retry, or book a counselor review for a verified shortlist.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleInquire = (rec: CourseRecommendation, index: number) => {
-    setCopiedIndex(index);
-    onPreSelectCourse(rec.university, rec.country);
-    setTimeout(() => {
-      setCopiedIndex(null);
-    }, 1500);
-  };
-
   return (
-    <div className="bg-white rounded-2xl shadow-xl border border-slate-100 p-6 md:p-8 font-sans max-w-4xl mx-auto" id="smart-course-finder">
-      <div className="flex items-center space-x-3 mb-6">
-        <div className="bg-[#0B5D3B] text-[#D4AF37] p-3 rounded-xl shadow-lg">
-          <Brain className="h-6 w-6 animate-pulse" />
-        </div>
-        <div>
-          <h2 className="font-display font-bold text-xl md:text-2xl text-[#0B5D3B]">JEL smart Course Finder</h2>
-          <p className="text-xs text-slate-500">Instant database matching powered by advanced university intelligence</p>
+    <section id="smart-course-finder" className="overflow-hidden rounded-[34px] border border-slate-200 bg-white shadow-[0_30px_100px_rgba(5,51,36,.11)]">
+      <div className="relative overflow-hidden bg-[radial-gradient(circle_at_80%_12%,rgba(126,243,190,.22),transparent_30%),linear-gradient(135deg,#001C13,#07583B)] px-6 py-10 text-white sm:px-10 lg:px-12">
+        <div className="absolute -right-16 top-8 h-56 w-56 rounded-full border border-white/10" />
+        <div className="absolute right-10 top-20 h-28 w-28 rounded-full border border-white/10" />
+        <div className="relative z-10 grid gap-8 lg:grid-cols-[1fr_.65fr] lg:items-end">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-2 text-[10px] font-black uppercase tracking-[.16em] text-[#A9F4D1]"><Sparkles className="h-4 w-4" /> AI-assisted planning</div>
+            <h1 className="mt-5 max-w-3xl text-3xl font-black tracking-[-.04em] sm:text-5xl">Find a smarter starting point for your course search.</h1>
+            <p className="mt-4 max-w-3xl text-sm leading-7 text-white/70">Create a preliminary shortlist from your destination, academic level, subject and budget. A JEL counselor must verify entry requirements, fees, intake availability and application suitability.</p>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {[{ icon: Search, label: "Explore" }, { icon: BrainCircuit, label: "Compare" }, { icon: ShieldCheck, label: "Verify" }].map(({ icon: Icon, label }) => <div key={label} className="rounded-2xl border border-white/10 bg-white/[0.07] p-4 text-center backdrop-blur"><Icon className="mx-auto h-5 w-5 text-[#8FF2C6]" /><div className="mt-2 text-[10px] font-black uppercase tracking-wider">{label}</div></div>)}
+          </div>
         </div>
       </div>
 
-      <form onSubmit={handleFindCourses} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-1.5">
-          <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center">
-            <MapPin className="h-3.5 w-3.5 mr-1.5 text-[#D4AF37]" /> Preferred Country
-          </label>
-          <select
-            value={preferredCountry}
-            onChange={(e) => setPreferredCountry(e.target.value)}
-            className="w-full bg-slate-50 border border-slate-200 text-sm py-2.5 px-3 rounded-lg text-slate-800 transition focus:ring-1 focus:ring-[#0B5D3B]"
-          >
-            {["United Kingdom", "Australia", "Canada", "United States", "Ireland", "New Zealand", "Malaysia", "Europe"].map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="space-y-1.5">
-          <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center">
-            <GraduationCap className="h-3.5 w-3.5 mr-1.5 text-[#D4AF37]" /> level of Study
-          </label>
-          <select
-            value={educationLevel}
-            onChange={(e) => setEducationLevel(e.target.value)}
-            className="w-full bg-slate-50 border border-slate-200 text-sm py-2.5 px-3 rounded-lg text-slate-800 transition focus:ring-1 focus:ring-[#0B5D3B]"
-          >
-            {["Diploma", "Bachelor's Degree", "Master's Degree", "PhD / Doctorate"].map((l) => (
-              <option key={l} value={l}>{l}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="space-y-1.5">
-          <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center">
-            <DollarSign className="h-3.5 w-3.5 mr-1.5 text-[#D4AF37]" /> Budget Range
-          </label>
-          <select
-            value={budgetRange}
-            onChange={(e) => setBudgetRange(e.target.value)}
-            className="w-full bg-slate-50 border border-slate-200 text-sm py-2.5 px-3 rounded-lg text-slate-800 transition focus:ring-1 focus:ring-[#0B5D3B]"
-          >
-            <option value="Low ($4,000 - $9,000 / year)">Low ($4,000 - $9,000 / year)</option>
-            <option value="Medium (£15,000 - £25,000 / year)">Medium (£15,000 - £25,000 / year)</option>
-            <option value="High ($25,000 - $45,000 / year)">High ($25,000 - $45,000 / year)</option>
-            <option value="Scholarship Bound (Looking for 100% Fellowship)">Scholarship Bound (Looking for 100% Fellowship)</option>
-          </select>
-        </div>
-
-        <div className="space-y-1.5">
-          <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center">
-            <Search className="h-3.5 w-3.5 mr-1.5 text-[#D4AF37]" /> Interest Field / Major
-          </label>
-          <input
-            type="text"
-            placeholder="e.g., Computer Science, MBA, Public Health, Cybersecurity"
-            value={interestArea}
-            onChange={(e) => setInterestArea(e.target.value)}
-            className="w-full bg-slate-50 border border-slate-200 text-sm py-2 px-3 rounded-lg text-slate-800 transition focus:ring-1 focus:ring-[#0B5D3B]"
-            required
-            id="gfind-major-input"
-          />
-        </div>
-
-        <div className="space-y-1.5 md:col-span-2">
-          <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center">
-            🎓 Current GPA or Academic Marks
-          </label>
-          <input
-            type="text"
-            placeholder="e.g., GPA 5.00/5.00 or CGPA 3.65/4.00"
-            value={gpa}
-            onChange={(e) => setGpa(e.target.value)}
-            className="w-full bg-slate-50 border border-slate-200 text-sm py-2 px-3 rounded-lg text-slate-800 transition focus:ring-1 focus:ring-[#0B5D3B]"
-            required
-            id="gfind-gpa-input"
-          />
-        </div>
-
-        {error && (
-          <div className="bg-red-50 text-red-700 text-xs p-3 rounded-lg md:col-span-2 font-mono">
-            ⚠️ {error}
+      <div className="grid lg:grid-cols-[.82fr_1.18fr]">
+        <form onSubmit={handleFindCourses} className="border-b border-slate-200 bg-slate-50/70 p-6 sm:p-8 lg:border-b-0 lg:border-r">
+          <div className="flex items-center gap-3"><div className="grid h-11 w-11 place-items-center rounded-2xl bg-[#0B5D3B] text-[#8FF2C6]"><GraduationCap className="h-5 w-5" /></div><div><h2 className="font-black text-slate-900">Your study profile</h2><p className="mt-1 text-[11px] text-slate-500">No data is saved by this finder.</p></div></div>
+          <div className="mt-6 space-y-4">
+            <Field label="Preferred country" icon={MapPin}><select value={preferredCountry} onChange={(e) => setPreferredCountry(e.target.value)} className="jel-finder-input">{countries.map((item) => <option key={item}>{item}</option>)}</select></Field>
+            <Field label="Study level" icon={GraduationCap}><select value={educationLevel} onChange={(e) => setEducationLevel(e.target.value)} className="jel-finder-input">{levels.map((item) => <option key={item}>{item}</option>)}</select></Field>
+            <Field label="Budget direction" icon={CircleDollarSign}><select value={budgetRange} onChange={(e) => setBudgetRange(e.target.value)} className="jel-finder-input">{budgets.map((item) => <option key={item}>{item}</option>)}</select></Field>
+            <Field label="Subject / major" icon={Search}><input required maxLength={100} value={interestArea} onChange={(e) => setInterestArea(e.target.value)} className="jel-finder-input" placeholder="Computer Science, MBA, Public Health…" /></Field>
+            <Field label="Latest GPA / academic result" icon={CheckCircle2}><input required maxLength={60} value={gpa} onChange={(e) => setGpa(e.target.value)} className="jel-finder-input" placeholder="CGPA 3.50/4.00 or GPA 5.00" /></Field>
           </div>
-        )}
+          <button disabled={isLoading} className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#0B5D3B] px-5 py-3.5 text-sm font-black text-white shadow-lg shadow-emerald-950/15 transition hover:-translate-y-0.5 disabled:opacity-60">{isLoading ? <><RefreshCw className="h-4 w-4 animate-spin" />Creating planning shortlist…</> : <><Search className="h-4 w-4" />Generate suggestions</>}</button>
+        </form>
 
-        <div className="md:col-span-2 flex justify-end">
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="bg-[#0B5D3B] hover:bg-[#03301f] disabled:opacity-50 text-white font-bold py-3.5 px-8 rounded-xl text-xs uppercase tracking-wider transition-all duration-300 shadow-lg shadow-[#0B5D3B]/25 flex items-center space-x-2 cursor-pointer"
-            id="btn-trigger-course-finder"
-          >
-            {isLoading ? (
-              <>
-                <RefreshCw className="h-4 w-4 animate-spin" />
-                <span>Analysing University Seats...</span>
-              </>
-            ) : (
-              <>
-                <Search className="h-4 w-4" />
-                <span>Generate Recommendations</span>
-              </>
-            )}
-          </button>
+        <div className="p-6 sm:p-8 lg:p-10">
+          <div className="flex flex-col gap-3 border-b border-slate-100 pb-5 sm:flex-row sm:items-center sm:justify-between"><div><div className="text-[10px] font-black uppercase tracking-[.17em] text-[#16A36D]">Planning results</div><h2 className="mt-2 text-2xl font-black text-slate-900">Suggested options</h2></div><span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-amber-800">Counselor verification required</span></div>
+
+          {error && <div className="mt-6 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-900"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><div className="font-black">Planning service notice</div><div className="mt-1 text-xs">{error}</div></div></div>}
+
+          {!recommendations.length && !error && !isLoading && <div className="grid min-h-[330px] place-items-center text-center"><div><div className="mx-auto grid h-20 w-20 place-items-center rounded-[28px] bg-emerald-50 text-[#0B5D3B]"><BrainCircuit className="h-9 w-9" /></div><h3 className="mt-5 text-lg font-black text-slate-900">Your shortlist will appear here</h3><p className="mx-auto mt-2 max-w-md text-sm leading-7 text-slate-500">Complete the five planning fields. Suggestions are exploratory and do not represent live seats, confirmed fees, admission decisions or visa outcomes.</p></div></div>}
+
+          {isLoading && <div className="grid min-h-[330px] place-items-center text-center"><div><RefreshCw className="mx-auto h-9 w-9 animate-spin text-[#0B5D3B]" /><div className="mt-4 text-sm font-black text-slate-800">Comparing profile factors…</div><div className="mt-2 text-xs text-slate-500">This may take a few seconds.</div></div></div>}
+
+          {!!recommendations.length && <div className="mt-6 space-y-4">{recommendations.map((item, index) => (
+            <article key={`${item.university}-${item.courseName}-${index}`} className="rounded-[24px] border border-slate-200 bg-[linear-gradient(145deg,#fff,#f8fbf9)] p-5 transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-lg">
+              <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2 text-[10px] font-black uppercase tracking-wider text-[#0B5D3B]"><span className="rounded-full bg-emerald-50 px-2.5 py-1.5">Option {index + 1}</span><span>{item.country}</span></div><h3 className="mt-3 text-lg font-black text-slate-900">{item.courseName}</h3><div className="mt-1 text-sm font-bold text-slate-600">{item.university}</div><p className="mt-4 text-xs leading-6 text-slate-600">{item.reason}</p></div><button onClick={() => onPreSelectCourse(item.university, item.country)} className="shrink-0 rounded-xl bg-[#0B5D3B] px-4 py-3 text-xs font-black text-white">Discuss option <ArrowRight className="ml-1 inline h-3.5 w-3.5" /></button></div>
+              <div className="mt-5 flex flex-wrap gap-2 border-t border-slate-100 pt-4"><span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-2 text-[10px] font-bold text-slate-600"><Clock3 className="h-3.5 w-3.5" />{item.duration}</span><span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-2 text-[10px] font-bold text-slate-600"><CircleDollarSign className="h-3.5 w-3.5" />{item.approxTuition}</span></div>
+            </article>
+          ))}<p className="rounded-xl bg-slate-50 p-4 text-[10px] leading-5 text-slate-500">AI-generated planning suggestions may be incomplete or outdated. JEL must verify the university’s official course page, current entry requirements, fees and intake availability before any application decision.</p></div>}
         </div>
-      </form>
-
-      {/* Recommendations Results list */}
-      {recommendations && (
-        <div className="mt-8 pt-8 border-t border-slate-100 space-y-6 animate-in fade-in slide-in-from-top-6 duration-400">
-          <div className="flex items-center justify-between">
-            <h3 className="font-display font-semibold text-slate-800 text-base">Matched Programs</h3>
-            <span className="text-xs text-[#D4AF37] bg-[#D4AF37]/10 px-2 py-0.5 rounded font-mono font-medium">Matching Complete</span>
-          </div>
-
-          <div className="grid grid-cols-1 gap-6">
-            {recommendations.map((rec, idx) => (
-              <div
-                key={idx}
-                className="bg-slate-50 border border-slate-100 rounded-xl p-5 hover:border-[#0B5D3B] transition-all duration-300 relative group flex flex-col md:flex-row md:items-center justify-between"
-              >
-                <div className="md:max-w-[70%] space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-lg">🎓</span>
-                    <span className="text-[#0B5D3B] text-[11px] font-bold uppercase tracking-widest">{rec.country}</span>
-                  </div>
-                  <h4 className="font-display font-bold text-[#0B5D3B] text-base leading-tight group-hover:text-[#D4AF37] transition-colors">
-                    {rec.courseName}
-                  </h4>
-                  <p className="text-xs text-slate-500 font-medium">{rec.university} (Est. Duration: {rec.duration})</p>
-                  <p className="text-xs text-slate-600 bg-white border border-slate-100 rounded-lg p-3 leading-relaxed mt-2">
-                    <span className="font-bold text-[#f5a623]">JEL Analyst Verdict:</span> {rec.reason}
-                  </p>
-                </div>
-
-                <div className="mt-4 md:mt-0 md:text-right flex flex-col items-start md:items-end space-y-3">
-                  <div>
-                    <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider block">Estimated Fee</span>
-                    <span className="text-base font-display font-bold text-slate-800">{rec.approxTuition}</span>
-                  </div>
-
-                  <button
-                    onClick={() => handleInquire(rec, idx)}
-                    className="w-full md:w-auto bg-gradient-to-r from-[#0B5D3B] to-[#0b5439] hover:from-[#D4AF37] hover:to-[#D4AF37] text-white py-2 px-4 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all duration-300 flex items-center justify-center space-x-1.5"
-                  >
-                    {copiedIndex === idx ? (
-                      <>
-                        <Check className="h-3.5 w-3.5 text-green-300" />
-                        <span>Saved to Booking form!</span>
-                      </>
-                    ) : (
-                      <>
-                        <span>Select for Consultation</span>
-                        <ChevronRight className="h-3.5 w-3.5" />
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <p className="text-[10px] text-center text-slate-400 leading-normal">
-            Information retrieved reflects live 2026 partner data. Final fee structures are subject to university and currency adjustments.
-          </p>
-        </div>
-      )}
-    </div>
+      </div>
+      <style>{`.jel-finder-input{width:100%;border:1px solid #dbe4df;border-radius:.8rem;background:#fff;padding:.78rem .9rem;font-size:.8rem;color:#1e293b;outline:none;transition:.2s}.jel-finder-input:focus{border-color:#16a36d;box-shadow:0 0 0 4px rgba(22,163,109,.1)}`}</style>
+    </section>
   );
+}
+
+function Field({ label, icon: Icon, children }: { label: string; icon: React.ComponentType<{ className?: string }>; children: React.ReactNode }) {
+  return <label className="block"><span className="mb-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-[.12em] text-slate-600"><Icon className="h-3.5 w-3.5 text-[#16A36D]" />{label}</span>{children}</label>;
 }

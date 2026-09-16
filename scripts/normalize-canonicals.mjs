@@ -11,6 +11,7 @@ const routes = [
   '/blogs',
   '/contact',
   '/booking',
+  '/study-abroad/apply',
   '/finder',
   '/checker',
   '/ects-calculator',

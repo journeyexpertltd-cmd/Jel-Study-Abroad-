@@ -11,7 +11,10 @@ import {
   GraduationCap,
   Headphones,
   Landmark,
+  Layers3,
   MessageCircle,
+  MousePointer2,
+  Orbit,
   Plane,
   Search,
   ShieldCheck,
@@ -81,8 +84,10 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
         @keyframes jelApprovedFloat {0%,100%{transform:translate3d(0,0,0)}50%{transform:translate3d(0,-12px,0)}}
         @keyframes jelApprovedGlow {0%,100%{opacity:.55;transform:scale(1)}50%{opacity:1;transform:scale(1.06)}}
         @keyframes jelApprovedSweep {0%{transform:translateX(-130%) rotate(18deg)}100%{transform:translateX(260%) rotate(18deg)}}
-        .jel-approved-float{animation:jelApprovedFloat 6.5s ease-in-out infinite}.jel-approved-float-delay{animation:jelApprovedFloat 7.5s ease-in-out -2.2s infinite}.jel-approved-glow{animation:jelApprovedGlow 4.5s ease-in-out infinite}.jel-approved-sweep{animation:jelApprovedSweep 9s linear infinite}
-        @media (prefers-reduced-motion:reduce){.jel-approved-float,.jel-approved-float-delay,.jel-approved-glow,.jel-approved-sweep{animation:none!important}}
+        @keyframes jelOrbit {from{transform:rotate(0deg) translateX(132px) rotate(0deg)}to{transform:rotate(360deg) translateX(132px) rotate(-360deg)}}
+        @keyframes jelOrbitReverse {from{transform:rotate(360deg) translateX(86px) rotate(-360deg)}to{transform:rotate(0deg) translateX(86px) rotate(0deg)}}
+        .jel-approved-float{animation:jelApprovedFloat 6.5s ease-in-out infinite}.jel-approved-float-delay{animation:jelApprovedFloat 7.5s ease-in-out -2.2s infinite}.jel-approved-glow{animation:jelApprovedGlow 4.5s ease-in-out infinite}.jel-approved-sweep{animation:jelApprovedSweep 9s linear infinite}.jel-orbit{animation:jelOrbit 15s linear infinite}.jel-orbit-reverse{animation:jelOrbitReverse 11s linear infinite}
+        @media (prefers-reduced-motion:reduce){.jel-approved-float,.jel-approved-float-delay,.jel-approved-glow,.jel-approved-sweep,.jel-orbit,.jel-orbit-reverse{animation:none!important}}
       `}</style>
 
       <section className="relative isolate overflow-hidden bg-[radial-gradient(circle_at_73%_22%,rgba(16,212,134,.17),transparent_30%),radial-gradient(circle_at_15%_68%,rgba(0,95,62,.22),transparent_34%),linear-gradient(135deg,#00150E_0%,#001D14_46%,#003425_100%)]">
@@ -104,6 +109,9 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
             </p>
 
             <div className="mt-9 flex flex-wrap gap-3">
+              <button onClick={() => navigate("apply")} className="inline-flex items-center gap-3 rounded-xl bg-[linear-gradient(110deg,#8FF2C6,#F3D14E)] px-6 py-4 text-sm font-black text-[#053324] shadow-[0_16px_34px_rgba(0,0,0,.18)] transition hover:-translate-y-1 hover:brightness-105">
+                Start application <ArrowRight className="h-4 w-4" />
+              </button>
               <button onClick={() => navigate("booking")} className="inline-flex items-center gap-3 rounded-xl bg-[#ECFFF6] px-6 py-4 text-sm font-black text-[#053324] shadow-[0_16px_34px_rgba(0,0,0,.18)] transition hover:-translate-y-1 hover:bg-white">
                 Book free counselling <ArrowRight className="h-4 w-4" />
               </button>
@@ -232,6 +240,45 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
               </div>
               <div className="mt-8 flex items-center gap-3 text-sm font-black text-[#9AF3C8]"><Headphones className="h-5 w-5" /> Use the Angela assistant on this page</div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-y border-white/[0.08] bg-[radial-gradient(circle_at_15%_20%,rgba(16,212,134,.12),transparent_30%),#02160F]">
+        <div className="mx-auto grid max-w-[1480px] grid-cols-1 items-center gap-12 px-5 py-20 sm:px-8 lg:grid-cols-[.9fr_1.1fr] lg:px-10 lg:py-24 xl:px-14">
+          <div className="relative mx-auto grid min-h-[420px] w-full max-w-[520px] place-items-center [perspective:1100px]">
+            <div className="absolute h-[330px] w-[330px] rounded-full border border-[#8FF2C6]/15 shadow-[0_0_90px_rgba(16,212,134,.08)]" />
+            <div className="absolute h-[220px] w-[220px] rounded-full border border-dashed border-[#F1C331]/25" />
+            <div className="jel-approved-float relative z-10 grid h-44 w-44 place-items-center rounded-[42px] border border-white/10 bg-[linear-gradient(145deg,rgba(143,242,198,.18),rgba(255,255,255,.04))] shadow-[0_35px_85px_rgba(0,0,0,.4)] backdrop-blur-xl [transform:rotateX(8deg)_rotateY(-9deg)]">
+              <div className="absolute inset-4 rounded-[30px] border border-white/10" />
+              <GraduationCap className="h-16 w-16 text-[#9AF3C8]" />
+              <span className="absolute bottom-5 text-[10px] font-black uppercase tracking-[.18em] text-white/70">JEL Intake</span>
+            </div>
+            <div className="jel-orbit absolute grid h-14 w-14 place-items-center rounded-2xl border border-[#8FF2C6]/25 bg-[#063526] text-[#9AF3C8] shadow-xl"><Search className="h-6 w-6" /></div>
+            <div className="jel-orbit-reverse absolute grid h-12 w-12 place-items-center rounded-2xl border border-[#F1C331]/25 bg-[#163A2E] text-[#F1C331] shadow-xl"><FileCheck2 className="h-5 w-5" /></div>
+            <div className="absolute bottom-3 left-4 rounded-2xl border border-white/10 bg-[#062B1F]/90 p-4 shadow-2xl backdrop-blur-xl"><div className="flex items-center gap-2 text-xs font-black text-white"><Orbit className="h-4 w-4 text-[#8FF2C6]" /> Explore</div><div className="mt-1 text-[10px] text-white/50">Courses & destinations</div></div>
+            <div className="absolute right-1 top-8 rounded-2xl border border-white/10 bg-[#062B1F]/90 p-4 shadow-2xl backdrop-blur-xl"><div className="flex items-center gap-2 text-xs font-black text-white"><Layers3 className="h-4 w-4 text-[#F1C331]" /> Track</div><div className="mt-1 text-[10px] text-white/50">One connected journey</div></div>
+          </div>
+
+          <div>
+            <div className="text-xs font-black uppercase tracking-[0.18em] text-[#7FE4B2]">Live online intake</div>
+            <h2 className="mt-3 text-4xl font-black leading-[1.02] tracking-[-0.045em] text-white sm:text-5xl lg:text-6xl">Explore. Apply. Track.<br /><span className="text-[#8FF2C6]">All in one flow.</span></h2>
+            <p className="mt-5 max-w-[690px] text-sm leading-7 text-[#9FC0B1] sm:text-base">Students can now discover study options, submit a structured application enquiry and then use the secure portal for profile and application tracking. Public forms remain separated from private CRM records.</p>
+            <div className="mt-8 grid gap-3 sm:grid-cols-3">
+              {[
+                { icon: Search, title: "Find options", text: "Plan by country, level, subject and budget.", tab: "finder" },
+                { icon: MousePointer2, title: "Apply online", text: "Send a structured profile to JEL’s CRM intake.", tab: "apply" },
+                { icon: ShieldCheck, title: "Track securely", text: "Use authenticated portal and protected records.", tab: "portal" },
+              ].map(({ icon: Icon, title, text, tab }) => (
+                <button key={title} onClick={() => navigate(tab)} className="group rounded-[22px] border border-white/[0.09] bg-white/[0.04] p-5 text-left transition hover:-translate-y-1 hover:border-[#8FF2C6]/35 hover:bg-white/[0.07]">
+                  <Icon className="h-6 w-6 text-[#9AF3C8]" />
+                  <div className="mt-5 text-sm font-black text-white">{title}</div>
+                  <div className="mt-2 text-xs leading-5 text-[#8EAE9F]">{text}</div>
+                  <div className="mt-4 text-[11px] font-black text-[#9AF3C8]">Open <ArrowRight className="ml-1 inline h-3.5 w-3.5 transition group-hover:translate-x-1" /></div>
+                </button>
+              ))}
+            </div>
+            <div className="mt-7 flex flex-wrap gap-3"><button onClick={() => navigate("apply")} className="rounded-xl bg-[#ECFFF6] px-6 py-4 text-sm font-black text-[#053324]">Start application</button><button onClick={() => navigate("finder")} className="rounded-xl border border-white/15 bg-white/[0.04] px-6 py-4 text-sm font-black text-white">Open course finder</button></div>
           </div>
         </div>
       </section>

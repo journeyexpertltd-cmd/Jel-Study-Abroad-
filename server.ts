@@ -909,38 +909,12 @@ app.post("/api/gemini/course-finder", async (req: express.Request, res: express.
     const { preferredCountry, educationLevel, budgetRange, interestArea, gpa } = req.body;
 
     if (!process.env.GEMINI_API_KEY) {
-      // Return solid fallback recommendation if key is missing to keep UI 100% interactive
-      res.json([
-        {
-          courseName: "B.Sc. in Computer Science / Information Technology",
-          university: "Taylor's University (Branch transferring to Australia)",
-          country: "Malaysia",
-          duration: "3 Years",
-          approxTuition: "$6,500 / year",
-          reason: "An excellent low-budget pathway based on your interest in " + (interestArea || "computing") + ". Taylor's ranks highly in Asia and offers dynamic transfer credits to Australian Group of 8 schools."
-        },
-        {
-          courseName: "M.Sc. in Business Analytics / Data Science",
-          university: "University of Greenwich",
-          country: "United Kingdom",
-          duration: "1 Year",
-          approxTuition: "£16,000 / year",
-          reason: "Perfectly aligns with your academic profile. Greenwich provides superb industry placement networks around London, high acceptance rates, and a 2-year Graduate Route stay back visa."
-        },
-        {
-          courseName: "M.Eng. in Software Engineering",
-          university: "Monash University",
-          country: "Australia",
-          duration: "2 Years",
-          approxTuition: "A$38,000 / year",
-          reason: "Top-tier option if budget satisfies the criteria. Monash is a QS Top 50 institution producing elite global engineers with direct pathway rights to Australia PR."
-        }
-      ]);
+      res.status(503).json({ error: "course_planning_temporarily_unavailable", retryable: true });
       return;
     }
 
     const ai = getGeminiClient();
-    const finderPrompt = `Act as an elite educational planner and registrar at JEL Study Abroad. Analyze the core parameters of a candidate from Bangladesh/South Asia and construct 3 matching university programs:
+    const finderPrompt = `Act as a cautious study-planning assistant for JEL Study Abroad. Analyze the core parameters of a candidate from Bangladesh/South Asia and suggest 3 programs only as preliminary research starting points:
 - Preferred Country: ${preferredCountry || "Any top destination"}
 - Academic background/GPA: ${gpa || "Satisfactory scoring"}
 - Preferred field or discipline: ${interestArea || "STEM or Business management"}
@@ -955,10 +929,10 @@ Format the response as raw JSON that fits this specific TypeScript format:
     "country": "Primary country",
     "duration": "e.g., 1 Year / 2 Years / 3 Years",
     "approxTuition": "Est. annual tuition",
-    "reason": "Clear professional explanation why this is a prime recommendation based on their GPA, field of interest, and budgets."
+    "reason": "A cautious explanation of why the option may be worth researching based on the supplied profile. Explicitly say that official entry requirements, fees and intake availability require verification."
   }
 ]
-Do not output markdown code fences or other textual summaries, output the JSON structure directly.`;
+Never claim live seats, guaranteed admission, visa likelihood, immigration or permanent-residency pathways, confirmed partnerships, current fees, acceptance rates or scholarship entitlement. Do not invent a university or program. If a fee or duration is uncertain, write "Verify on official university website". Do not output markdown code fences or other textual summaries, output the JSON structure directly.`;
 
     const response = await ai.models.generateContent({
       model: "gemini-3.5-flash",

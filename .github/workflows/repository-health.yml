@@ -45,7 +45,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          routes=(/ /about /services /destinations /partners /scholarships /blogs /contact /booking /finder /checker /ects-calculator)
+          routes=(/ /about /services /destinations /partners /scholarships /blogs /contact /booking /study-abroad/apply /finder /checker /ects-calculator)
           for path in "${routes[@]}"; do
             status=$(curl --fail --silent --show-error --location --max-time 20 --output /dev/null --write-out '%{http_code}' "$SITE_URL$path")
             test "$status" = "200"
@@ -58,7 +58,7 @@ jobs:
           robots=$(curl --fail --silent --show-error --max-time 20 "$SITE_URL/robots.txt")
           grep -F "Sitemap: $SITE_URL/sitemap.xml" <<< "$robots"
           sitemap=$(curl --fail --silent --show-error --max-time 20 "$SITE_URL/sitemap.xml")
-          test "$(grep -o '<loc>' <<< "$sitemap" | wc -l | tr -d ' ')" = "12"
+          test "$(grep -o '<loc>' <<< "$sitemap" | wc -l | tr -d ' ')" = "13"
           headers=$(curl --fail --silent --show-error --max-time 20 --head "$SITE_URL/" | tr -d '\r')
           grep -Eiq '^[[:space:]]*strict-transport-security:[[:space:]]*' <<< "$headers"
           grep -Eiq '^[[:space:]]*x-frame-options:[[:space:]]*DENY[[:space:]]*$' <<< "$headers"

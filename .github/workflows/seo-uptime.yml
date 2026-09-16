@@ -49,6 +49,7 @@ jobs:
             "/blogs"
             "/contact"
             "/booking"
+            "/study-abroad/apply"
             "/finder"
             "/checker"
             "/ects-calculator"
@@ -68,7 +69,7 @@ jobs:
           robots="$(curl --fail --silent --show-error --max-time 20 "$base/robots.txt")"
           sitemap="$(curl --fail --silent --show-error --max-time 20 "$base/sitemap.xml")"
           grep -F "Sitemap: $base/sitemap.xml" <<< "$robots"
-          test "$(grep -o '<loc>' <<< "$sitemap" | wc -l)" -eq 12
+          test "$(grep -o '<loc>' <<< "$sitemap" | wc -l)" -eq 13
           ! grep -E 'journeyexpert(ltd|limited)\.com' <<< "$sitemap"
           echo "robots.txt and sitemap.xml passed."
 
@@ -100,6 +101,6 @@ jobs:
             echo ""
             echo "- Target: https://journeyexpertbd.com"
             echo "- Schedule: daily at 03:37 UTC"
-            echo "- Checks: SEO metadata, 12 canonical routes, robots, sitemap, Cloudflare edge trace, HTTPS, and security headers"
+            echo "- Checks: SEO metadata, 13 canonical routes, robots, sitemap, Cloudflare edge trace, HTTPS, and security headers"
             echo "- Production changes: none; all checks are read-only HTTP requests"
           } >> "$GITHUB_STEP_SUMMARY"

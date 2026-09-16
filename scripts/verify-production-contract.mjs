@@ -41,7 +41,7 @@ requireText(token, "voiceName: 'Aoede'", 'Angela Live token');
 requireText(token, "gemini-2.5-flash-native-audio-preview-12-2025", 'Angela Live token');
 
 const locs = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]);
-if (locs.length !== 12) throw new Error(`Sitemap contract: expected 12 URLs, found ${locs.length}`);
+if (locs.length !== 13) throw new Error(`Sitemap contract: expected 13 URLs, found ${locs.length}`);
 for (const loc of locs) {
   if (!loc.startsWith('https://journeyexpertbd.com/')) throw new Error(`Sitemap contract: wrong domain ${loc}`);
   if (loc !== 'https://journeyexpertbd.com/' && loc.endsWith('/')) {

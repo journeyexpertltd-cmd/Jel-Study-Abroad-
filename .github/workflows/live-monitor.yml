@@ -43,6 +43,7 @@ jobs:
             "/blogs"
             "/contact"
             "/booking"
+            "/study-abroad/apply"
             "/finder"
             "/checker"
             "/ects-calculator"
@@ -71,7 +72,7 @@ jobs:
           base="https://journeyexpertbd.com"
           curl --fail --silent --show-error "$base/robots.txt" | grep -F "Sitemap: $base/sitemap.xml"
           sitemap="$(curl --fail --silent --show-error "$base/sitemap.xml")"
-          test "$(grep -o '<loc>' <<< "$sitemap" | wc -l)" -eq 12
+          test "$(grep -o '<loc>' <<< "$sitemap" | wc -l)" -eq 13
           grep -F "https://journeyexpertbd.com/" <<< "$sitemap"
           ! grep -E 'journeyexpert(ltd|limited)\.com' <<< "$sitemap"
 

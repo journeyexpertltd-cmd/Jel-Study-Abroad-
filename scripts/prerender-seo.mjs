@@ -79,6 +79,14 @@ const pages = {
       "The session can cover university research, document readiness, scholarship questions and visa-planning considerations. Counseling does not guarantee admission, scholarships or visa approval; it is intended to improve preparation and help the student understand the requirements that apply to their profile."
     ]
   },
+  "/study-abroad/apply/": {
+    title: "Apply to Study Abroad | JEL Student Intake",
+    description: "Submit your study-abroad profile securely for JEL counselor review, including destination, study level, subject, intake and academic background.",
+    details: [
+      "The JEL online student intake form collects the essential information a counselor needs for an initial study-abroad profile review: contact details, preferred destination, intended study level, subject, intake, academic result, English-test status and budget direction.",
+      "Submitting an enquiry does not create an admission offer, scholarship entitlement or visa decision. A JEL counselor can review the profile, explain appropriate next steps and confirm which official institution requirements and documents need to be checked before an application proceeds."
+    ]
+  },
   "/finder/": {
     title: "AI Course Finder & University Search | JEL Study Abroad",
     description: "Use the JEL course finder to research study options by destination, subject, tuition and entry criteria before confirming details with an institution.",

@@ -32,6 +32,7 @@ const ScholarshipMatching = lazy(() => import("./components/ScholarshipMatching"
 const AdmissionPrediction = lazy(() => import("./components/AdmissionPrediction").then((m) => ({ default: m.AdmissionPrediction })));
 const GlobalMarketplace = lazy(() => import("./components/GlobalMarketplace").then((m) => ({ default: m.GlobalMarketplace })));
 const EctsCalculator = lazy(() => import("./components/EctsCalculator").then((m) => ({ default: m.EctsCalculator })));
+const StudentApplicationForm = lazy(() => import("./components/StudentApplicationForm").then((m) => ({ default: m.StudentApplicationForm })));
 
 const jelLogo = "/assets/images/jel-study-abroad-official-v2.png";
 
@@ -56,6 +57,7 @@ const tabToPath: Record<string, string> = {
   finder: "/finder",
   checker: "/checker",
   booking: "/booking",
+  apply: "/study-abroad/apply",
   admin: "/admin",
   franchise: "/franchise",
   partnerSync: "/partnersync",
@@ -83,6 +85,8 @@ const pathToTab: Record<string, string> = {
   finder: "finder",
   checker: "checker",
   booking: "booking",
+  apply: "apply",
+  "study-abroad/apply": "apply",
   admin: "admin",
   franchise: "franchise",
   partnersync: "partnerSync",
@@ -145,6 +149,7 @@ export default function App() {
     blog: { title: "Study Abroad Guides & Updates | JEL Study Abroad", desc: "Read study-abroad, admissions, scholarship and student visa guidance for Bangladeshi applicants." },
     contact: { title: "Contact JEL Study Abroad | Tejgaon, Dhaka", desc: "Contact JEL Study Abroad in Tejgaon, Dhaka for admissions, scholarships and student visa counseling." },
     booking: { title: "Book a Study Abroad Consultation | JEL Study Abroad", desc: "Submit a consultation request for a JEL counselor to review your study-abroad profile." },
+    apply: { title: "Apply to Study Abroad | JEL Student Intake", desc: "Submit your study-abroad profile securely for JEL counselor review, including destination, study level, subject, intake and academic background." },
     finder: { title: "AI Course Finder | JEL Study Abroad", desc: "Use JEL study-planning tools to explore courses and university options by destination and profile." },
     checker: { title: "Student Visa Eligibility Planning Tool | JEL Study Abroad", desc: "Review common academic, language and financial factors used in student visa preparation." },
     portal: { title: "Student Portal | JEL Study Abroad", desc: "Secure JEL student authentication, profile, application tracking and private document workspace." },
@@ -234,6 +239,7 @@ export default function App() {
       {activeTab === "finder" && <SmartCourseFinder onPreSelectCourse={(university, country) => { setBookingUniversity(university); setBookingCountry(country); navigate("booking"); }} />}
       {activeTab === "checker" && <EligibilityChecker />}
       {activeTab === "booking" && <ConsultationBooking preSelectedUniversity={bookingUniversity} preSelectedCountry={bookingCountry} onClearPreSelected={() => { setBookingUniversity(""); setBookingCountry(""); }} setActiveTab={setActiveTab} />}
+      {activeTab === "apply" && <StudentApplicationForm setActiveTab={setActiveTab} />}
       {activeTab === "portal" && <StudentPortal setActiveTab={setActiveTab} onPreSelectCountry={setExploreCountry} />}
       {activeTab === "admin" && <AdminDashboard setActiveTab={setActiveTab} />}
       {activeTab === "franchise" && <MultiAgentFranchise />}
@@ -279,7 +285,7 @@ export default function App() {
 
           <div className="flex items-center gap-2">
             <button onClick={() => setSearchOpen(true)} aria-label="Search" className="grid h-11 w-11 place-items-center rounded-xl border border-white/10 bg-white/[0.04] text-[#D7EEE2] transition hover:bg-white/[0.08]"><Search className="h-4 w-4" /></button>
-            <button onClick={() => navigate("booking")} className="hidden items-center gap-2 rounded-full border border-white/20 bg-white/[0.05] px-5 py-3.5 text-sm font-black text-white transition hover:bg-white/[0.1] sm:inline-flex">Apply now ↗</button>
+            <button onClick={() => navigate("apply")} className="hidden items-center gap-2 rounded-full border border-[#8FF2C6]/30 bg-[#8FF2C6]/10 px-5 py-3.5 text-sm font-black text-white transition hover:-translate-y-0.5 hover:bg-[#8FF2C6]/20 sm:inline-flex">Apply now ↗</button>
             <button onClick={() => setMobileMenu((value) => !value)} aria-label="Menu" className="grid h-11 w-11 place-items-center rounded-xl border border-white/10 bg-white/[0.04] text-white lg:hidden">{mobileMenu ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}</button>
           </div>
         </div>
@@ -295,7 +301,8 @@ export default function App() {
               <button onClick={() => navigate("universities")} className="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-left text-xs font-black text-white">Partners</button>
               <button onClick={() => navigate("scholarships")} className="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-left text-xs font-black text-white">Scholarships</button>
               <button onClick={() => navigate("contact")} className="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-left text-xs font-black text-white">Contact</button>
-              <button onClick={() => navigate("booking")} className="col-span-2 rounded-xl bg-[#ECFFF6] p-3 text-left text-xs font-black text-[#053324]">Apply now / Book counselling</button>
+              <button onClick={() => navigate("apply")} className="rounded-xl bg-[#ECFFF6] p-3 text-left text-xs font-black text-[#053324]">Apply now</button>
+              <button onClick={() => navigate("booking")} className="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-left text-xs font-black text-white">Book counselling</button>
             </div>
           </div>
         )}
