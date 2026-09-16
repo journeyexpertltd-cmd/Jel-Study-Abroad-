@@ -43,6 +43,8 @@ const jelLogo = "/assets/images/jel-study-abroad-official-v2.png";
 const verifiedSocialLinks = [
   { label: "Facebook", href: "https://www.facebook.com/journeyexpertltd" },
   { label: "Instagram", href: "https://www.instagram.com/journeyexpertltd/" },
+  { label: "LinkedIn", href: "https://www.linkedin.com/in/journey-expert-ltd-jel-13b6123b1" },
+  { label: "YouTube", href: "https://www.youtube.com/@JELSTUDYABROAD" },
   { label: "WhatsApp", href: "https://wa.me/8801926400400" },
 ];
 
@@ -190,6 +192,8 @@ export default function App() {
         sameAs: [
           "https://www.facebook.com/journeyexpertltd",
           "https://www.instagram.com/journeyexpertltd/",
+          "https://www.linkedin.com/in/journey-expert-ltd-jel-13b6123b1",
+          "https://www.youtube.com/@JELSTUDYABROAD",
         ],
         contactPoint: { "@type": "ContactPoint", telephone: "+8801926400400", contactType: "customer service", areaServed: "BD", availableLanguage: ["en", "bn"] },
       },
