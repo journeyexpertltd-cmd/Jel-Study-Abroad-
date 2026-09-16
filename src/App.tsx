@@ -1,18 +1,13 @@
 import React, { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import {
-  Brain,
-  Calculator,
   Calendar,
+  Clock3,
   Globe,
   Mail,
   MapPin,
   Menu,
-  Moon,
   Phone,
   Search,
-  ShieldCheck,
-  Sun,
-  Users,
   X,
 } from "lucide-react";
 import { AIChatAssistant } from "./components/AIChatAssistant";
@@ -41,11 +36,11 @@ const EctsCalculator = lazy(() => import("./components/EctsCalculator").then((m)
 const jelLogo = "/assets/images/jel-study-abroad-official-v2.png";
 
 const verifiedSocialLinks = [
-  { label: "Facebook", href: "https://www.facebook.com/journeyexpertltd" },
-  { label: "Instagram", href: "https://www.instagram.com/journeyexpertltd/" },
-  { label: "LinkedIn", href: "https://www.linkedin.com/in/journey-expert-ltd-jel-13b6123b1" },
-  { label: "YouTube", href: "https://www.youtube.com/@JELSTUDYABROAD" },
-  { label: "WhatsApp", href: "https://wa.me/8801926400400" },
+  { label: "FB", name: "Facebook", href: "https://www.facebook.com/journeyexpertltd" },
+  { label: "IG", name: "Instagram", href: "https://www.instagram.com/journeyexpertltd/" },
+  { label: "YT", name: "YouTube", href: "https://www.youtube.com/@JELSTUDYABROAD" },
+  { label: "in", name: "LinkedIn", href: "https://www.linkedin.com/in/journey-expert-ltd-jel-13b6123b1" },
+  { label: "WA", name: "WhatsApp", href: "https://wa.me/8801926400400" },
 ];
 
 const tabToPath: Record<string, string> = {
@@ -118,12 +113,6 @@ export default function App() {
   const [bookingUniversity, setBookingUniversity] = useState("");
   const [bookingCountry, setBookingCountry] = useState("");
   const [exploreCountry, setExploreCountry] = useState("United Kingdom");
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem("jel_theme") === "dark" || (!localStorage.getItem("jel_theme") && window.matchMedia("(prefers-color-scheme: dark)").matches));
-
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", darkMode);
-    localStorage.setItem("jel_theme", darkMode ? "dark" : "light");
-  }, [darkMode]);
 
   useEffect(() => {
     const target = tabToPath[activeTab] || "/";
@@ -189,12 +178,7 @@ export default function App() {
         name: "Journey Expert Ltd.",
         url: "https://journeyexpertbd.com",
         logo: "https://journeyexpertbd.com/assets/images/jel-study-abroad-official-v2.png",
-        sameAs: [
-          "https://www.facebook.com/journeyexpertltd",
-          "https://www.instagram.com/journeyexpertltd/",
-          "https://www.linkedin.com/in/journey-expert-ltd-jel-13b6123b1",
-          "https://www.youtube.com/@JELSTUDYABROAD",
-        ],
+        sameAs: verifiedSocialLinks.filter((item) => item.name !== "WhatsApp").map((item) => item.href),
         contactPoint: { "@type": "ContactPoint", telephone: "+8801926400400", contactType: "customer service", areaServed: "BD", availableLanguage: ["en", "bn"] },
       },
       {
@@ -221,19 +205,19 @@ export default function App() {
   };
 
   const menuItems = [
-    ["home", "Home"], ["about", "About Us"], ["services", "Services"], ["countries", "Destinations"], ["universities", "Partners"], ["scholarships", "Scholarships"], ["blog", "Guides & Blogs"], ["portal", "Student Portal"], ["contact", "Contact Us"],
-  ];
-  const tools = [
-    { id: "finder", label: "Course Finder", icon: Brain },
-    { id: "ects", label: "ECTS Calculator", icon: Calculator },
-    { id: "checker", label: "Eligibility Planner", icon: ShieldCheck },
-    { id: "booking", label: "Book Consultation", icon: Calendar },
-    { id: "admin", label: "Counselor CRM", icon: Users },
+    ["home", "Home"],
+    ["about", "About"],
+    ["services", "Services"],
+    ["countries", "Destinations"],
+    ["universities", "Partners"],
+    ["scholarships", "Scholarships"],
+    ["blog", "Blogs"],
+    ["contact", "Contact"],
   ];
 
   const renderMain = () => (
     <Suspense fallback={<div className="min-h-[45vh] flex items-center justify-center text-sm font-bold text-[#0B5D3B]">Loading JEL Study Abroad…</div>}>
-      {activeTab === "home" && <HomeView setActiveTab={setActiveTab} onPreSelectCountry={(country) => { setExploreCountry(country); }} />}
+      {activeTab === "home" && <HomeView setActiveTab={setActiveTab} onPreSelectCountry={(country) => setExploreCountry(country)} />}
       {activeTab === "about" && <AboutView />}
       {activeTab === "services" && <ServicesView />}
       {activeTab === "countries" && <CountriesView selectedCountryName={exploreCountry} />}
@@ -256,45 +240,56 @@ export default function App() {
   );
 
   return (
-    <div className={`min-h-screen bg-[#F8F9FA] dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex flex-col ${darkMode ? "dark" : ""}`}>
-      <header className="bg-[#0B5D3B] text-white text-[11px] py-2 border-b border-white/10">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-2">
-          <div className="flex flex-wrap justify-center gap-4"><span className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5 text-[#D4AF37]" /> Nabisco Mor, Tejgaon, Dhaka</span><span className="flex items-center gap-1.5"><Mail className="h-3.5 w-3.5 text-[#D4AF37]" /> journeyexpertbd@gmail.com</span></div>
-          <div className="flex flex-wrap justify-center gap-4"><a href="tel:+8801926400400" className="hover:text-[#D4AF37]">Call +8801926400400</a><a href="https://wa.me/8801926400400" target="_blank" rel="noreferrer" className="hover:text-[#D4AF37]">WhatsApp</a><span className="text-[#D4AF37] font-bold">Admissions & visa guidance · No outcome guarantees</span></div>
+    <div className="min-h-screen bg-[#F7F4EA] text-[#12372A] flex flex-col">
+      <header className="border-b border-[#DDD6C5] bg-[#F5F1E5] text-[10px] text-slate-600">
+        <div className="mx-auto flex max-w-[1480px] flex-wrap items-center justify-between gap-2 px-5 py-2 sm:px-8 lg:px-10 xl:px-14">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
+            <span className="inline-flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5 text-[#0B5D3B]" />189/A, Abdul Motin Complex, Tejgaon, Dhaka</span>
+            <span className="hidden items-center gap-1.5 md:inline-flex"><Clock3 className="h-3.5 w-3.5 text-[#0B5D3B]" />Sat–Thu, 10:00–19:00</span>
+            <a href="mailto:journeyexpertbd@gmail.com" className="hidden items-center gap-1.5 lg:inline-flex"><Mail className="h-3.5 w-3.5 text-[#0B5D3B]" />journeyexpertbd@gmail.com</a>
+          </div>
+          <div className="flex items-center gap-2">
+            <a href="tel:+8801926400400" className="hidden items-center gap-1.5 font-bold sm:inline-flex"><Phone className="h-3.5 w-3.5 text-[#0B5D3B]" />+880 1926-400400</a>
+            <div className="hidden items-center gap-1 md:flex">{verifiedSocialLinks.map((social) => <a key={social.name} href={social.href} target="_blank" rel="noopener noreferrer" aria-label={social.name} className="grid h-6 min-w-6 place-items-center rounded-full bg-[#0B5D3B] px-1 text-[8px] font-black text-white transition hover:bg-[#D29D27]">{social.label}</a>)}</div>
+            <span className="ml-1 rounded border border-[#CFC6B1] px-2 py-1 font-bold text-[#0B5D3B]">EN | বাংলা</span>
+          </div>
         </div>
       </header>
 
-      <nav className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md sticky top-0 z-40 border-b border-slate-200 dark:border-slate-800 shadow-sm">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 h-16 md:h-20 flex items-center justify-between gap-5">
-          <button onClick={() => navigate("home")} className="flex items-center gap-3 text-left shrink-0"><img src={jelLogo} alt="JEL Study Abroad" className="h-10 md:h-12 w-auto object-contain" /><div className="hidden sm:block"><div className="font-black text-[#0B5D3B] dark:text-emerald-400">JEL Study Abroad</div><div className="text-[10px] uppercase tracking-wider text-slate-500">A Brand of Journey Expert Ltd.</div></div></button>
-          <div className="hidden xl:flex items-center gap-5">{menuItems.map(([id, label]) => <button key={id} onClick={() => navigate(id)} className={`text-xs font-black uppercase tracking-wide ${activeTab === id ? "text-[#0B5D3B] border-b-2 border-[#D4AF37] pb-1" : "text-slate-600 dark:text-slate-300 hover:text-[#0B5D3B]"}`}>{label}</button>)}</div>
-          <div className="flex items-center gap-2"><button onClick={() => setSearchOpen(true)} aria-label="Search" className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700"><Search className="h-4 w-4" /></button><button onClick={() => setDarkMode((value) => !value)} aria-label="Toggle theme" className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700">{darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}</button><button onClick={() => setMobileMenu((value) => !value)} aria-label="Menu" className="xl:hidden p-2.5">{mobileMenu ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}</button></div>
+      <nav className="sticky top-0 z-50 border-b border-[#E0DAC9] bg-[#FBF9F2]/95 shadow-sm backdrop-blur-xl">
+        <div className="mx-auto flex h-[78px] max-w-[1480px] items-center justify-between gap-4 px-5 sm:px-8 lg:px-10 xl:px-14">
+          <button onClick={() => navigate("home")} className="flex shrink-0 items-center gap-3 text-left"><img src={jelLogo} alt="JEL Study Abroad" className="h-14 w-auto object-contain" /></button>
+          <div className="hidden items-center gap-1 xl:flex">{menuItems.map(([id, label]) => <button key={id} onClick={() => navigate(id)} className={`rounded-lg px-3.5 py-2 text-xs font-black transition ${activeTab === id ? "bg-[#0B5D3B] text-white shadow-md" : "text-[#243E36] hover:bg-[#E9EFE8] hover:text-[#0B5D3B]"}`}>{label}</button>)}</div>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setSearchOpen(true)} aria-label="Search" className="grid h-10 w-10 place-items-center rounded-lg border border-[#D8D1BF] bg-white text-[#0B5D3B] transition hover:border-[#0B5D3B]"><Search className="h-4 w-4" /></button>
+            <button onClick={() => navigate("portal")} className="hidden rounded-lg border border-[#0B5D3B] px-4 py-3 text-xs font-black text-[#0B5D3B] lg:block">Student Login</button>
+            <button onClick={() => navigate("booking")} className="hidden items-center gap-2 rounded-lg bg-[#0B5D3B] px-5 py-3 text-xs font-black text-white shadow-[0_10px_25px_rgba(11,93,59,.2)] transition hover:-translate-y-0.5 hover:bg-[#084A30] sm:inline-flex"><Calendar className="h-4 w-4" />Book Free Counselling <ArrowIcon /></button>
+            <button onClick={() => setMobileMenu((value) => !value)} aria-label="Menu" className="grid h-10 w-10 place-items-center rounded-lg border border-[#D8D1BF] bg-white xl:hidden">{mobileMenu ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}</button>
+          </div>
         </div>
-        {mobileMenu && <div className="xl:hidden px-5 pb-5 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800"><div className="grid grid-cols-2 gap-2 pt-4">{menuItems.map(([id, label]) => <button key={id} onClick={() => navigate(id)} className="rounded-xl border border-slate-200 dark:border-slate-700 p-3 text-left text-xs font-bold">{label}</button>)}</div></div>}
+        {mobileMenu && <div className="border-t border-[#E0DAC9] bg-[#FBF9F2] px-5 pb-5 xl:hidden"><div className="grid grid-cols-2 gap-2 pt-4">{menuItems.map(([id, label]) => <button key={id} onClick={() => navigate(id)} className={`rounded-lg border p-3 text-left text-xs font-black ${activeTab === id ? "border-[#0B5D3B] bg-[#0B5D3B] text-white" : "border-[#D8D1BF] bg-white"}`}>{label}</button>)}<button onClick={() => navigate("portal")} className="rounded-lg border border-[#D8D1BF] bg-white p-3 text-left text-xs font-black">Student Portal</button><button onClick={() => navigate("booking")} className="rounded-lg bg-[#D6A534] p-3 text-left text-xs font-black text-[#12372A]">Book Free Counselling</button></div></div>}
       </nav>
 
-      <section className="max-w-[1600px] w-[calc(100%-2rem)] mx-auto mt-4 bg-[#0B5D3B] text-white rounded-2xl px-4 md:px-6 py-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div><div className="text-sm font-black">AI-assisted study planning and secure JEL services</div><div className="text-xs text-white/70 mt-1">Use planning tools as guidance; final admissions and visa decisions are made by the relevant institutions and authorities.</div></div>
-        <div className="flex flex-wrap gap-2">{tools.map((tool) => { const Icon = tool.icon; return <button key={tool.id} onClick={() => navigate(tool.id)} className={`rounded-xl px-3 py-2 text-xs font-black flex items-center gap-2 ${activeTab === tool.id ? "bg-[#D4AF37] text-slate-950" : "bg-white/10 hover:bg-white/20"}`}><Icon className="h-4 w-4" />{tool.label}</button>; })}</div>
-      </section>
-
-      <main className="flex-1 w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24">{renderMain()}</main>
+      <main className={activeTab === "home" ? "flex-1 w-full" : "flex-1 w-full max-w-[1480px] mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24"}>{renderMain()}</main>
       <AIChatAssistant />
 
-      <a href="https://wa.me/8801926400400" target="_blank" rel="noreferrer" className="fixed bottom-6 right-6 z-30 h-12 w-12 rounded-full bg-[#25D366] text-white shadow-xl flex items-center justify-center" aria-label="WhatsApp JEL"><Phone className="h-5 w-5" /></a>
-      {activeTab !== "booking" && <button onClick={() => navigate("booking")} className="fixed bottom-6 left-6 z-30 rounded-xl bg-[#D4AF37] text-slate-950 shadow-xl px-5 py-3 text-xs font-black flex items-center gap-2"><Calendar className="h-4 w-4" /> Book Consultation</button>}
+      <a href="https://wa.me/8801926400400" target="_blank" rel="noreferrer" className="fixed bottom-5 right-5 z-40 grid h-12 w-12 place-items-center rounded-full bg-[#25D366] text-white shadow-xl transition hover:-translate-y-1" aria-label="WhatsApp JEL"><Phone className="h-5 w-5" /></a>
 
-      <footer className="bg-slate-950 text-white rounded-t-[32px] px-5 py-10">
-        <div className="max-w-[1600px] mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 text-left">
-          <div><img src={jelLogo} alt="JEL Study Abroad" className="h-12 w-auto bg-white rounded-xl p-2" /><p className="text-xs text-slate-400 mt-4 leading-relaxed">JEL Study Abroad is a brand of Journey Expert Ltd., providing study-abroad counseling, admissions support and related travel services from Dhaka, Bangladesh.</p></div>
-          <div><h4 className="font-black text-sm">Study destinations</h4><div className="mt-3 space-y-2 text-xs text-slate-400">{["United Kingdom", "Canada", "Australia", "United States", "Ireland", "Germany"].map((country) => <button key={country} onClick={() => { setExploreCountry(country); navigate("countries"); }} className="block hover:text-white">Study in {country}</button>)}</div></div>
-          <div><h4 className="font-black text-sm">Quick links</h4><div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-400">{menuItems.map(([id, label]) => <button key={id} onClick={() => navigate(id)} className="text-left hover:text-white">{label}</button>)}</div></div>
-          <div><h4 className="font-black text-sm">Contact & social</h4><div className="mt-3 space-y-2 text-xs text-slate-400"><div className="flex gap-2"><MapPin className="h-4 w-4 shrink-0" />189/A, Abdul Motin Complex, Nabisco Mor, Tejgaon, Dhaka, Bangladesh</div><div className="flex gap-2"><Phone className="h-4 w-4" />+8801926400400</div><div className="flex gap-2"><Globe className="h-4 w-4" />journeyexpertbd.com</div></div><div className="mt-4 flex flex-wrap gap-2">{verifiedSocialLinks.map((social) => <a key={social.label} href={social.href} target="_blank" rel="noopener noreferrer" className="rounded-lg border border-slate-700 px-3 py-2 text-[11px] font-bold text-slate-300 hover:text-white hover:border-slate-500" aria-label={`Journey Expert Ltd. ${social.label}`}>{social.label}</a>)}</div></div>
+      <footer className="border-t border-[#DDD6C5] bg-[#F5F1E5]">
+        <div className="mx-auto grid max-w-[1480px] grid-cols-1 gap-9 px-5 py-10 sm:px-8 md:grid-cols-2 lg:grid-cols-[1.15fr_.7fr_1fr_1fr] lg:px-10 xl:px-14">
+          <div><img src={jelLogo} alt="JEL Study Abroad" className="h-16 w-auto object-contain" /><p className="mt-4 max-w-sm text-xs leading-6 text-slate-600">Education. Guidance. A Brighter Tomorrow. JEL Study Abroad is a brand of Journey Expert Ltd., supporting international education planning from Dhaka, Bangladesh.</p></div>
+          <div><h4 className="font-[Georgia,serif] text-sm font-black">Quick Links</h4><div className="mt-4 space-y-2">{menuItems.map(([id, label]) => <button key={id} onClick={() => navigate(id)} className="block text-left text-xs text-slate-600 transition hover:text-[#0B5D3B]">{label}</button>)}</div></div>
+          <div><h4 className="font-[Georgia,serif] text-sm font-black">Contact Us</h4><div className="mt-4 space-y-3 text-xs text-slate-600"><div className="flex gap-2"><MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#0B5D3B]" />189/A, Abdul Motin Complex, Nabisco Mor, Tejgaon, Dhaka</div><a href="tel:+8801926400400" className="flex gap-2"><Phone className="h-4 w-4 text-[#0B5D3B]" />+880 1926-400400</a><a href="mailto:journeyexpertbd@gmail.com" className="flex gap-2"><Mail className="h-4 w-4 text-[#0B5D3B]" />journeyexpertbd@gmail.com</a><div className="flex gap-2"><Clock3 className="h-4 w-4 text-[#0B5D3B]" />Sat–Thu, 10:00–19:00</div></div></div>
+          <div><h4 className="font-[Georgia,serif] text-sm font-black">Follow Us</h4><div className="mt-4 flex flex-wrap gap-2">{verifiedSocialLinks.map((social) => <a key={social.name} href={social.href} target="_blank" rel="noopener noreferrer" className="grid h-9 min-w-9 place-items-center rounded-full bg-[#0B5D3B] px-2 text-[10px] font-black text-white transition hover:bg-[#D29D27]" aria-label={social.name}>{social.label}</a>)}</div><button onClick={() => navigate("portal")} className="mt-5 text-xs font-black text-[#0B5D3B]">JEL Student Portal →</button><div className="mt-5 flex items-center gap-2 text-[10px] text-slate-500"><Globe className="h-4 w-4" />journeyexpertbd.com</div></div>
         </div>
-        <div className="max-w-[1600px] mx-auto mt-8 pt-6 border-t border-slate-800 text-[11px] text-slate-500 flex flex-col md:flex-row justify-between gap-2"><span>© {new Date().getFullYear()} Journey Expert Ltd. / JEL Study Abroad.</span><span>Information is guidance only; admissions, scholarships and visas are subject to third-party decisions.</span></div>
+        <div className="bg-[#064A34] text-white/75"><div className="mx-auto flex max-w-[1480px] flex-col justify-between gap-3 px-5 py-4 text-[10px] sm:px-8 md:flex-row lg:px-10 xl:px-14"><span>© {new Date().getFullYear()} JEL Study Abroad, a brand of Journey Expert Ltd.</span><div className="flex flex-wrap gap-4"><span>Privacy Policy</span><span>Terms & Conditions</span><span>Cookie Policy</span><span>Your Journey, Our Expertise.</span></div></div></div>
       </footer>
 
       <SearchModal isOpen={searchOpen} onClose={() => setSearchOpen(false)} setActiveTab={setActiveTab} setUniversitySearch={setUniSearch} setScholarshipSearch={setScholarshipSearch} setBlogSearch={setBlogSearch} setInitialBlogId={setInitialBlogId} />
     </div>
   );
+}
+
+function ArrowIcon() {
+  return <span aria-hidden="true" className="text-base leading-none">→</span>;
 }
