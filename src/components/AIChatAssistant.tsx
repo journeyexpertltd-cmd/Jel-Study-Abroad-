@@ -10,6 +10,13 @@ import { fetchAngelaSpeech, voiceErrorMessage } from "../lib/angelaAudio";
 
 const jelBrandIcon = new URL("../assets/images/jel-study-abroad-official.webp", import.meta.url).href;
 
+const ENGLISH_WELCOME = "👋 Assalamu Alaikum! I am Angela, the official AI Voice & Customer Assistant for Journey Expert Limited (JEL).\n\nHow may I help you today? I can assist you with:\n✈️ Air Ticketing & Flight Bookings\n🛂 Visa Services (Tourist, Visit, Medical, Student & Business Visas)\n🌍 International & Domestic Tour Packages\n🕋 VIP & Economy Umrah Packages\n🎓 JEL Study Abroad (UK, USA, Canada, Australia & Europe)\n\nYou can speak using the microphone button or type below in English, বাংলা, or Banglish!";
+
+const BANGLA_WELCOME = "👋 আসসালামু আলাইকুম! আমি অ্যাঞ্জেলা—জার্নি এক্সপার্ট লিমিটেড (JEL)-এর অফিসিয়াল এআই ভয়েস ও কাস্টমার অ্যাসিস্ট্যান্ট।\n\nআমি যেসব বিষয়ে সাহায্য করতে পারি:\n✈️ এয়ার টিকিট ও ফ্লাইট বুকিং\n🛂 ট্যুরিস্ট, ভিজিট, মেডিকেল, স্টুডেন্ট ও বিজনেস ভিসা\n🌍 আন্তর্জাতিক ও দেশীয় ট্যুর প্যাকেজ\n🕋 ভিআইপি ও ইকোনমি ওমরাহ প্যাকেজ\n🎓 যুক্তরাজ্য, যুক্তরাষ্ট্র, কানাডা, অস্ট্রেলিয়া ও ইউরোপে উচ্চশিক্ষা\n\nমাইক্রোফোনে বলুন অথবা বাংলায় লিখুন—আমি সাহায্য করতে প্রস্তুত।";
+
+const isBanglaText = (text: string) => /[\u0980-\u09FF]/.test(text);
+const welcomeFor = (mode: "auto" | "en" | "bn") => mode === "bn" ? BANGLA_WELCOME : ENGLISH_WELCOME;
+
 // Voice States according to Phase 6 specifications
 export type AngelaVoiceState = "READY" | "LISTENING" | "THINKING" | "SPEAKING" | "ERROR";
 
@@ -64,7 +71,7 @@ export function AIChatAssistant() {
     {
       id: "welcome-angela-jel",
       sender: "assistant",
-      text: "👋 Assalamu Alaikum! I am Angela, the official AI Voice & Customer Assistant for Journey Expert Limited (JEL).\n\nHow may I help you today? I can assist you with:\n✈️ Air Ticketing & Flight Bookings\n🛂 Visa Services (Tourist, Visit, Medical, Student & Business Visas)\n🌍 International & Domestic Tour Packages\n🕋 VIP & Economy Umrah Packages\n🎓 JEL Study Abroad (UK, USA, Canada, Australia & Europe)\n\nYou can speak using the microphone button or type below in English, বাংলা, or Banglish!",
+      text: ENGLISH_WELCOME,
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
     }
   ]);
@@ -194,6 +201,10 @@ export function AIChatAssistant() {
     cancelPending();
     stopSpeaking();
     setLanguageMode(mode);
+    setMessages((current) => {
+      const isWelcomeOnly = current.length === 1 && current[0].sender === "assistant" && current[0].id.includes("welcome");
+      return isWelcomeOnly ? [{ ...current[0], text: welcomeFor(mode) }] : current;
+    });
     setVoiceState("READY");
     setErrorMessage(null);
   };
@@ -487,7 +498,10 @@ export function AIChatAssistant() {
 
       const data = await response.json();
       if (requestRef.current !== controller) return;
-      const replyText = data.reply || "I am processing your inquiry. Please reach out to our JEL Counselors at +8801926400400 for immediate assistance.";
+      const wantsBangla = languageMode === "bn" || isBanglaText(trimmed);
+      const replyText = data.reply || (wantsBangla
+        ? "আপনার প্রশ্নটি প্রক্রিয়া করা যাচ্ছে না। দ্রুত সহায়তার জন্য JEL কাউন্সেলরের সঙ্গে +8801926400400 নম্বরে যোগাযোগ করুন।"
+        : "I am processing your inquiry. Please reach out to our JEL Counselors at +8801926400400 for immediate assistance.");
       
       const assistantMsgId = `m-${Date.now() + 1}`;
       const assistantMsg: ChatMessage = {
@@ -509,14 +523,19 @@ export function AIChatAssistant() {
       if (requestRef.current !== controller) return;
       console.error("Angela Chat Error:", error);
       // Phase 12: Never display technical stack traces to customers
-      const friendlyError = "I'm temporarily unable to respond. Please try again or contact JEL directly.";
+      const wantsBangla = languageMode === "bn" || isBanglaText(trimmed);
+      const friendlyError = wantsBangla
+        ? "এই মুহূর্তে উত্তর দিতে পারছি না। আবার চেষ্টা করুন অথবা JEL-এর সঙ্গে সরাসরি যোগাযোগ করুন।"
+        : "I'm temporarily unable to respond. Please try again or contact JEL directly.";
       setErrorMessage(friendlyError);
       setVoiceState("ERROR");
 
       const errorMsg: ChatMessage = {
         id: `m-err-${Date.now()}`,
         sender: "assistant",
-        text: "I'm temporarily unable to process your request. Your connection appears to be interrupted. Please connect with our counselors directly via WhatsApp at +8801926400400 or call +8802 9830404.",
+        text: wantsBangla
+          ? "আপনার অনুরোধটি এই মুহূর্তে প্রক্রিয়া করা যাচ্ছে না। WhatsApp-এ +8801926400400 অথবা টেলিফোনে +8802 9830404 নম্বরে আমাদের কাউন্সেলরের সঙ্গে যোগাযোগ করুন।"
+          : "I'm temporarily unable to process your request. Your connection appears to be interrupted. Please connect with our counselors directly via WhatsApp at +8801926400400 or call +8802 9830404.",
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
       };
       setMessages(prev => [...prev, errorMsg]);
@@ -651,7 +670,9 @@ export function AIChatAssistant() {
       {
         id: `welcome-${Date.now()}`,
         sender: "assistant",
-        text: "Assalamu Alaikum! Conversation refreshed. Ask me anything about flight tickets, visit visas, medical visas, tour packages, Umrah, or study abroad programs!",
+        text: languageMode === "bn"
+          ? "আসসালামু আলাইকুম! কথোপকথন নতুন করে শুরু হয়েছে। এয়ার টিকিট, ভিজিট বা মেডিকেল ভিসা, ট্যুর প্যাকেজ, ওমরাহ কিংবা উচ্চশিক্ষা নিয়ে প্রশ্ন করুন।"
+          : "Assalamu Alaikum! Conversation refreshed. Ask me anything about flight tickets, visit visas, medical visas, tour packages, Umrah, or study abroad programs!",
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
       }
     ]);
@@ -681,6 +702,34 @@ export function AIChatAssistant() {
     }
   ];
 
+  const isBanglaMode = languageMode === "bn";
+  const stateLabel: Record<AngelaVoiceState, string> = isBanglaMode ? {
+    READY: "প্রস্তুত",
+    LISTENING: "শুনছি",
+    THINKING: "ভাবছি",
+    SPEAKING: "বলছি",
+    ERROR: "সমস্যা",
+  } : {
+    READY: "READY",
+    LISTENING: "LISTENING",
+    THINKING: "THINKING",
+    SPEAKING: "SPEAKING",
+    ERROR: "ERROR",
+  };
+  const stateDescription: Record<AngelaVoiceState, string> = isBanglaMode ? {
+    READY: "প্রস্তুত। মাইক্রোফোনে বলুন অথবা নিচে লিখুন।",
+    LISTENING: "অ্যাঞ্জেলা শুনছে—স্বাভাবিকভাবে বলুন।",
+    THINKING: "JEL-এর যাচাইকৃত তথ্য দিয়ে উত্তর তৈরি হচ্ছে...",
+    SPEAKING: "অ্যাঞ্জেলা উত্তরটি পড়ে শোনাচ্ছে...",
+    ERROR: errorMessage || "ভয়েসে সমস্যা হলেও বাংলায় লিখে সাহায্য নিতে পারবেন।",
+  } : {
+    READY: "Ready. Tap mic to talk or type below.",
+    LISTENING: "Angela is listening to you (speak freely)...",
+    THINKING: "Angela is reasoning with JEL verified knowledge...",
+    SPEAKING: "Angela is speaking aloud (barge-in enabled)...",
+    ERROR: errorMessage || "I can still help you by text.",
+  };
+
   return (
     <div className="fixed bottom-6 right-4 sm:right-6 z-50 font-sans" id="angela-ai-voice-assistant-widget">
       {/* Floating Action Button with Angela Avatar & Glowing Voice Wave */}
@@ -690,7 +739,9 @@ export function AIChatAssistant() {
             void unlockAudio();
             setIsOpen(true);
             if (isVoiceEnabled && messages.length === 1) {
-              speakText("Assalamu Alaikum! I am Angela, your official AI Voice Assistant for Journey Expert Limited. How can I assist you with travel or study abroad today?", "welcome");
+              speakText(languageMode === "bn"
+                ? "আসসালামু আলাইকুম! আমি অ্যাঞ্জেলা। ভ্রমণ বা বিদেশে উচ্চশিক্ষা নিয়ে আপনাকে কীভাবে সাহায্য করতে পারি?"
+                : "Assalamu Alaikum! I am Angela, your official AI Voice Assistant for Journey Expert Limited. How can I assist you with travel or study abroad today?", "welcome");
             }
           }}
           className="flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-gradient-to-tr from-[#0B5D3B] via-[#0D7A4D] to-[#D4AF37] text-white shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 relative group cursor-pointer border-2 border-white/50"
@@ -733,6 +784,7 @@ export function AIChatAssistant() {
       {/* Angela Conversation Interface Panel */}
       {isOpen && (
         <div 
+          lang={isBanglaMode ? "bn-BD" : "en"}
           className={`bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200/90 dark:border-slate-800 flex flex-col overflow-hidden transition-all duration-300 animate-in zoom-in-95 ${
             isMaximized 
               ? "w-[calc(100vw-24px)] sm:w-[650px] max-w-[650px] h-[88vh] max-h-[88vh]" 
@@ -776,10 +828,10 @@ export function AIChatAssistant() {
                 </div>
                 <div className="flex items-center space-x-1.5 mt-0.5">
                   <span className="text-[10px] sm:text-[11px] text-emerald-200/90 font-medium">
-                    {voiceState === "LISTENING" ? "Listening to you..." : 
-                     voiceState === "SPEAKING" ? "Speaking response..." : 
-                     voiceState === "THINKING" ? "Analyzing with JEL engine..." :
-                     voiceState === "ERROR" ? "Ready by text" :
+                    {voiceState === "LISTENING" ? (isBanglaMode ? "আপনার কথা শুনছি..." : "Listening to you...") : 
+                     voiceState === "SPEAKING" ? (isBanglaMode ? "উত্তর পড়ে শোনাচ্ছি..." : "Speaking response...") : 
+                     voiceState === "THINKING" ? (isBanglaMode ? "JEL তথ্য দিয়ে বিশ্লেষণ করছি..." : "Analyzing with JEL engine...") :
+                     voiceState === "ERROR" ? (isBanglaMode ? "লিখে সহায়তা নিন" : "Ready by text") :
                      "Journey Expert Limited"}
                   </span>
                   {voiceState === "SPEAKING" && (
@@ -882,15 +934,11 @@ export function AIChatAssistant() {
                 "bg-emerald-500"
               }`} />
               <span className="font-bold tracking-wider uppercase text-[10px]">
-                {voiceState}
+                {stateLabel[voiceState]}
               </span>
               <span className="text-slate-500 dark:text-slate-400 hidden sm:inline">|</span>
               <span className="truncate max-w-[200px] sm:max-w-[280px]">
-                {voiceState === "LISTENING" ? "Angela is listening to you (speak freely)..." :
-                 voiceState === "THINKING" ? "Angela is reasoning with JEL verified knowledge..." :
-                 voiceState === "SPEAKING" ? "Angela is speaking aloud (barge-in enabled)..." :
-                 voiceState === "ERROR" ? (errorMessage || "I can still help you by text.") :
-                 "Ready. Tap mic to talk or type below."}
+                {stateDescription[voiceState]}
               </span>
             </div>
 
@@ -902,7 +950,7 @@ export function AIChatAssistant() {
                 title="Interrupt / Stop speech immediately"
               >
                 <Square className="h-2.5 w-2.5 fill-current" />
-                <span>Stop</span>
+                <span>{isBanglaMode ? "থামান" : "Stop"}</span>
               </button>
             )}
 
@@ -911,7 +959,7 @@ export function AIChatAssistant() {
                 onClick={stopListening}
                 className="flex items-center space-x-1 bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-bold px-2 py-0.5 rounded transition-colors shadow-2xs cursor-pointer"
               >
-                <span>Done</span>
+                <span>{isBanglaMode ? "শেষ" : "Done"}</span>
               </button>
             )}
           </div>
@@ -920,7 +968,7 @@ export function AIChatAssistant() {
           <div className="bg-slate-50 dark:bg-slate-850 border-b border-slate-200/80 dark:border-slate-800 px-3 py-1.5 flex items-center justify-between text-xs text-slate-600 dark:text-slate-300 font-sans">
             <span className="flex items-center font-medium text-slate-700 dark:text-slate-300 text-[11px]">
               <Headphones className="h-3.5 w-3.5 mr-1 text-[#0B5D3B]" />
-              Human Specialist:
+              {isBanglaMode ? "মানব সহায়তা:" : "Human Specialist:"}
             </span>
             <div className="flex items-center space-x-1.5 text-[11px] font-semibold">
               <a 
@@ -958,9 +1006,9 @@ export function AIChatAssistant() {
                   <Mic className="h-3.5 w-3.5 text-white" />
                 </div>
                 <div className="overflow-hidden">
-                  <p className="text-[9px] text-rose-100 font-bold uppercase tracking-wider">Listening in real-time...</p>
+                  <p className="text-[9px] text-rose-100 font-bold uppercase tracking-wider">{isBanglaMode ? "সরাসরি শুনছি..." : "Listening in real-time..."}</p>
                   <p className="text-xs font-medium truncate italic text-white">
-                    {interimTranscript || "Speak in English, বাংলা, or Banglish..."}
+                    {interimTranscript || (isBanglaMode ? "বাংলায় বলুন..." : "Speak in English, বাংলা, or Banglish...")}
                   </p>
                 </div>
               </div>
@@ -968,7 +1016,7 @@ export function AIChatAssistant() {
                 onClick={stopListening}
                 className="bg-white text-rose-800 hover:bg-rose-50 text-[11px] font-bold px-2.5 py-1 rounded-lg shadow transition-colors cursor-pointer"
               >
-                Submit
+                {isBanglaMode ? "পাঠান" : "Submit"}
               </button>
             </div>
           )}
@@ -1003,7 +1051,7 @@ export function AIChatAssistant() {
                           : "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200/80 dark:border-slate-700/80 rounded-bl-xs"
                       }`}
                     >
-                      <p className="whitespace-pre-line break-words">{m.text}</p>
+                      <p lang={isBanglaText(m.text) ? "bn-BD" : "en"} className="whitespace-pre-line break-words">{m.text}</p>
 
                       {/* Assistant Message Action Buttons */}
                       {!isUser && (
@@ -1028,12 +1076,12 @@ export function AIChatAssistant() {
                               {isMessageSpeaking ? (
                                 <>
                                   <Square className="h-3 w-3 fill-current" />
-                                  <span>Stop</span>
+                                  <span>{isBanglaMode ? "থামান" : "Stop"}</span>
                                 </>
                               ) : (
                                 <>
                                   <Volume2 className="h-3 w-3 text-emerald-600" />
-                                  <span>Listen</span>
+                                  <span>{isBanglaMode ? "শুনুন" : "Listen"}</span>
                                 </>
                               )}
                             </button>
@@ -1068,7 +1116,7 @@ export function AIChatAssistant() {
                   <div className="h-4 w-4 rounded-full border border-emerald-500 overflow-hidden bg-white shrink-0">
                     <img src={jelBrandIcon} alt="Angela" className="h-full w-full object-contain" />
                   </div>
-                  <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Angela is reasoning...</span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">{isBanglaMode ? "অ্যাঞ্জেলা উত্তর তৈরি করছে..." : "Angela is reasoning..."}</span>
                   <div className="flex items-center space-x-1">
                     <span className="h-1.5 w-1.5 bg-[#0B5D3B] rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></span>
                     <span className="h-1.5 w-1.5 bg-[#0B5D3B] rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></span>
@@ -1119,7 +1167,7 @@ export function AIChatAssistant() {
                       ? "bg-rose-600 text-white animate-pulse"
                       : "bg-emerald-50 dark:bg-emerald-950 text-[#0B5D3B] dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900 border border-emerald-200 dark:border-emerald-800"
                   }`}
-                  title={voiceState === "LISTENING" ? "Angela is listening... Click to send" : "Tap to Speak with Angela (Voice Input)"}
+                  title={voiceState === "LISTENING" ? (isBanglaMode ? "অ্যাঞ্জেলা শুনছে—পাঠাতে চাপুন" : "Angela is listening... Click to send") : (isBanglaMode ? "অ্যাঞ্জেলার সঙ্গে বাংলায় কথা বলুন" : "Tap to Speak with Angela (Voice Input)")}
                   id="btn-voice-input"
                 >
                   {voiceState === "LISTENING" ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
@@ -1140,6 +1188,7 @@ export function AIChatAssistant() {
                     : "Ask Angela about flights, visas, tours, or study abroad..."
                 }
                 className="flex-1 min-w-0 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs sm:text-sm py-2 px-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B5D3B] text-slate-800 dark:text-slate-100 placeholder:text-slate-400"
+                lang={isBanglaMode ? "bn-BD" : "en"}
                 id="input-angela-chat"
               />
 
@@ -1149,7 +1198,7 @@ export function AIChatAssistant() {
                 disabled={!inputValue.trim()}
                 className="bg-gradient-to-r from-[#0B5D3B] to-[#0D7A4D] hover:opacity-95 disabled:opacity-40 text-white rounded-xl h-10 w-10 flex items-center justify-center transition-all cursor-pointer shadow-xs shrink-0"
                 id="btn-send-angela-message"
-                aria-label="Send Message"
+                aria-label={isBanglaMode ? "বার্তা পাঠান" : "Send Message"}
               >
                 <Send className="h-4 w-4" />
               </button>
@@ -1159,7 +1208,7 @@ export function AIChatAssistant() {
             <div className="flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500 px-1 pt-0.5">
               <span className="flex items-center gap-1 truncate max-w-[240px] sm:max-w-none">
                 <ShieldCheck className="h-3 w-3 text-emerald-500 shrink-0" />
-                <span className="truncate">AI voice. বাংলা audio তৈরিতে উত্তরের লেখা Google-এ পাঠানো হতে পারে।</span>
+                <span className="truncate">{isBanglaMode ? "এআই ভয়েস। বাংলা অডিও তৈরির জন্য উত্তরের লেখা Google-এ পাঠানো হতে পারে।" : "AI voice. Bangla audio may send the response text to Google for speech generation."}</span>
               </span>
               <span className="font-mono text-[9px] shrink-0">v2.5 Live Voice</span>
             </div>
@@ -1172,4 +1221,3 @@ export function AIChatAssistant() {
 
 // Named alias export for authoritative integration
 export { AIChatAssistant as AngelaVoiceAssistant };
-

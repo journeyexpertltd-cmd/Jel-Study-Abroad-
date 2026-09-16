@@ -31,10 +31,41 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   const fromVoice = body.source === 'voice';
   // Actual Bengali script always wins over a stale/manual UI language selection.
   const bn = hasBanglaScript || body.language === 'bn' || (body.language !== 'en' && looksBanglish);
-  const fallback = () => json({
-    reply: bn ? 'লাইভ AI এখন সাময়িকভাবে ব্যস্ত। কয়েক সেকেন্ড পর আবার চেষ্টা করুন অথবা JEL-এর সঙ্গে +8801926400400 নম্বরে যোগাযোগ করুন।' : 'Live AI is temporarily busy. Please try again in a few seconds or contact JEL at +8801926400400.',
-    mode: 'fallback', language: bn ? 'bn' : 'en', retryable: true,
-  });
+  const fallback = () => {
+    const query = last.toLowerCase();
+    const asksContact = /যোগাযোগ|ফোন|নাম্বার|হোয়াটসঅ্যাপ|ঠিকানা|অফিস|contact|phone|address|office/.test(query);
+    const asksStudy = /স্টাডি|পড়|বিশ্ববিদ্যাল|স্কলারশিপ|ইউকে|কানাডা|অস্ট্রেলিয়া|student|study|university|scholarship|masters|bachelor|uk|canada|australia/.test(query);
+    const asksVisa = /ভিসা|visa|document|ডকুমেন্ট/.test(query);
+    const asksTicket = /টিকিট|ফ্লাইট|ভাড়া|ফেয়ার|ticket|flight|fare/.test(query);
+    const asksUmrah = /ওমরাহ|উমরাহ|umrah|tour|ট্যুর/.test(query);
+
+    let reply: string;
+    if (bn && asksContact) {
+      reply = 'JEL-এর অফিস: ১৮৯/এ (২য় তলা), আব্দুল মতিন কমপ্লেক্স, হাজী মরণ আলী রোড, নাবিস্কো মোড়, তেজগাঁও, ঢাকা-১২১৫। WhatsApp/হটলাইন: +8801926400400, টেলিফোন: +8802 9830404, ইমেইল: journeyexpertbd@gmail.com।';
+    } else if (bn && asksStudy) {
+      reply = 'আমি এখন নিরাপদ সহায়তা মোডে উত্তর দিচ্ছি। উচ্চশিক্ষার সাধারণ ধাপ হলো: প্রোফাইল মূল্যায়ন, দেশ ও বিষয় নির্বাচন, বিশ্ববিদ্যালয়ের সংক্ষিপ্ত তালিকা, কাগজপত্র ও SOP প্রস্তুতি, আবেদন, অফার পর্যালোচনা এবং ভিসার কাগজপত্র প্রস্তুত করা। সঠিক পরামর্শের জন্য আপনার বর্তমান শিক্ষাগত যোগ্যতা ও পছন্দের দেশটি লিখুন।';
+    } else if (bn && asksVisa) {
+      reply = 'আমি এখন নিরাপদ সহায়তা মোডে উত্তর দিচ্ছি। ভিসার কাগজপত্র দেশ ও ভিসার ধরন অনুযায়ী বদলে যায়। সাধারণত পাসপোর্ট, ছবি, আর্থিক প্রমাণ, একাডেমিক বা পেশাগত কাগজপত্র এবং ভ্রমণের উদ্দেশ্যের প্রমাণ প্রয়োজন হতে পারে। চূড়ান্ত তালিকা সংশ্লিষ্ট দূতাবাসের বর্তমান নির্দেশনা দেখে নিশ্চিত করতে হবে। কোন দেশের কোন ভিসা জানতে চান?';
+    } else if (bn && asksTicket) {
+      reply = 'আমি এখন নিরাপদ সহায়তা মোডে আছি। লাইভ টিকিটের ভাড়া ও আসন দ্রুত বদলায়, তাই আমি কোনো দাম নিশ্চিত করছি না। যাত্রার শহর, গন্তব্য, তারিখ ও যাত্রীর সংখ্যা লিখুন; যাচাই করা লাইভ সহায়তার জন্য WhatsApp/হটলাইন +8801926400400।';
+    } else if (bn && asksUmrah) {
+      reply = 'আমি এখন নিরাপদ সহায়তা মোডে আছি। ওমরাহ বা ট্যুর প্যাকেজের তারিখ, হোটেল, ফ্লাইট ও মূল্য লাইভভাবে যাচাই করতে হয়। যাত্রার সম্ভাব্য তারিখ ও যাত্রীর সংখ্যা লিখুন অথবা WhatsApp/হটলাইন +8801926400400 নম্বরে যোগাযোগ করুন।';
+    } else if (bn) {
+      reply = 'আমি এখন লাইভ মডেলের বদলে নিরাপদ সহায়তা মোডে আছি, তবে বাংলায় সাহায্য করতে পারি। স্টাডি অ্যাব্রোড, ভিসা, এয়ার টিকিট, ট্যুর বা ওমরাহ—কোন বিষয়ে জানতে চান? জরুরি সহায়তার জন্য WhatsApp/হটলাইন +8801926400400।';
+    } else if (asksContact) {
+      reply = 'JEL is located at 189/A (2nd floor), Abdul Motin Complex, Hazi Moron Ali Road, Nabisco Mor, Tejgaon, Dhaka-1215. WhatsApp/hotline: +8801926400400; telephone: +8802 9830404; email: journeyexpertbd@gmail.com.';
+    } else if (asksStudy) {
+      reply = 'I am answering in safe assistance mode. A typical study-abroad journey includes profile assessment, country and subject selection, a practical university shortlist, document and SOP preparation, applications, offer review, and visa-document preparation. Share your current qualification and preferred country for a more relevant starting point.';
+    } else if (asksVisa) {
+      reply = 'I am answering in safe assistance mode. Visa documents vary by country and visa type. Common items may include a passport, photographs, financial evidence, academic or employment records, and proof of travel purpose. Always confirm the final checklist with the relevant embassy. Which country and visa type do you mean?';
+    } else if (asksTicket || asksUmrah) {
+      reply = 'I am in safe assistance mode. Live fares, seats and package availability change frequently, so I will not invent a price. Share your route or destination, travel date and number of travellers, or contact JEL on WhatsApp/hotline +8801926400400 for a verified live check.';
+    } else {
+      reply = 'I am temporarily using safe assistance mode, but I can still help with study abroad, visas, air tickets, tours or Umrah. Tell me the service and destination you need. For urgent help, contact JEL on WhatsApp/hotline +8801926400400.';
+    }
+
+    return json({ reply, mode: 'fallback', language: bn ? 'bn' : 'en', retryable: true });
+  };
   if (!env.GEMINI_API_KEY) {
     try {
       const response = await fetch('https://journeyexpertltd.com/api/ai/voice-agent', {

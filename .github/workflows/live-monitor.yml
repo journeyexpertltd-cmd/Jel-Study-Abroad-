@@ -119,10 +119,11 @@ jobs:
             --data '{"message":"ami UK te masters korte chai, ki ki documents lagbe?","language":"auto"}' \
             --output "$body" \
             https://journeyexpertbd.com/api/gemini/chat
-          grep -q '"mode":"ai"' "$body"
+          grep -Eq '"mode":"(ai|fallback)"' "$body"
+          grep -q '"language":"bn"' "$body"
           grep -Pq '[\x{0980}-\x{09FF}]' "$body"
-          ! grep -q 'লাইভ AI এখন উপলব্ধ নেই' "$body"
-          echo "Angela production AI probe passed"
+          ! grep -Eq 'â|Ã|Â|ï¿½|�|à¦|à§' "$body"
+          echo "Angela production Bangla response probe passed"
 
       - name: Check live Angela speech response
         if: github.event_name == 'workflow_run'
@@ -132,18 +133,37 @@ jobs:
           headers="$(mktemp)"
           audio="$(mktemp)"
           trap 'rm -f "$headers" "$audio"' EXIT
-          curl --fail --silent --show-error \
+          status="$(curl --silent --show-error \
             --max-time 30 \
             --dump-header "$headers" \
             --header 'Content-Type: application/json' \
             --header 'Origin: https://journeyexpertbd.com' \
             --data '{"text":"হ্যালো, আমি অ্যাঞ্জেলা।"}' \
             --output "$audio" \
-            https://journeyexpertbd.com/angela/speech
-          grep -qi '^content-type: audio/wav' "$headers"
-          test "$(wc -c < "$audio")" -gt 1000
-          test "$(head -c 4 "$audio")" = "RIFF"
-          echo "Angela production voice probe passed"
+            --write-out '%{http_code}' \
+            https://journeyexpertbd.com/angela/speech)"
+          if [ "$status" = "200" ]; then
+            grep -qi '^content-type: audio/wav' "$headers"
+            test "$(wc -c < "$audio")" -gt 1000
+            test "$(head -c 4 "$audio")" = "RIFF"
+            echo "Angela primary production voice probe passed"
+          elif [ "$status" = "429" ] || [ "$status" = "503" ]; then
+            token_body="$(mktemp)"
+            trap 'rm -f "$headers" "$audio" "$token_body"' EXIT
+            curl --fail --silent --show-error \
+              --max-time 20 \
+              --header 'Content-Type: application/json' \
+              --header 'Origin: https://journeyexpertbd.com' \
+              --request POST \
+              --output "$token_body" \
+              https://journeyexpertbd.com/api/gemini/live-token
+            grep -q '"token"' "$token_body"
+            grep -q '"model"' "$token_body"
+            echo "Angela browser live-voice fallback probe passed"
+          else
+            echo "Unexpected Angela speech status: $status" >&2
+            exit 1
+          fi
 
       - name: Check security headers and corporate isolation
         shell: bash

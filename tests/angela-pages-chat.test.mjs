@@ -15,7 +15,8 @@ test('Pages chat validates input and provides a Bangla fallback without credenti
   assert.equal(response.status, 200);
   assert.equal(data.mode, 'fallback');
   assert.equal(data.language, 'bn');
-  assert.match(data.reply, /লাইভ AI/);
+  assert.match(data.reply, /নিরাপদ সহায়তা মোড/);
+  assert.doesNotMatch(data.reply, /â|Ã|Â|ï¿½|�|à¦|à§/);
   assert.equal(response.headers.get('cache-control'), 'no-store');
   assert.equal((await onRequest({ request: request({}), env: {} })).status, 400);
   assert.equal((await onRequest({ request: request({ message: 'a'.repeat(40000) }), env: {} })).status, 413);
@@ -67,6 +68,17 @@ test('Actual Bengali input overrides stale UI language and rejects an English-on
     const actualEnglish = await (await onRequest({ request: request({ language: 'en', message: 'Introduce yourself' }), env: {} })).json();
     assert.equal(actualEnglish.language, 'en');
   } finally { globalThis.fetch = originalFetch; }
+});
+
+test('Bangla fallback stays useful and preserves UTF-8 for common intents', async () => {
+  const study = await (await onRequest({ request: request({ language: 'bn', message: 'আমি যুক্তরাজ্যে মাস্টার্স পড়তে চাই' }), env: {} })).json();
+  assert.equal(study.language, 'bn');
+  assert.match(study.reply, /প্রোফাইল মূল্যায়ন/);
+  assert.doesNotMatch(study.reply, /â|Ã|Â|ï¿½|�|à¦|à§/);
+
+  const contact = await (await onRequest({ request: request({ language: 'bn', message: 'অফিসের ঠিকানা ও ফোন নম্বর দিন' }), env: {} })).json();
+  assert.match(contact.reply, /তেজগাঁও/);
+  assert.match(contact.reply, /\+8801926400400/);
 });
 
 test('Study Abroad uses the company Angela gateway with bounded conversation and Banglish detection', async () => {
