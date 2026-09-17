@@ -3,7 +3,7 @@
 The widget first uses a Bengali browser voice when available. Otherwise it POSTs reply text to the same site's /angela/speech Pages Function. That function uses Gemini TTS and returns a 24 kHz mono PCM WAV file. English browser voice and existing chat endpoints are retained.
 
 ## Required environment
-Configure encrypted GEMINI_API_KEY (or a separate GEMINI_TTS_API_KEY) in the Pages project, separately for Preview and Production. No VITE_ prefix. GEMINI_TTS_MODEL is optional; default gemini-2.5-flash-preview-tts. ANGELA_SERVER_VOICE=off disables server audio.
+Configure encrypted GEMINI_API_KEY (or a separate GEMINI_TTS_API_KEY) in the Pages project, separately for Preview and Production. No VITE_ prefix. GEMINI_TTS_MODEL is optional; default gemini-3.1-flash-tts. ANGELA_SERVER_VOICE=off disables server audio.
 
 Use a project with the intended billing and quota settings. A free tier exists but is limited; an API key does not prove free-tier eligibility. This change does not enable billing or buy credits. Public deployment needs provider quotas and appropriate abuse controls; same-origin validation is not authentication or a global rate limit.
 

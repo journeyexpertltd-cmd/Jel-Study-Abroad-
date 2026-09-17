@@ -29,7 +29,7 @@ test('Live token endpoint creates a one-use audio-only constrained token without
       assert.equal(body.uses, 1);
       assert.ok(body.expireTime);
       assert.ok(body.newSessionExpireTime);
-      assert.equal(body.bidiGenerateContentSetup.model, 'models/gemini-2.5-flash-native-audio-preview-12-2025');
+      assert.equal(body.bidiGenerateContentSetup.model, 'models/gemini-3.1-flash-live-preview');
       assert.deepEqual(body.bidiGenerateContentSetup.generationConfig.responseModalities, ['AUDIO']);
       assert.equal(body.bidiGenerateContentSetup.generationConfig.speechConfig.voiceConfig.prebuiltVoiceConfig.voiceName, 'Aoede');
       assert.match(body.bidiGenerateContentSetup.systemInstruction.parts[0].text, /adult female speech renderer/i);
@@ -42,7 +42,7 @@ test('Live token endpoint creates a one-use audio-only constrained token without
     assert.equal(response.headers.get('cache-control'), 'no-store');
     const data = await response.json();
     assert.equal(data.token, 'auth_tokens/test-ephemeral-token');
-    assert.equal(data.model, 'gemini-2.5-flash-native-audio-preview-12-2025');
+    assert.equal(data.model, 'gemini-3.1-flash-live-preview');
     assert.ok(!JSON.stringify(data).includes('secret-test-key'));
   } finally {
     globalThis.fetch = original;
