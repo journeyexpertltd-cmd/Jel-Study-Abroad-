@@ -47,7 +47,7 @@ test('Speech produces a playable PCM WAV using one fast primary model and frozen
     const response = await onRequest({ request: request('আমি অ্যাঞ্জেলা'), env: { GEMINI_API_KEY: 'test-key', ANGELA_TTS_VOICE: 'OtherVoice' } });
     assert.equal(calls, 1);
     assert.equal(response.headers.get('content-type'), 'audio/wav');
-    assert.equal(response.headers.get('x-angela-tts-model'), 'gemini-2.5-flash-preview-tts');
+    assert.equal(response.headers.get('x-angela-tts-model'), 'gemini-3.1-flash-tts');
     assert.equal(response.headers.get('x-angela-tts-voice'), 'Aoede');
     assert.equal(response.headers.get('x-angela-tts-language'), 'bn-auto');
     const buffer = await response.arrayBuffer();
