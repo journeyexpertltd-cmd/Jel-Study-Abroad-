@@ -81,7 +81,13 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
     } catch { return fallback(); }
   }
 
-  const primaryModel = env.GEMINI_MODEL || 'gemini-3.8-flash';
+  const configuredModel = env.GEMINI_MODEL?.trim();
+  const candidateModels = Array.from(new Set([
+    configuredModel,
+    'gemini-flash-latest',
+    'gemini-2.5-flash',
+    'gemini-2.5-flash-lite',
+  ].filter((model): model is string => Boolean(model))));
   const makeRequest = async (model: string, timeoutMs: number): Promise<Response | null> => {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -106,14 +112,16 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
     }
   };
 
-  // Fast failover: keep the primary window short enough for conversational voice,
-  // then give the lightweight fallback a second bounded chance. Worst-case model
-  // wait is now about 9.5s instead of roughly 16s.
-  let response = await makeRequest(primaryModel, 5500);
-  let providerModel = primaryModel;
-  if ((!response || !response.ok) && primaryModel !== 'gemini-3.5-flash-lite') {
-    response = await makeRequest('gemini-3.5-flash-lite', 4000);
-    providerModel = 'gemini-3.5-flash-lite';
+  // Prefer the deployment-configured model, then use durable aliases/stable models.
+  // Model IDs are retired over time; one invalid model must not take Angela offline.
+  let response: Response | null = null;
+  let providerModel = '';
+  for (const model of candidateModels) {
+    response = await makeRequest(model, model === configuredModel ? 3500 : 3000);
+    if (response?.ok) {
+      providerModel = model;
+      break;
+    }
   }
   if (!response || !response.ok) return fallback();
 
