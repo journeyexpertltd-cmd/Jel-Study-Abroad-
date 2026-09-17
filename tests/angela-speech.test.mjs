@@ -36,7 +36,7 @@ test('Speech produces a playable PCM WAV using one fast primary model and frozen
   try {
     globalThis.fetch = async (url, options) => {
       calls += 1;
-      assert.match(url, /gemini-2\.5-flash-preview-tts:generateContent$/);
+      assert.match(url, /gemini-3\.1-flash-tts:generateContent$/);
       assert.equal(options.headers['x-goog-api-key'], 'test-key');
       const body = JSON.parse(options.body);
       assert.deepEqual(body.generationConfig.responseModalities, ['AUDIO']);
