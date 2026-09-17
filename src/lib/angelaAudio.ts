@@ -187,6 +187,19 @@ export async function fetchAngelaSpeech(text: string, signal: AbortSignal): Prom
   const cached = speechCache.get(speechText);
   if (cached) return cached;
 
+  // Gemini Live is the production-first path: it is substantially faster than
+  // waiting for a cold TTS function and uses the same fixed female Aoede voice.
+  try {
+    const liveBlob = await fetchAngelaLiveSpeech(speechText, signal);
+    rememberSpeech(speechText, liveBlob);
+    return liveBlob;
+  } catch (liveError) {
+    if (signal.aborted) throw liveError;
+    console.warn('Angela Live voice notice:', liveError);
+  }
+
+  // Same-origin server TTS remains the bounded fallback when Live is
+  // temporarily unavailable or a browser cannot establish the WebSocket.
   const response = await fetch('/angela/speech', {
     method: 'POST', signal, headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ text: speechText }),
@@ -194,25 +207,11 @@ export async function fetchAngelaSpeech(text: string, signal: AbortSignal): Prom
 
   if (!response.ok) {
     const data = await response.json().catch(() => ({}));
-    const code = data.error || 'voice_provider_unavailable';
-    const shouldTryLive = response.status === 429
-      || response.status >= 500
-      || code === 'voice_quota_exceeded'
-      || code === 'voice_provider_unavailable'
-      || code === 'voice_timeout';
-
-    if (shouldTryLive) {
-      const liveBlob = await fetchAngelaLiveSpeech(speechText, signal);
-      rememberSpeech(speechText, liveBlob);
-      return liveBlob;
-    }
-    throw new Error(code);
+    throw new Error(data.error || 'voice_provider_unavailable');
   }
 
   if (!response.headers.get('content-type')?.includes('audio/wav')) {
-    const liveBlob = await fetchAngelaLiveSpeech(speechText, signal);
-    rememberSpeech(speechText, liveBlob);
-    return liveBlob;
+    throw new Error('voice_provider_unavailable');
   }
 
   const blob = await response.blob();

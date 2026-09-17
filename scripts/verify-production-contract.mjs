@@ -20,7 +20,7 @@ const [audio, speech, chat, token, sitemap, redirects] = await Promise.all([
 requireText(audio, "data instanceof Blob", 'Angela browser audio');
 requireText(audio, "fetch('/api/gemini/live-token'", 'Angela browser audio');
 requireText(audio, "voiceName: 'Aoede'", 'Angela browser audio');
-requireText(audio, "response.status === 429", 'Angela browser audio');
+requireText(audio, "const liveBlob = await fetchAngelaLiveSpeech(speechText, signal)", 'Angela browser audio');
 requireText(audio, "live_voice_timeout')), 10000", 'Angela browser audio');
 
 requireText(speech, "const voiceName = 'Aoede'", 'Angela TTS endpoint');
@@ -32,8 +32,10 @@ requireText(speech, "gemini-2.5-flash-preview-tts", 'Angela TTS endpoint');
 forbidText(speech, "gemini-2.5-pro-preview-tts", 'Angela TTS endpoint');
 forbidText(speech, "gemini-3.1-flash-tts-preview", 'Angela TTS endpoint');
 
-requireText(chat, "makeRequest(primaryModel, 5500)", 'Angela chat endpoint');
-requireText(chat, "makeRequest('gemini-3.5-flash-lite', 4000)", 'Angela chat endpoint');
+requireText(chat, "'gemini-flash-latest'", 'Angela chat endpoint');
+requireText(chat, "'gemini-2.5-flash'", 'Angela chat endpoint');
+requireText(chat, "'gemini-2.5-flash-lite'", 'Angela chat endpoint');
+requireText(chat, "for (const model of candidateModels)", 'Angela chat endpoint');
 requireText(chat, "maxOutputTokens: fromVoice ? 180 : 280", 'Angela chat endpoint');
 
 requireText(token, "request.headers.get('origin') !== url.origin", 'Angela Live token');
