@@ -100,3 +100,15 @@ test('Cloudflare dispatch includes the Bengali speech function', async () => {
   const routes = JSON.parse(await readFile(new URL('../public/_routes.json', import.meta.url), 'utf8'));
   assert.ok(routes.include.includes('/angela/speech'));
 });
+
+test('English service words stay English in Auto, while Banglish stays Bengali', async () => {
+  for (const message of ['What are your visa services?', 'I need a flight ticket', 'What services do you offer for university applications? Please answer in English.']) {
+    const data = await (await onRequest({ request: request({ message, language: 'auto' }), env: {} })).json();
+    assert.equal(data.language, 'en', message);
+    assert.doesNotMatch(data.reply, /[\u0980-\u09FF]/);
+  }
+  const banglish = await (await onRequest({ request: request({ message: 'ami UK te porte chai', language: 'auto' }), env: {} })).json();
+  assert.equal(banglish.language, 'bn');
+  const explicit = await (await onRequest({ request: request({ message: 'Please answer in English', language: 'bn' }), env: {} })).json();
+  assert.equal(explicit.language, 'en');
+});
