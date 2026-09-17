@@ -47,7 +47,10 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   // cannot return promptly, the client moves to Angela's Gemini Live/browser
   // fallback instead of leaving the visitor waiting on one cold request.
   const voiceName = 'Aoede';
-  const model = env.GEMINI_TTS_MODEL?.trim() || 'gemini-2.5-flash-preview-tts';
+  const configuredModel = env.GEMINI_TTS_MODEL?.trim();
+  const model = !configuredModel || configuredModel === 'gemini-2.5-flash-preview-tts'
+    ? 'gemini-3.1-flash-tts'
+    : configuredModel;
   const configuredTimeout = Number(env.ANGELA_TTS_TIMEOUT_MS || '8000');
   const timeoutMs = Number.isFinite(configuredTimeout) ? Math.min(10000, Math.max(4500, configuredTimeout)) : 8000;
   const controller = new AbortController();
