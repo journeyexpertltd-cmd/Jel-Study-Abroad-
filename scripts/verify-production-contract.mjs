@@ -32,6 +32,7 @@ requireText(speech, "gemini-2.5-flash-preview-tts", 'Angela TTS endpoint');
 forbidText(speech, "gemini-2.5-pro-preview-tts", 'Angela TTS endpoint');
 forbidText(speech, "gemini-3.1-flash-tts-preview", 'Angela TTS endpoint');
 
+requireText(chat, "'gemini-3.5-flash'", 'Angela chat endpoint');
 requireText(chat, "'gemini-flash-latest'", 'Angela chat endpoint');
 requireText(chat, "'gemini-2.5-flash'", 'Angela chat endpoint');
 requireText(chat, "'gemini-2.5-flash-lite'", 'Angela chat endpoint');
