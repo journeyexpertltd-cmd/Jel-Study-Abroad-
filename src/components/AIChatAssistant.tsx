@@ -349,7 +349,7 @@ export function AIChatAssistant() {
           if (!browserVoice) {
             currentUtteranceRef.current = null;
             setVoiceState("ERROR");
-            setErrorMessage("বাংলা কণ্ঠটি সাময়িকভাবে পাওয়া যাচ্ছে না। একটু পরে Listen চাপুন।");
+            setErrorMessage(voiceErrorMessage(error));
             return;
           }
           utterance.voice = browserVoice;
@@ -787,8 +787,8 @@ export function AIChatAssistant() {
           lang={isBanglaMode ? "bn-BD" : "en"}
           className={`bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200/90 dark:border-slate-800 flex flex-col overflow-hidden transition-all duration-300 animate-in zoom-in-95 ${
             isMaximized 
-              ? "w-[calc(100vw-24px)] sm:w-[650px] max-w-[650px] h-[88vh] max-h-[88vh]" 
-              : "w-[calc(100vw-24px)] sm:w-[420px] max-w-[420px] h-[640px] max-h-[85vh]"
+              ? "w-[calc(100vw-24px)] sm:w-[650px] max-w-[650px] h-[88dvh] max-h-[88dvh]" 
+              : "w-[calc(100vw-24px)] sm:w-[420px] max-w-[420px] h-[640px] max-h-[85dvh]"
           }`}
           id="angela-ai-voice-panel"
         >
