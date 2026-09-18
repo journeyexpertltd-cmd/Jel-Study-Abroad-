@@ -2,7 +2,7 @@ name: Study Abroad Live Monitor
 
 on:
   schedule:
-    - cron: "17 2 * * *"
+    - cron: "17 2,14 * * *"
   workflow_dispatch:
 
 permissions:
@@ -182,7 +182,7 @@ jobs:
             echo "- Target: https://journeyexpertbd.com"
             echo "- Trigger: ${{ github.event_name }}"
             echo "- Commit: ${{ github.sha }}"
-            echo "- Schedule: once every 24 hours; manual runs remain available."
+            echo "- Schedule: once every 12 hours; manual runs remain available."
             echo "- Public routes, admin/student portal entry routes, sitemap, robots and API health are verified."
             echo "- CRM: the production lead endpoint is probed with a non-persisting validation request."
             echo "- Angela: production AI endpoint is probed for a real non-fallback Bangla response."
