@@ -553,7 +553,7 @@ app.post("/api/gemini/live-token", async (req, res) => {
         uses: 1,
         expireTime,
         liveConnectConstraints: {
-          model: "models/gemini-3.1-flash-live-preview",
+          model: "models/gemini-2.5-flash-native-audio-preview-09-2025",
           config: { responseModalities: ["AUDIO"] },
         },
       }),
@@ -569,7 +569,7 @@ app.post("/api/gemini/live-token", async (req, res) => {
     const data: any = await upstream.json();
     if (!data?.name) return res.status(502).json({ error: "live_voice_unavailable" });
     res.setHeader("Cache-Control", "no-store");
-    return res.json({ token: data.name, model: "gemini-3.1-flash-live-preview", expiresAt: expireTime });
+    return res.json({ token: data.name, model: "gemini-2.5-flash-native-audio-preview-09-2025", expiresAt: expireTime });
   } catch (error: any) {
     console.warn("Angela AI Studio Live token error", error?.message || "unknown");
     return res.status(503).json({ error: "live_voice_unavailable" });
