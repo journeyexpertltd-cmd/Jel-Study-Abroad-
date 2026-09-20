@@ -27,10 +27,11 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   if (!turns.length || turns[turns.length - 1].role !== 'user') return json({ error: 'User message required' }, 400);
   const last = turns[turns.length - 1].parts[0].text;
   const hasBanglaScript = /[\u0980-\u09FF]/.test(last);
-  const looksBanglish = /\b(ami|amar|amake|apni|apnar|tumi|tomar|chai|jabo|jete|koto|kivabe|ki|keno|kobe|hobe|korbo|korte|lagbe|apnader|kothay|banglay|bolen|diben|pari|parbo|porte|bidesh|visa|student|university|ticket|flight)\b/i.test(last);
+  const looksBanglish = /\b(ami|amar|amake|apni|apnar|tumi|tomar|chai|jabo|jete|koto|kivabe|keno|kobe|hobe|korbo|korte|lagbe|apnader|kothay|banglay|bolen|diben|pari|parbo|porte|bidesh)\b/i.test(last);
+  const asksEnglish = /\b(?:answer|reply|respond|speak|explain)\s+(?:to me\s+)?in\s+english\b|ইংরেজিতে\s*(?:বলুন|উত্তর|বলো)/i.test(last);
   const fromVoice = body.source === 'voice';
   // Actual Bengali script always wins over a stale/manual UI language selection.
-  const bn = hasBanglaScript || body.language === 'bn' || (body.language !== 'en' && looksBanglish);
+  const bn = !asksEnglish && (hasBanglaScript || body.language === 'bn' || (body.language !== 'en' && looksBanglish));
   const fallback = () => {
     const query = last.toLowerCase();
     const asksContact = /যোগাযোগ|ফোন|নাম্বার|হোয়াটসঅ্যাপ|ঠিকানা|অফিস|contact|phone|address|office/.test(query);

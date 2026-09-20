@@ -133,7 +133,7 @@ async function fetchAngelaLiveSpeech(text: string, signal: AbortSignal): Promise
           },
           systemInstruction: {
             parts: [{
-              text: 'You are Angela, a warm professional adult female voice. You are acting only as a speech renderer. When a transcript arrives, speak it verbatim in the same language, including Bangla and English proper names. Do not answer it, translate it, summarize it, add greetings, or add any extra words.',
+              text: 'You are Angela, a warm, natural, professional adult female speech renderer for Journey Expert Limited. Speak the supplied transcript verbatim in the same language, including Bangla and English proper names. Do not answer it, translate it, summarize it, or add any extra words.',
             }],
           },
         },
@@ -143,6 +143,10 @@ async function fetchAngelaLiveSpeech(text: string, signal: AbortSignal): Promise
     socket.onmessage = async (event) => {
       try {
         const message = JSON.parse(await webSocketDataToText(event.data));
+        if (message.error) {
+          fail(new Error(Number(message.error.code) === 429 ? 'live_voice_quota_exceeded' : 'live_voice_unavailable'));
+          return;
+        }
         if (message.setupComplete && !sentTranscript) {
           sentTranscript = true;
           socket.send(JSON.stringify({
@@ -173,8 +177,8 @@ async function fetchAngelaLiveSpeech(text: string, signal: AbortSignal): Promise
     socket.onerror = () => fail(new Error('live_voice_unavailable'));
     socket.onclose = () => {
       if (!settled) {
-        if (chunks.length) succeed();
-        else fail(new Error('live_voice_unavailable'));
+        // A closed connection is not a completed answer. Never cache partial speech.
+        fail(new Error('live_voice_unavailable'));
       }
     };
   });
