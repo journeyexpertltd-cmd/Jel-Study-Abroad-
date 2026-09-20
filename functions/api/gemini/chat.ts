@@ -27,7 +27,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   if (!turns.length || turns[turns.length - 1].role !== 'user') return json({ error: 'User message required' }, 400);
   const last = turns[turns.length - 1].parts[0].text;
   const hasBanglaScript = /[\u0980-\u09FF]/.test(last);
-  const looksBanglish = /\b(ami|amar|amake|apni|apnar|tumi|tomar|chai|jabo|jete|koto|kivabe|ki|keno|kobe|hobe|korbo|korte|lagbe|apnader|kothay|banglay|bolen|diben|pari|parbo|porte|bidesh|visa|student|university|ticket|flight)\b/i.test(last);
+  const looksBanglish = /\b(ami|amar|amake|apni|apnar|tumi|tomar|chai|jabo|jete|koto|kivabe|ki|keno|kobe|hobe|korbo|korte|lagbe|apnader|kothay|banglay|bolen|diben|pari|parbo|porte|bidesh)\b/i.test(last);
   const fromVoice = body.source === 'voice';
   // Actual Bengali script always wins over a stale/manual UI language selection.
   const bn = hasBanglaScript || body.language === 'bn' || (body.language !== 'en' && looksBanglish);
@@ -102,7 +102,9 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
         body: JSON.stringify({
           contents: turns,
           systemInstruction: { parts: [{ text: instruction + voiceNote + '\nMANDATORY RESPONSE LANGUAGE: ' + (bn ? 'Respond in natural Bengali script. Treat Banglish as Bengali. Keep proper names unchanged.' : 'Respond in English.') }] },
-          generationConfig: { temperature: 0.3, maxOutputTokens: fromVoice ? 180 : 280 },
+          // Bengali and model reasoning both need room within the output budget.
+          // Keep spoken length concise through the instruction, not a tiny token cap.
+          generationConfig: { temperature: 0.3, maxOutputTokens: fromVoice ? 1536 : 2048 },
         }),
       });
     } catch (error: any) {
@@ -118,7 +120,9 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   let response: Response | null = null;
   let providerModel = '';
   for (const model of candidateModels) {
-    response = await makeRequest(model, model === configuredModel ? 3500 : 3000);
+    // Allow the primary model time to answer, while keeping the complete retry
+    // sequence below the client's 20-second timeout (at most 17 seconds).
+    response = await makeRequest(model, model === candidateModels[0] ? 7000 : 2500);
     if (response?.ok) {
       providerModel = model;
       break;
@@ -128,7 +132,10 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
 
   try {
     const data: any = await response.json();
-    const reply = data?.candidates?.[0]?.content?.parts?.map((p: any) => p.text || '').join('').trim();
+    const candidate = data?.candidates?.[0];
+    // Never show an unfinished sentence or provider reasoning as a final answer.
+    if (candidate?.finishReason && candidate.finishReason !== 'STOP') return fallback();
+    const reply = candidate?.content?.parts?.filter((p: any) => !p.thought && typeof p.text === 'string').map((p: any) => p.text).join('').trim();
     if (bn && reply && !/[\u0980-\u09FF]/.test(reply)) return fallback();
     return reply ? json({ reply, mode: 'ai', language: bn ? 'bn' : 'en', providerModel }) : fallback();
   } catch {

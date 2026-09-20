@@ -9,6 +9,36 @@ const request = (body, options = {}) => new Request('https://journeyexpertbd.com
   method: 'POST', body: JSON.stringify(body), ...options,
 });
 
+test('Auto mode keeps English travel questions in English and recognizes Banglish', async () => {
+  globalThis.fetch = async () => { throw new Error('offline'); };
+  for (const message of ['What student visa documents do I need?', 'Can you help with a flight ticket?', 'Which university should I choose?']) {
+    const data = await (await onRequest({ request: request({ message, language: 'auto' }), env: {} })).json();
+    assert.equal(data.language, 'en');
+  }
+  const data = await (await onRequest({ request: request({ message: 'ami UK te porte chai', language: 'auto' }), env: {} })).json();
+  assert.equal(data.language, 'bn');
+});
+
+test('Complete Bengali answers retain a usable budget and exclude thought parts', async () => {
+  const answer = 'কাউন্সেলিং শুরু করতে আপনার শিক্ষাগত যোগ্যতা ও পছন্দের দেশ জানান।';
+  globalThis.fetch = async (_url, options) => {
+    assert.ok(JSON.parse(options.body).generationConfig.maxOutputTokens >= 1500);
+    return Response.json({ candidates: [{ finishReason: 'STOP', content: { parts: [{ thought: true, text: 'internal reasoning' }, { text: answer }] } }] });
+  };
+  for (const source of ['text', 'voice']) {
+    const data = await (await onRequest({ request: request({ message: 'কাউন্সেলিং কীভাবে শুরু করব?', source }), env: { GEMINI_API_KEY: 'test-only' } })).json();
+    assert.equal(data.mode, 'ai');
+    assert.equal(data.reply, answer);
+  }
+});
+
+test('A token-truncated provider response is not presented as a completed answer', async () => {
+  globalThis.fetch = async () => Response.json({ candidates: [{ finishReason: 'MAX_TOKENS', content: { parts: [{ text: 'JEL-এ স্টাডি অ্যাব্রোড কাউন্সেল' }] } }] });
+  const data = await (await onRequest({ request: request({ message: 'স্টাডি কাউন্সেলিং কীভাবে শুরু করব?' }), env: { GEMINI_API_KEY: 'test-only' } })).json();
+  assert.equal(data.mode, 'fallback');
+  assert.match(data.reply, /প্রোফাইল মূল্যায়ন/);
+});
+
 test('Pages chat validates input and provides a Bangla fallback without credentials', async () => {
   const response = await onRequest({ request: request({ message: 'আমি পড়তে চাই' }), env: {} });
   const data = await response.json();
