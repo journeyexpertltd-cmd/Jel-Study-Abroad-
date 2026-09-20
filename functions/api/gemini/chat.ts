@@ -119,10 +119,10 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   // Model IDs are retired over time; one invalid model must not take Angela offline.
   let response: Response | null = null;
   let providerModel = '';
-  for (const [index, model] of candidateModels.entries()) {
+  for (const model of candidateModels) {
     // Allow the primary model time to answer, while keeping the complete retry
     // sequence below the client's 20-second timeout (at most 17 seconds).
-    response = await makeRequest(model, index === 0 ? 7000 : 2500);
+    response = await makeRequest(model, model === candidateModels[0] ? 7000 : 2500);
     if (response?.ok) {
       providerModel = model;
       break;
