@@ -1,0 +1,38 @@
+name: Study AI Studio route probe
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Probe dedicated Study Abroad AI Studio routes
+        shell: bash
+        run: |
+          set -u
+          origin="https://jel-study-abroad.ai.studio"
+          echo "root_status=$(curl --silent --show-error --location --max-time 15 --output /dev/null --write-out '%{http_code}' "$origin/")"
+          for path in /api/gemini/chat /api/ai/voice-agent; do
+            body="$(mktemp)"
+            status="$(curl --silent --show-error --max-time 20               --header 'Content-Type: application/json'               --header 'Origin: https://journeyexpertbd.com'               --data '{"message":"ami UK te masters korte chai, ki documents lagbe?","language":"auto","history":[]}'               --output "$body" --write-out '%{http_code}' "$origin$path" || true)"
+            echo "$path status=$status"
+            python - "$body" "$path" <<'PY'
+import json,re,sys,os
+p,path=sys.argv[1],sys.argv[2]
+try:
+    raw=open(p,encoding="utf-8").read()
+    data=json.loads(raw)
+    reply=str(data.get("reply") or data.get("response") or "").strip()
+    print(path, "json_keys=", sorted(data.keys())[:20], "mode=", data.get("mode"), "language=", data.get("language"), "reply_len=", len(reply), "has_bangla=", bool(re.search(r"[\u0980-\u09ff]", reply)))
+except Exception as e:
+    print(path, "non_json_or_empty", type(e).__name__, "bytes=", os.path.getsize(p) if os.path.exists(p) else 0)
+PY
+            rm -f "$body"
+          done
