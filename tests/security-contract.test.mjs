@@ -62,7 +62,7 @@ test('course finder fails safely without invented live university data', () => {
 
 test('versioned migrations keep CRM and student storage private with RLS', () => {
   const crmSql = read('supabase/migrations/20260916_production_crm_storage.sql');
-  const studentSql = read('supabase/migrations/20260916_student_applications.sql');
+  const studentSql = read('supabase/migrations/20260916041416_student_applications.sql');
   assert.match(crmSql, /alter table public\.leads enable row level security/i);
   assert.match(crmSql, /'student-documents',[\s\S]*false,/i);
   assert.match(crmSql, /grant execute on function public\.submit_public_lead/i);
