@@ -1,0 +1,34 @@
+name: Live Angela mode diagnostic
+
+on:
+  push:
+    branches:
+      - diag/live-angela-mode-20260921
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Inspect live health and Angela mode
+        shell: bash
+        run: |
+          set -euo pipefail
+          health="$(mktemp)"
+          body="$(mktemp)"
+          trap 'rm -f "$health" "$body"' EXIT
+          curl --fail --silent --show-error --max-time 20 https://journeyexpertbd.com/api/health > "$health"
+          echo "health_ok=$(jq -r '.ok // false' "$health")"
+          echo "gemini_configured=$(jq -r '.checks.gemini // false' "$health")"
+          echo "supabase_configured=$(jq -r '.checks.supabase // false' "$health")"
+          curl --fail --silent --show-error --max-time 25             --header 'Content-Type: application/json'             --header 'Origin: https://journeyexpertbd.com'             --data '{"message":"ami UK te masters korte chai, ki documents lagbe?","language":"auto"}'             https://journeyexpertbd.com/api/gemini/chat > "$body"
+          echo "mode=$(jq -r '.mode // ""' "$body")"
+          echo "language=$(jq -r '.language // ""' "$body")"
+          echo "provider_model=$(jq -r '.providerModel // ""' "$body")"
+          echo "retryable=$(jq -r '.retryable // false' "$body")"
+          reply="$(jq -r '.reply // ""' "$body")"
+          echo "reply_length=${#reply}"
+          if grep -Pq '[\x{0980}-\x{09FF}]' <<< "$reply"; then echo "has_bangla=true"; else echo "has_bangla=false"; fi
