@@ -1012,34 +1012,10 @@ app.post("/api/gemini/course-finder", async (req: express.Request, res: express.
     const { preferredCountry, educationLevel, budgetRange, interestArea, gpa } = req.body;
 
     if (!process.env.GEMINI_API_KEY) {
-      // Return solid fallback recommendation if key is missing to keep UI 100% interactive
-      res.json([
-        {
-          courseName: "B.Sc. in Computer Science / Information Technology",
-          university: "Taylor's University (Branch transferring to Australia)",
-          country: "Malaysia",
-          duration: "3 Years",
-          approxTuition: "$6,500 / year",
-          reason: "An excellent low-budget pathway based on your interest in " + (interestArea || "computing") + ". Taylor's ranks highly in Asia and offers dynamic transfer credits to Australian Group of 8 schools."
-        },
-        {
-          courseName: "M.Sc. in Business Analytics / Data Science",
-          university: "University of Greenwich",
-          country: "United Kingdom",
-          duration: "1 Year",
-          approxTuition: "£16,000 / year",
-          reason: "Perfectly aligns with your academic profile. Greenwich provides superb industry placement networks around London, high acceptance rates, and a 2-year Graduate Route stay back visa."
-        },
-        {
-          courseName: "M.Eng. in Software Engineering",
-          university: "Monash University",
-          country: "Australia",
-          duration: "2 Years",
-          approxTuition: "A$38,000 / year",
-          reason: "Top-tier option if budget satisfies the criteria. Monash is a QS Top 50 institution producing elite global engineers with direct pathway rights to Australia PR."
-        }
-      ]);
-      return;
+      return res.status(503).json({
+        error: "course_planning_temporarily_unavailable",
+        retryable: true
+      });
     }
 
     const ai = getGeminiClient();
@@ -1061,10 +1037,12 @@ Format the response as raw JSON that fits this specific TypeScript format:
     "reason": "Clear professional explanation why this is a prime recommendation based on their GPA, field of interest, and budgets."
   }
 ]
+Never claim live seats, guaranteed admission, visa probability, permanent-residency pathways, confirmed JEL partnerships, acceptance rates, scholarships or current fees. Never invent a university or program. State in every recommendation reason that current entry requirements, fees and intake availability require verification on the official university website.
+
 Do not output markdown code fences or other textual summaries, output the JSON structure directly.`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
+      model: "gemini-3.8-flash",
       contents: finderPrompt,
       config: {
         responseMimeType: "application/json",
@@ -1091,7 +1069,7 @@ Do not output markdown code fences or other textual summaries, output the JSON s
     res.json(parsedData);
   } catch (error: any) {
     console.error("Course Finder backend exception:", error);
-    res.status(500).json({ error: error.message || "Course search failed" });
+    res.status(503).json({ error: "course_planning_temporarily_unavailable", retryable: true });
   }
 });
 
