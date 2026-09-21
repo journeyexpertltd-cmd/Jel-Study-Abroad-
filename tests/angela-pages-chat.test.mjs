@@ -22,7 +22,8 @@ test('Auto mode keeps English travel questions in English and recognizes Banglis
 test('Complete Bengali answers retain a usable budget and exclude thought parts', async () => {
   const answer = 'কাউন্সেলিং শুরু করতে আপনার শিক্ষাগত যোগ্যতা ও পছন্দের দেশ জানান।';
   globalThis.fetch = async (_url, options) => {
-    assert.ok(JSON.parse(options.body).generationConfig.maxOutputTokens >= 1500);
+    const maxTokens = JSON.parse(options.body).generationConfig.maxOutputTokens;
+    assert.ok(maxTokens >= 512 && maxTokens <= 896, 'low-latency output budget should remain sufficient for complete concise answers');
     return Response.json({ candidates: [{ finishReason: 'STOP', content: { parts: [{ thought: true, text: 'internal reasoning' }, { text: answer }] } }] });
   };
   for (const source of ['text', 'voice']) {
