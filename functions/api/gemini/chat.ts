@@ -63,11 +63,13 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
 
     return json({ reply, mode: 'fallback', language: bn ? 'bn' : 'en', retryable: true });
   };
-  if (!env.GEMINI_API_KEY) {
+  const apiKey = env.GEMINI_API_KEY?.trim() || env.GEMINI_TTS_API_KEY?.trim();
+  if (!apiKey) {
+    const studyAiStudioOrigin = (env.STUDY_AI_STUDIO_ORIGIN || 'https://jel-study-abroad.ai.studio').replace(/\/$/, '');
     try {
-      const response = await fetch('https://journeyexpertltd.com/api/ai/voice-agent', {
+      const response = await fetch(`${studyAiStudioOrigin}/api/gemini/chat`, {
         method: 'POST', signal: AbortSignal.timeout(8000),
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Origin': new URL(request.url).origin },
         body: JSON.stringify({ message: last, language: bn ? 'bn' : 'en', history: turns.slice(0, -1).map((turn: any) => ({ role: turn.role === 'model' ? 'assistant' : 'user', content: turn.parts[0].text })) }),
       });
       if (!response.ok) return fallback();
@@ -97,7 +99,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
         : '';
       return await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
         method: 'POST', signal: controller.signal,
-        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY! },
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
         body: JSON.stringify({
           contents: turns,
           systemInstruction: { parts: [{ text: instruction + voiceNote + '\nMANDATORY RESPONSE LANGUAGE: ' + (bn ? 'Respond in natural Bengali script. Treat Banglish as Bengali. Keep proper names unchanged.' : 'Respond in English.') }] },
