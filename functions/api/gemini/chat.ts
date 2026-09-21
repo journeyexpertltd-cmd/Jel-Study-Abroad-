@@ -84,8 +84,8 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   const configuredModel = env.GEMINI_MODEL?.trim();
   const voiceModel = env.GEMINI_VOICE_MODEL?.trim() || 'gemini-3.5-flash-lite';
   const candidateModels = Array.from(new Set((fromVoice
-    ? [voiceModel, configuredModel, 'gemini-3.8-flash', 'gemini-3.5-flash', 'gemini-2.5-flash-lite', 'gemini-flash-latest']
-    : [configuredModel, 'gemini-3.8-flash', 'gemini-3.5-flash-lite', 'gemini-3.5-flash', 'gemini-2.5-flash-lite', 'gemini-flash-latest']
+    ? [voiceModel, configuredModel, 'gemini-3.8-flash', 'gemini-3.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-flash-latest']
+    : [configuredModel, 'gemini-3.8-flash', 'gemini-3.5-flash-lite', 'gemini-3.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-flash-latest']
   ).filter((model): model is string => Boolean(model))));
   const makeRequest = async (model: string, timeoutMs: number): Promise<Response | null> => {
     const controller = new AbortController();
