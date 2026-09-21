@@ -61,7 +61,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
     } else if (asksTicket || asksUmrah) {
       reply = 'Live fares, seats and package availability change frequently, so I will not invent a price. Share your route or destination, travel date and number of travellers, or contact JEL on WhatsApp/hotline +8801926400400 for a verified live check.';
     } else {
-      reply = 'I am Angela, JEL's AI assistant. I can help with study abroad, visas, air tickets, tours or Umrah. Tell me the service and destination you need. For urgent help, contact JEL on WhatsApp/hotline +8801926400400.';
+      reply = "I am Angela, JEL's AI assistant. I can help with study abroad, visas, air tickets, tours or Umrah. Tell me the service and destination you need. For urgent help, contact JEL on WhatsApp/hotline +8801926400400.";
     }
 
     return json({ reply, mode: 'fallback', language: bn ? 'bn' : 'en', retryable: true });
