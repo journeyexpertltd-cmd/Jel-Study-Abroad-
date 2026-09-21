@@ -117,7 +117,7 @@ async function fetchAngelaLiveSpeech(text: string, signal: AbortSignal): Promise
     signal.addEventListener('abort', onAbort, { once: true });
     // Keep backup speech conversational. The primary TTS already had its own
     // bounded attempt, so a long second wait makes Angela feel unresponsive.
-    const timer = window.setTimeout(() => fail(new Error('live_voice_timeout')), 10000);
+    const timer = window.setTimeout(() => fail(new Error('live_voice_timeout')), 3500);
 
     socket.onopen = () => {
       socket.send(JSON.stringify({
@@ -187,36 +187,38 @@ export async function fetchAngelaSpeech(text: string, signal: AbortSignal): Prom
   const cached = speechCache.get(speechText);
   if (cached) return cached;
 
-  // Gemini Live is the production-first path: it is substantially faster than
-  // waiting for a cold TTS function and uses the same fixed female Aoede voice.
+  // Low-latency path: use the same-origin Gemini TTS endpoint first.
+  // This avoids paying a WebSocket setup + 10s Live timeout before TTS.
+  const ttsController = new AbortController();
+  const abortTts = () => ttsController.abort();
+  signal.addEventListener('abort', abortTts, { once: true });
+  const ttsTimer = window.setTimeout(() => ttsController.abort(), 4500);
   try {
-    const liveBlob = await fetchAngelaLiveSpeech(speechText, signal);
-    rememberSpeech(speechText, liveBlob);
-    return liveBlob;
-  } catch (liveError) {
-    if (signal.aborted) throw liveError;
-    console.warn('Angela Live voice notice:', liveError);
-  }
+    const response = await fetch('/angela/speech', {
+      method: 'POST',
+      signal: ttsController.signal,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: speechText }),
+    });
 
-  // Same-origin server TTS remains the bounded fallback when Live is
-  // temporarily unavailable or a browser cannot establish the WebSocket.
-  const response = await fetch('/angela/speech', {
-    method: 'POST', signal, headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text: speechText }),
-  });
+    if (response.ok && response.headers.get('content-type')?.includes('audio/wav')) {
+      const blob = await response.blob();
+      rememberSpeech(speechText, blob);
+      return blob;
+    }
 
-  if (!response.ok) {
     const data = await response.json().catch(() => ({}));
-    throw new Error(data.error || 'voice_provider_unavailable');
+    if (response.status !== 429) console.warn('Angela TTS notice:', data?.error || response.status);
+  } catch (ttsError) {
+    if (signal.aborted) throw ttsError;
+    console.warn('Angela TTS notice:', ttsError);
+  } finally {
+    window.clearTimeout(ttsTimer);
+    signal.removeEventListener('abort', abortTts);
   }
 
-  if (!response.headers.get('content-type')?.includes('audio/wav')) {
-    throw new Error('voice_provider_unavailable');
-  }
-
-  const blob = await response.blob();
-  rememberSpeech(speechText, blob);
-  return blob;
+  // Short Live fallback only when the direct TTS endpoint is unavailable.
+  return await fetchAngelaLiveSpeech(speechText, signal);
 }
 
 export function voiceErrorMessage(error: unknown): string {
