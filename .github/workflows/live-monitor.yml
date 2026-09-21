@@ -1,4 +1,5 @@
 name: Study Abroad Live Monitor
+# Re-measure after typed Flash-Lite fast path deployment.
 
 on:
   push:
