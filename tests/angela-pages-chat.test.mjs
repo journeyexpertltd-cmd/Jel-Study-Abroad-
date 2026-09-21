@@ -112,10 +112,11 @@ test('Bangla fallback stays useful and preserves UTF-8 for common intents', asyn
   assert.match(contact.reply, /\+8801926400400/);
 });
 
-test('Study Abroad uses the company Angela gateway with bounded conversation and Banglish detection', async () => {
+test('Study Abroad keeps its no-key AI fallback on the dedicated Study AI Studio with bounded conversation and Banglish detection', async () => {
   globalThis.fetch = async (url, options) => {
-    assert.equal(url, 'https://journeyexpertltd.com/api/ai/voice-agent');
+    assert.equal(url, 'https://jel-study-abroad.ai.studio/api/gemini/chat');
     assert.equal(options.headers['x-goog-api-key'], undefined);
+    assert.equal(options.headers.Origin, 'https://journeyexpertbd.com');
     const body = JSON.parse(options.body);
     assert.equal(body.language, 'bn');
     assert.equal(body.message, 'ami UK te porte chai');
@@ -123,7 +124,9 @@ test('Study Abroad uses the company Angela gateway with bounded conversation and
     return Response.json({ reply: 'ইউকেতে পড়াশোনার জন্য আপনার পছন্দের বিষয় কী?', mode: 'ai' });
   };
   const result = await onRequest({ request: request({ messages: [{ sender: 'assistant', text: 'How can I help?' }, { sender: 'user', text: 'ami UK te porte chai' }] }), env: {} });
-  assert.equal((await result.json()).mode, 'ai');
+  const data = await result.json();
+  assert.equal(data.mode, 'ai');
+  assert.equal(data.language, 'bn');
 });
 
 test('Cloudflare dispatch includes the Bengali speech function', async () => {
