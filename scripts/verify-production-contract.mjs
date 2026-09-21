@@ -20,7 +20,7 @@ const [audio, speech, chat, token, sitemap, redirects] = await Promise.all([
 requireText(audio, "data instanceof Blob", 'Angela browser audio');
 requireText(audio, "fetch('/api/gemini/live-token'", 'Angela browser audio');
 requireText(audio, "voiceName: 'Aoede'", 'Angela browser audio');
-requireText(audio, "gemini-3.1-flash-live-preview", 'Angela browser audio');
+requireText(audio, "gemini-3.8-live", 'Angela browser audio');
 requireText(audio, "const liveBlob = await fetchAngelaLiveSpeech(speechText, signal)", 'Angela browser audio');
 requireText(audio, "live_voice_timeout')), 10000", 'Angela browser audio');
 
@@ -33,6 +33,7 @@ requireText(speech, "gemini-3.1-flash-tts", 'Angela TTS endpoint');
 forbidText(speech, "gemini-2.5-pro-preview-tts", 'Angela TTS endpoint');
 forbidText(speech, "gemini-3.1-flash-tts-preview", 'Angela TTS endpoint');
 
+requireText(chat, "'gemini-3.8-flash'", 'Angela chat endpoint');
 requireText(chat, "'gemini-3.5-flash'", 'Angela chat endpoint');
 requireText(chat, "'gemini-flash-latest'", 'Angela chat endpoint');
 requireText(chat, "'gemini-2.5-flash'", 'Angela chat endpoint');
@@ -41,8 +42,9 @@ requireText(chat, "for (const model of candidateModels)", 'Angela chat endpoint'
 requireText(chat, "maxOutputTokens: fromVoice ? 1536 : 2048", 'Angela chat endpoint');
 
 requireText(token, "request.headers.get('origin') !== url.origin", 'Angela Live token');
-requireText(token, "voiceName: 'Aoede'", 'Angela Live token');
-requireText(token, "gemini-3.1-flash-live-preview", 'Angela Live token');
+requireText(token, "liveConnectConstraints", 'Angela Live token');
+requireText(token, "responseModalities: ['AUDIO']", 'Angela Live token');
+requireText(token, "gemini-3.8-live", 'Angela Live token');
 
 const locs = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]);
 if (locs.length !== 13) throw new Error(`Sitemap contract: expected 13 URLs, found ${locs.length}`);
