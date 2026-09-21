@@ -82,15 +82,11 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   }
 
   const configuredModel = env.GEMINI_MODEL?.trim();
-  const candidateModels = Array.from(new Set([
-    configuredModel,
-    'gemini-3.8-flash',
-    'gemini-3.7-flash',
-    'gemini-3.5-flash',
-    'gemini-flash-latest',
-    'gemini-2.5-flash',
-    'gemini-2.5-flash-lite',
-  ].filter((model): model is string => Boolean(model))));
+  const voiceModel = env.GEMINI_VOICE_MODEL?.trim() || 'gemini-3.5-flash-lite';
+  const candidateModels = Array.from(new Set((fromVoice
+    ? [voiceModel, configuredModel, 'gemini-3.8-flash', 'gemini-3.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-flash-latest']
+    : [configuredModel, 'gemini-3.8-flash', 'gemini-3.5-flash-lite', 'gemini-3.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-flash-latest']
+  ).filter((model): model is string => Boolean(model))));
   const makeRequest = async (model: string, timeoutMs: number): Promise<Response | null> => {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -104,9 +100,8 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
         body: JSON.stringify({
           contents: turns,
           systemInstruction: { parts: [{ text: instruction + voiceNote + '\nMANDATORY RESPONSE LANGUAGE: ' + (bn ? 'Respond in natural Bengali script. Treat Banglish as Bengali. Keep proper names unchanged.' : 'Respond in English.') }] },
-          // Bengali and model reasoning both need room within the output budget.
-          // Keep spoken length concise through the instruction, not a tiny token cap.
-          generationConfig: { temperature: 0.3, maxOutputTokens: fromVoice ? 1536 : 2048 },
+          // Low-latency production profile: concise spoken answers and bounded text answers.
+          generationConfig: { temperature: 0.25, maxOutputTokens: fromVoice ? 512 : 896 },
         }),
       });
     } catch (error: any) {
@@ -117,14 +112,12 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
     }
   };
 
-  // Prefer the deployment-configured model, then use durable aliases/stable models.
-  // Model IDs are retired over time; one invalid model must not take Angela offline.
+  // Voice uses Flash-Lite first for the lowest practical latency; text keeps the configured model first.
+  // Keep retries short so a retired or overloaded model cannot stall the conversation.
   let response: Response | null = null;
   let providerModel = '';
   for (const model of candidateModels) {
-    // Allow the primary model time to answer, while keeping the complete retry
-    // sequence below the client's 20-second timeout (at most 17 seconds).
-    response = await makeRequest(model, model === candidateModels[0] ? 7000 : 2500);
+    response = await makeRequest(model, model === candidateModels[0] ? (fromVoice ? 2200 : 3500) : 1200);
     if (response?.ok) {
       providerModel = model;
       break;

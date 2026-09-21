@@ -38,7 +38,7 @@ requireText(chat, "'gemini-flash-latest'", 'Angela chat endpoint');
 requireText(chat, "'gemini-2.5-flash'", 'Angela chat endpoint');
 requireText(chat, "'gemini-2.5-flash-lite'", 'Angela chat endpoint');
 requireText(chat, "for (const model of candidateModels)", 'Angela chat endpoint');
-requireText(chat, "maxOutputTokens: fromVoice ? 1536 : 2048", 'Angela chat endpoint');
+requireText(chat, "maxOutputTokens: fromVoice ? 512 : 896", 'Angela chat endpoint');
 
 requireText(token, "request.headers.get('origin') !== url.origin", 'Angela Live token');
 requireText(token, "liveConnectConstraints", 'Angela Live token');
