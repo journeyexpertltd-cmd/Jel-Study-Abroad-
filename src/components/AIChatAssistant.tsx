@@ -267,7 +267,7 @@ export function AIChatAssistant() {
 
       const matchesBangla = (voice: SpeechSynthesisVoice) =>
         /^bn(?:[-_]|$)/i.test(voice.lang) || /bangla|bengali/i.test(voice.name);
-      const femaleName = /female|woman|nabanita|zira|aria|jenny|sonia|samantha|victoria|karen|moira|fiona|ava|allison|susan|kathy|heera|google.*bangla/i;
+      const femaleName = /female|woman|nabanita|zira|aria|jenny|sonia|samantha|victoria|karen|moira|fiona|ava|allison|susan|kathy|heera|hazel|libby|natasha|serena|tessa|veena|google.*female/i;
 
       const speakWithBrowser = (utterance: SpeechSynthesisUtterance, voice?: SpeechSynthesisVoice) => {
         if (voice) {
@@ -312,13 +312,16 @@ export function AIChatAssistant() {
         // Free-first path: use a device/browser Bengali voice immediately when available.
         // Prefer a likely female voice, but keep any Bengali voice as a no-quota resilience fallback.
         const localBanglaVoice =
-          voices.find((voice) => matchesBangla(voice) && femaleName.test(voice.name)) ||
-          voices.find(matchesBangla);
+          voices.find((voice) => matchesBangla(voice) && femaleName.test(voice.name));
 
         if (localBanglaVoice) {
           speakWithBrowser(utterance, localBanglaVoice);
           return;
         }
+
+        // Never fall back to an arbitrary Bengali system voice because many
+        // Windows/browser defaults are male (for example Microsoft Bashkar).
+        // The server path below uses Gemini Kore, an explicitly female voice.
 
         // No Bengali system voice: fall back to the same-origin Gemini Live/TTS bridge.
         currentUtteranceRef.current = null;
@@ -398,8 +401,16 @@ export function AIChatAssistant() {
       }
 
       const preferredEnglishVoice =
-        voices.find((voice) => /^en(?:[-_]|$)/i.test(voice.lang) && /female|zira|aria|jenny|samantha|google uk english female|natural/i.test(voice.name)) ||
-        voices.find((voice) => /^en(?:[-_]|$)/i.test(voice.lang));
+        voices.find((voice) => /^en(?:[-_]|$)/i.test(voice.lang) && femaleName.test(voice.name));
+
+      if (!preferredEnglishVoice) {
+        // Do not allow the browser to substitute its default male English voice.
+        setVoiceState("ERROR");
+        setActiveSpeakingId(null);
+        setErrorMessage("A female English voice is not available on this device. Male default voice was not used.");
+        return;
+      }
+
       speakWithBrowser(utterance, preferredEnglishVoice);
     } catch (error) {
       console.warn("Text to speech exception:", error);
