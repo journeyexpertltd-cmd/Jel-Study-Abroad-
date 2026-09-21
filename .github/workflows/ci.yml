@@ -60,7 +60,8 @@ jobs:
           grep -q 'https://journeyexpertbd.com/ects-calculator"' dist/ects-calculator/index.html
           ! grep -q 'https://journeyexpertbd.com/about/' dist/about/index.html
           ! grep -q 'https://journeyexpertbd.com/ects-calculator/' dist/ects-calculator/index.html
-          ! grep -RInE 'journeyexpertltd\.com|journeyexpertlimited\.com' dist index.html public
+          ! grep -RInE 'journeyexpertlimited\.com' dist index.html public
+          ! grep -RInE 'canonical[^>]*journeyexpertltd\.com|journeyexpertltd\.com[^>]*canonical' dist --include='*.html'
 
       - name: Publish CI summary
         if: always()

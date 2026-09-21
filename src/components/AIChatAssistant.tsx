@@ -10,9 +10,9 @@ import { fetchAngelaSpeech, voiceErrorMessage } from "../lib/angelaAudio";
 
 const jelBrandIcon = new URL("../assets/images/jel-study-abroad-official.webp", import.meta.url).href;
 
-const ENGLISH_WELCOME = "👋 Assalamu Alaikum! I am Angela, the official AI Voice & Customer Assistant for Journey Expert Limited (JEL).\n\nHow may I help you today? I can assist you with:\n✈️ Air Ticketing & Flight Bookings\n🛂 Visa Services (Tourist, Visit, Medical, Student & Business Visas)\n🌍 International & Domestic Tour Packages\n🕋 VIP & Economy Umrah Packages\n🎓 JEL Study Abroad (UK, USA, Canada, Australia & Europe)\n\nYou can speak using the microphone button or type below in English, বাংলা, or Banglish!";
+const ENGLISH_WELCOME = "👋 Assalamu Alaikum! I am Angela, the AI Voice & Study Abroad Assistant for JEL Study Abroad, a brand of Journey Expert Ltd.\n\nI can help with study destinations, university and course selection, admissions, scholarships, SOP guidance, English tests, student-visa documents, and pre-departure/post-arrival guidance.\n\nFor air tickets, tours, Hajj/Umrah, medical or halal tourism, hotels and corporate travel, please use our main website journeyexpertltd.com.\n\nSpeak or type in English, বাংলা, or Banglish.";
 
-const BANGLA_WELCOME = "👋 আসসালামু আলাইকুম! আমি অ্যাঞ্জেলা—জার্নি এক্সপার্ট লিমিটেড (JEL)-এর অফিসিয়াল এআই ভয়েস ও কাস্টমার অ্যাসিস্ট্যান্ট।\n\nআমি যেসব বিষয়ে সাহায্য করতে পারি:\n✈️ এয়ার টিকিট ও ফ্লাইট বুকিং\n🛂 ট্যুরিস্ট, ভিজিট, মেডিকেল, স্টুডেন্ট ও বিজনেস ভিসা\n🌍 আন্তর্জাতিক ও দেশীয় ট্যুর প্যাকেজ\n🕋 ভিআইপি ও ইকোনমি ওমরাহ প্যাকেজ\n🎓 যুক্তরাজ্য, যুক্তরাষ্ট্র, কানাডা, অস্ট্রেলিয়া ও ইউরোপে উচ্চশিক্ষা\n\nমাইক্রোফোনে বলুন অথবা বাংলায় লিখুন—আমি সাহায্য করতে প্রস্তুত।";
+const BANGLA_WELCOME = "👋 আসসালামু আলাইকুম! আমি অ্যাঞ্জেলা—JEL Study Abroad-এর এআই ভয়েস ও শিক্ষা সহকারী।\n\nআমি উচ্চশিক্ষার দেশ, বিশ্ববিদ্যালয় ও কোর্স নির্বাচন, অ্যাডমিশন, স্কলারশিপ, SOP, ইংরেজি টেস্ট, স্টুডেন্ট ভিসার ডকুমেন্ট, প্রি-ডিপারচার ও পোস্ট-অ্যারাইভাল গাইডেন্সে সাহায্য করতে পারি।\n\nএয়ার টিকিট, ট্যুর, হজ-ওমরাহ, মেডিকেল/হালাল ট্যুরিজম, হোটেল ও কর্পোরেট ট্রাভেলের জন্য মূল ওয়েবসাইট journeyexpertltd.com ব্যবহার করুন।\n\nবাংলা, English বা Banglish-এ বলুন বা লিখুন।";
 
 const isBanglaText = (text: string) => /[\u0980-\u09FF]/.test(text);
 const welcomeFor = (mode: "auto" | "en" | "bn") => mode === "bn" ? BANGLA_WELCOME : ENGLISH_WELCOME;
