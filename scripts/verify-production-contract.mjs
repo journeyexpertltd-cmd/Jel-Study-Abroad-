@@ -24,14 +24,13 @@ requireText(audio, "gemini-3.8-live", 'Angela browser audio');
 requireText(audio, "const liveBlob = await fetchAngelaLiveSpeech(speechText, signal)", 'Angela browser audio');
 requireText(audio, "live_voice_timeout')), 10000", 'Angela browser audio');
 
-requireText(speech, "const voiceName = 'Aoede'", 'Angela TTS endpoint');
-requireText(speech, "ANGELA_TTS_TIMEOUT_MS", 'Angela TTS endpoint');
-requireText(speech, "Math.min(10000, Math.max(4500, configuredTimeout))", 'Angela TTS endpoint');
-forbidText(speech, "Math.min(15000, Math.max(5000, configuredTimeout))", 'Angela TTS endpoint');
-forbidText(speech, "setTimeout(() => controller.abort(), 4000)", 'Angela TTS endpoint');
-requireText(speech, "gemini-3.1-flash-tts", 'Angela TTS endpoint');
-forbidText(speech, "gemini-2.5-pro-preview-tts", 'Angela TTS endpoint');
-forbidText(speech, "gemini-3.1-flash-tts-preview", 'Angela TTS endpoint');
+requireText(speech, "env.GEMINI_TTS_API_KEY || env.GEMINI_API_KEY", 'Angela TTS endpoint');
+requireText(speech, "env.ANGELA_SERVER_VOICE === 'off'", 'Angela TTS endpoint');
+requireText(speech, "setTimeout(() => controller.abort(), 25000)", 'Angela TTS endpoint');
+requireText(speech, "gemini-3.1-flash-tts-preview", 'Angela TTS endpoint');
+requireText(speech, "voiceName: 'Kore'", 'Angela TTS endpoint');
+requireText(speech, "responseModalities: ['AUDIO']", 'Angela TTS endpoint');
+requireText(speech, "audio/wav", 'Angela TTS endpoint');
 
 requireText(chat, "'gemini-3.8-flash'", 'Angela chat endpoint');
 requireText(chat, "'gemini-3.5-flash'", 'Angela chat endpoint');
