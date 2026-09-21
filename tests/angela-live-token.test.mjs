@@ -29,11 +29,10 @@ test('Live token endpoint creates a one-use audio-only constrained token without
       assert.equal(body.uses, 1);
       assert.ok(body.expireTime);
       assert.ok(body.newSessionExpireTime);
-      assert.equal(body.bidiGenerateContentSetup.model, 'models/gemini-3.1-flash-live-preview');
-      assert.deepEqual(body.bidiGenerateContentSetup.generationConfig.responseModalities, ['AUDIO']);
-      assert.equal(body.bidiGenerateContentSetup.generationConfig.speechConfig.voiceConfig.prebuiltVoiceConfig.voiceName, 'Aoede');
-      assert.match(body.bidiGenerateContentSetup.systemInstruction.parts[0].text, /adult female speech renderer/i);
-      assert.equal(body.liveConnectConstraints, undefined);
+      assert.equal(body.liveConnectConstraints.model, 'models/gemini-3.8-live');
+      assert.deepEqual(body.liveConnectConstraints.config.responseModalities, ['AUDIO']);
+      assert.deepEqual(body.liveConnectConstraints.config.sessionResumption, {});
+      assert.equal(body.bidiGenerateContentSetup, undefined);
       return Response.json({ name: 'auth_tokens/test-ephemeral-token' });
     };
 
@@ -42,7 +41,7 @@ test('Live token endpoint creates a one-use audio-only constrained token without
     assert.equal(response.headers.get('cache-control'), 'no-store');
     const data = await response.json();
     assert.equal(data.token, 'auth_tokens/test-ephemeral-token');
-    assert.equal(data.model, 'gemini-3.1-flash-live-preview');
+    assert.equal(data.model, 'gemini-3.8-live');
     assert.ok(!JSON.stringify(data).includes('secret-test-key'));
   } finally {
     globalThis.fetch = original;

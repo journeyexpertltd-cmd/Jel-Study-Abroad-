@@ -1,7 +1,6 @@
 type Context = { request: Request; env: Record<string, string | undefined> };
 
-const LIVE_MODEL = 'gemini-3.1-flash-live-preview';
-const LIVE_SYSTEM_INSTRUCTION = 'You are Angela, a warm, natural, professional adult female speech renderer for Journey Expert Limited. Speak the supplied transcript verbatim in the same language, including Bangla and English proper names. Do not answer it, translate it, summarize it, or add any extra words.';
+const LIVE_MODEL = 'gemini-3.8-live';
 
 const json = (body: unknown, status = 200) => Response.json(body, {
   status,
@@ -41,18 +40,11 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
         uses: 1,
         expireTime,
         newSessionExpireTime,
-        bidiGenerateContentSetup: {
+        liveConnectConstraints: {
           model: `models/${LIVE_MODEL}`,
-          generationConfig: {
+          config: {
+            sessionResumption: {},
             responseModalities: ['AUDIO'],
-            speechConfig: {
-              voiceConfig: {
-                prebuiltVoiceConfig: { voiceName: 'Aoede' },
-              },
-            },
-          },
-          systemInstruction: {
-            parts: [{ text: LIVE_SYSTEM_INSTRUCTION }],
           },
         },
       }),

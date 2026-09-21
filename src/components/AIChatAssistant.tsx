@@ -211,25 +211,23 @@ export function AIChatAssistant() {
 
   // Text-to-speech engine with natural voice matching
   const speakText = useCallback(async (text: string, messageId?: string) => {
-    // Start Chrome audio activation immediately while the user gesture is still active.
+    // Unlock Web Audio during the user's gesture so async cloud playback remains allowed.
     const audioUnlockPromise = unlockAudio();
     const attempt = ++speechAttemptRef.current;
     stopServerAudio();
+
     if (typeof window === "undefined" || !window.speechSynthesis) {
       setErrorMessage("Voice output is not supported in this browser. You can still chat by text.");
       setVoiceState("ERROR");
       return;
     }
 
-    // Barge-in: interrupt previous speech
     window.speechSynthesis.cancel();
-
     if (!enabledRef.current) {
       setVoiceState("READY");
       return;
     }
 
-    // Clean text: strip markdown syntax, links, emojis for clear auditory playback
     const cleanSpeech = text
       .replace(/[*#_~`>]/g, "")
       .replace(/https?:\/\/\S+/g, "")
@@ -243,20 +241,11 @@ export function AIChatAssistant() {
     }
 
     try {
-      const utterance = new SpeechSynthesisUtterance(cleanSpeech);
-      currentUtteranceRef.current = utterance;
-
-      const hasBangla = /[\u0980-\u09FF]/.test(cleanSpeech);
-      utterance.lang = hasBangla ? "bn-BD" : "en-US";
-      utterance.rate = 1.0;
-      utterance.pitch = 1.0;
-
-      // Select high quality voices
+      const wantsBanglaVoice = isBanglaText(cleanSpeech) || languageMode === "bn";
       let voices = window.speechSynthesis.getVoices();
-      const matchesBangla = (v: SpeechSynthesisVoice) => /^bn(?:[-_]|$)/i.test(v.lang) || /bangla|bengali/i.test(v.name);
-      // Bangla uses server TTS, so never delay it waiting for a local OS Bengali voice.
-      if (!hasBangla && !voices.length) {
-        // Browsers may expose their voices after the first getVoices() call.
+
+      // Chromium/Safari often populate voices asynchronously after the first call.
+      if (!voices.length) {
         await new Promise<void>((resolve) => {
           const synthesis = window.speechSynthesis;
           const finish = () => {
@@ -265,30 +254,84 @@ export function AIChatAssistant() {
             resolve();
           };
           const onVoices = () => {
-            const available = synthesis.getVoices();
-            if (available.length > 0) finish();
+            if (synthesis.getVoices().length > 0) finish();
           };
-          const timeout = setTimeout(finish, 1500);
+          const timeout = window.setTimeout(finish, 1200);
           synthesis.addEventListener("voiceschanged", onVoices);
           onVoices();
         });
         voices = window.speechSynthesis.getVoices();
       }
+
       if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
-      if (hasBangla) {
-        // Use the fixed server TTS voice first for Bengali so Auto/Bangla never picks a random local male voice.
+
+      const matchesBangla = (voice: SpeechSynthesisVoice) =>
+        /^bn(?:[-_]|$)/i.test(voice.lang) || /bangla|bengali/i.test(voice.name);
+      const femaleName = /female|woman|nabanita|zira|aria|jenny|sonia|samantha|victoria|karen|moira|fiona|ava|allison|susan|kathy|heera|google.*bangla/i;
+
+      const speakWithBrowser = (utterance: SpeechSynthesisUtterance, voice?: SpeechSynthesisVoice) => {
+        if (voice) {
+          utterance.voice = voice;
+          utterance.lang = voice.lang;
+        }
+        currentUtteranceRef.current = utterance;
+        utterance.onstart = () => {
+          if (currentUtteranceRef.current !== utterance) return;
+          setVoiceState("SPEAKING");
+          setErrorMessage(null);
+          if (messageId) setActiveSpeakingId(messageId);
+        };
+        utterance.onend = () => {
+          if (currentUtteranceRef.current !== utterance) return;
+          currentUtteranceRef.current = null;
+          setVoiceState("READY");
+          setActiveSpeakingId(null);
+        };
+        utterance.onerror = (event) => {
+          if (currentUtteranceRef.current !== utterance) return;
+          currentUtteranceRef.current = null;
+          setActiveSpeakingId(null);
+          if (event.error === "canceled" || event.error === "interrupted") {
+            setVoiceState("READY");
+            return;
+          }
+          setVoiceState("ERROR");
+          setErrorMessage(wantsBanglaVoice
+            ? "বাংলা কণ্ঠটি চালানো যায়নি। Listen চেপে আবার চেষ্টা করুন।"
+            : "Voice playback failed. Please press Listen and try again.");
+        };
+        window.speechSynthesis.speak(utterance);
+      };
+
+      const utterance = new SpeechSynthesisUtterance(cleanSpeech);
+      utterance.lang = wantsBanglaVoice ? "bn-BD" : "en-US";
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
+
+      if (wantsBanglaVoice) {
+        // Free-first path: use a device/browser Bengali voice immediately when available.
+        // Prefer a likely female voice, but keep any Bengali voice as a no-quota resilience fallback.
+        const localBanglaVoice =
+          voices.find((voice) => matchesBangla(voice) && femaleName.test(voice.name)) ||
+          voices.find(matchesBangla);
+
+        if (localBanglaVoice) {
+          speakWithBrowser(utterance, localBanglaVoice);
+          return;
+        }
+
+        // No Bengali system voice: fall back to the same-origin Gemini Live/TTS bridge.
         currentUtteranceRef.current = null;
         const controller = new AbortController();
         serverSpeechRef.current = controller;
-        const timeout = setTimeout(() => controller.abort(), 30000);
+        const timeout = window.setTimeout(() => controller.abort(), 30000);
         setVoiceState("THINKING");
         setErrorMessage(null);
+
         try {
           const blob = await fetchAngelaSpeech(cleanSpeech, controller.signal);
           if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
 
-          // Prefer the AudioContext unlocked by the user's open/send/mic gesture.
-          // This avoids Chrome dropping async TTS playback after user activation expires.
           const context = await audioUnlockPromise;
           let playedWithWebAudio = false;
           if (context?.state === "running") {
@@ -324,11 +367,15 @@ export function AIChatAssistant() {
             audio.volume = 1;
             audio.onended = () => {
               if (serverAudioRef.current !== audio) return;
-              stopServerAudio(); setVoiceState("READY"); setActiveSpeakingId(null);
+              stopServerAudio();
+              setVoiceState("READY");
+              setActiveSpeakingId(null);
             };
             audio.onerror = () => {
               if (serverAudioRef.current !== audio) return;
-              stopServerAudio(); setVoiceState("ERROR"); setActiveSpeakingId(null);
+              stopServerAudio();
+              setVoiceState("ERROR");
+              setActiveSpeakingId(null);
               setErrorMessage("কণ্ঠ চালানো যায়নি। Listen চেপে আবার চেষ্টা করুন।");
             };
             await audio.play();
@@ -339,107 +386,27 @@ export function AIChatAssistant() {
           }
         } catch (error) {
           if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
-          stopServerAudio(); setActiveSpeakingId(null);
-
-          // Emergency fallback: use only a likely female Bengali system voice.
-          // If one is not available, do not substitute a random male voice.
-          const browserVoice = voices.find((voice) =>
-            matchesBangla(voice) && /nabanita|female|woman|zira|aria|jenny|sonia|samantha|victoria|karen|moira|fiona|ava|allison|susan|kathy/i.test(voice.name)
-          );
-          if (!browserVoice) {
-            currentUtteranceRef.current = null;
-            setVoiceState("ERROR");
-            setErrorMessage("বাংলা কণ্ঠটি সাময়িকভাবে পাওয়া যাচ্ছে না। একটু পরে Listen চাপুন।");
-            return;
-          }
-          utterance.voice = browserVoice;
-          utterance.lang = browserVoice.lang;
-          currentUtteranceRef.current = utterance;
-          utterance.onstart = () => {
-            if (currentUtteranceRef.current !== utterance) return;
-            setVoiceState("SPEAKING");
-            setErrorMessage(null);
-            if (messageId) setActiveSpeakingId(messageId);
-          };
-          utterance.onend = () => {
-            if (currentUtteranceRef.current !== utterance) return;
-            currentUtteranceRef.current = null;
-            setVoiceState("READY");
-            setActiveSpeakingId(null);
-          };
-          utterance.onerror = (event) => {
-            if (currentUtteranceRef.current !== utterance) return;
-            currentUtteranceRef.current = null;
-            setActiveSpeakingId(null);
-            if (event.error === "canceled" || event.error === "interrupted") {
-              setVoiceState("READY");
-              return;
-            }
-            setVoiceState("ERROR");
-            setErrorMessage(voiceErrorMessage(error));
-          };
-          window.speechSynthesis.speak(utterance);
-          return;
+          stopServerAudio();
+          setActiveSpeakingId(null);
+          setVoiceState("ERROR");
+          setErrorMessage(voiceErrorMessage(error));
         } finally {
           clearTimeout(timeout);
           if (serverSpeechRef.current === controller) serverSpeechRef.current = null;
         }
         return;
       }
-      if (voices.length > 0) {
-        if (hasBangla) {
-          const banglaVoice = voices.find(matchesBangla);
-          if (banglaVoice) {
-            utterance.voice = banglaVoice;
-            utterance.lang = banglaVoice.lang;
-          } else {
-            currentUtteranceRef.current = null;
-            setActiveSpeakingId(null);
-            setVoiceState("ERROR");
-            setErrorMessage("এই ব্রাউজারে বাংলা কণ্ঠ পাওয়া যায়নি। বাংলা লেখা পড়তে পারবেন; ইংরেজি শুনতে EN নির্বাচন করে নতুন প্রশ্ন করুন।");
-            return;
-          }
-        } else {
-          const preferredVoice = voices.find(v => 
-            (v.lang.startsWith("en") && (v.name.toLowerCase().includes("female") || v.name.toLowerCase().includes("zira") || v.name.toLowerCase().includes("samantha") || v.name.toLowerCase().includes("google uk english female") || v.name.toLowerCase().includes("natural")))
-          ) || voices.find(v => v.lang.startsWith("en"));
-          if (preferredVoice) utterance.voice = preferredVoice;
-        }
-      }
 
-      utterance.onstart = () => {
-        if (currentUtteranceRef.current !== utterance) return;
-        setVoiceState("SPEAKING");
-        setErrorMessage(null);
-        if (messageId) setActiveSpeakingId(messageId);
-      };
-
-      utterance.onend = () => {
-        if (currentUtteranceRef.current !== utterance) return;
-        setVoiceState("READY");
-        setActiveSpeakingId(null);
-      };
-
-      utterance.onerror = (e) => {
-        if (currentUtteranceRef.current !== utterance) return;
-        // Only set error if not cancelled deliberately (interruption)
-        if (e.error !== "canceled" && e.error !== "interrupted") {
-          console.warn("Speech synthesis notice:", e.error);
-          setErrorMessage("I can still help you by text.");
-          setVoiceState("ERROR");
-        } else {
-          setVoiceState("READY");
-        }
-        setActiveSpeakingId(null);
-      };
-
-      window.speechSynthesis.speak(utterance);
-    } catch (err) {
-      console.warn("Text to speech exception:", err);
+      const preferredEnglishVoice =
+        voices.find((voice) => /^en(?:[-_]|$)/i.test(voice.lang) && /female|zira|aria|jenny|samantha|google uk english female|natural/i.test(voice.name)) ||
+        voices.find((voice) => /^en(?:[-_]|$)/i.test(voice.lang));
+      speakWithBrowser(utterance, preferredEnglishVoice);
+    } catch (error) {
+      console.warn("Text to speech exception:", error);
       setErrorMessage("I can still help you by text.");
       setVoiceState("ERROR");
     }
-  }, [isVoiceEnabled]);
+  }, [isVoiceEnabled, languageMode]);
 
   // Clean speech synthesis on unmount
   useEffect(() => {

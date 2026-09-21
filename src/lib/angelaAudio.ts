@@ -1,6 +1,6 @@
 const MAX_SPEECH_CHARS = 700;
 const MAX_CACHE_ENTRIES = 12;
-const LIVE_FALLBACK_MODEL = 'gemini-3.1-flash-live-preview';
+const LIVE_FALLBACK_MODEL = 'gemini-3.8-live';
 const speechCache = new Map<string, Blob>();
 
 function normalizeSpeechText(text: string): string {

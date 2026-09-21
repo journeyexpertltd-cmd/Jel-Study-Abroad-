@@ -45,7 +45,8 @@ test('Pages chat validates input and provides a Bangla fallback without credenti
   assert.equal(response.status, 200);
   assert.equal(data.mode, 'fallback');
   assert.equal(data.language, 'bn');
-  assert.match(data.reply, /নিরাপদ সহায়তা মোড/);
+  assert.match(data.reply, /[\u0980-\u09FF]/);
+  assert.doesNotMatch(data.reply, /নিরাপদ সহায়তা মোড|লাইভ মডেলের বদলে/);
   assert.doesNotMatch(data.reply, /â|Ã|Â|ï¿½|�|à¦|à§/);
   assert.equal(response.headers.get('cache-control'), 'no-store');
   assert.equal((await onRequest({ request: request({}), env: {} })).status, 400);
