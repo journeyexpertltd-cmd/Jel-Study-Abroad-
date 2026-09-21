@@ -63,6 +63,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
 
     return json({ reply, mode: 'fallback', language: bn ? 'bn' : 'en', retryable: true });
   };
+  // Reuse the working server-side Gemini auth key when deployments expose text and TTS keys separately.
   const apiKey = env.GEMINI_API_KEY?.trim() || env.GEMINI_TTS_API_KEY?.trim();
   if (!apiKey) {
     const studyAiStudioOrigin = (env.STUDY_AI_STUDIO_ORIGIN || 'https://jel-study-abroad.ai.studio').replace(/\/$/, '');
