@@ -1,6 +1,7 @@
 type Env = {
   APP_VERSION?: string;
   GEMINI_API_KEY?: string;
+  GEMINI_TTS_API_KEY?: string;
   SUPABASE_URL?: string;
   SUPABASE_SERVICE_ROLE_KEY?: string;
   SSLCOMMERZ_STORE_ID?: string;
@@ -13,7 +14,7 @@ type PagesContext = {
 
 export const onRequestGet = async ({ env }: PagesContext): Promise<Response> => {
   const checks = {
-    gemini: Boolean(env.GEMINI_API_KEY),
+    gemini: Boolean(env.GEMINI_API_KEY || env.GEMINI_TTS_API_KEY),
     supabase: Boolean(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY),
     sslcommerz: Boolean(
       env.SSLCOMMERZ_STORE_ID && env.SSLCOMMERZ_STORE_PASSWORD,
