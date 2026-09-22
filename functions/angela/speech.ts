@@ -76,7 +76,6 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
         response_format: {
           type: 'audio',
           mime_type: 'audio/wav',
-          sample_rate: 24000,
           delivery: 'inline',
         },
         generation_config: {
