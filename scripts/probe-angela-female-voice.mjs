@@ -79,7 +79,13 @@ async function liveFallback() {
         if (message.setupComplete && !sent) {
           sent = true;
           socket.send(JSON.stringify({
-            realtimeInput: { text: 'Speak this transcript exactly as written:\n' + text },
+            clientContent: {
+              turns: [{
+                role: 'user',
+                parts: [{ text: 'Speak this transcript exactly as written:\n' + text }],
+              }],
+              turnComplete: true,
+            },
           }));
           return;
         }
