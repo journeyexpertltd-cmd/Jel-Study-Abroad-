@@ -24,7 +24,6 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   if (!key) return json({ error: 'live_voice_not_configured' }, 503);
 
   const expireTime = new Date(Date.now() + 5 * 60 * 1000).toISOString();
-  const newSessionExpireTime = new Date(Date.now() + 60 * 1000).toISOString();
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 8000);
 
@@ -39,7 +38,6 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
       body: JSON.stringify({
         uses: 1,
         expireTime,
-        newSessionExpireTime,
         liveConnectConstraints: {
           model: 'models/gemini-3.8-live',
           config: {
@@ -55,7 +53,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
       if (upstream.status === 429) {
         return json({ error: 'live_voice_quota_exceeded' }, 429);
       }
-      return json({ error: 'live_voice_unavailable' }, 424);
+      return json({ error: 'live_voice_unavailable', providerStatus: upstream.status }, 424);
     }
 
     const data: any = await upstream.json();

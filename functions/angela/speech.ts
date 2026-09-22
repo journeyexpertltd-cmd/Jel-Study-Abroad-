@@ -73,11 +73,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
       body: JSON.stringify({
         model,
         input: 'Speak the following transcript exactly in its original language, naturally, warmly, and clearly. Do not translate, summarize, answer, or add words:\n' + text,
-        response_format: {
-          type: 'audio',
-          mime_type: 'audio/wav',
-          delivery: 'inline',
-        },
+        response_format: { type: 'audio' },
         generation_config: {
           speech_config: [{ voice: 'Kore' }],
         },
@@ -94,9 +90,10 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
     if (!audio?.data || audio.data.length > 12000000) return json('voice_provider_unavailable', 503);
     const raw = Uint8Array.from(atob(audio.data), character => character.charCodeAt(0));
     if (!raw.length) return json('voice_provider_unavailable', 503);
+    const wav = pcmToWav(raw);
 
-    return new Response(raw, { headers: {
-      'Content-Type': audio.mimeType || 'audio/wav',
+    return new Response(wav, { headers: {
+      'Content-Type': 'audio/wav',
       'Cache-Control': 'no-store',
       'X-Content-Type-Options': 'nosniff',
       'X-Angela-Voice-Model': model,

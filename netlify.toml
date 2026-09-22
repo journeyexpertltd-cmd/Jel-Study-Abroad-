@@ -43,6 +43,12 @@
   to = "/.netlify/functions/api/:splat"
   status = 200
 
+# Angela speech route must reach the Express/Netlify backend just like /api/*.
+[[redirects]]
+  from = "/angela/speech"
+  to = "/.netlify/functions/api/angela/speech"
+  status = 200
+
 # Explicit routes
 [[redirects]]
   from = "/about"
