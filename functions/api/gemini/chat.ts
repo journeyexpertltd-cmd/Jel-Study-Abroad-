@@ -115,27 +115,34 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
     }
   };
 
-  // Prefer Gemini 3.8 Flash; use Gemini 3.5 Flash only on bounded provider failure.
-  let response: Response | null = null;
-  let providerModel = '';
+  // Prefer Gemini 3.8 Flash. If it returns HTTP 200 but unusable content
+  // (empty, truncated, or wrong-language), continue to Gemini 3.5 instead of
+  // collapsing immediately into canned fallback.
   for (const model of candidateModels) {
-    response = await makeRequest(model, model === 'gemini-3.8-flash' ? 7500 : 5500);
-    if (response?.ok) {
-      providerModel = model;
-      break;
+    const response = await makeRequest(model, model === 'gemini-3.8-flash' ? 8500 : 6500);
+    if (!response?.ok) continue;
+
+    try {
+      const data: any = await response.json();
+      const candidate = data?.candidates?.[0];
+      if (!candidate) continue;
+      if (candidate.finishReason && candidate.finishReason !== 'STOP') continue;
+
+      const reply = candidate.content?.parts
+        ?.filter((p: any) => !p.thought && typeof p.text === 'string')
+        .map((p: any) => p.text)
+        .join('')
+        .trim();
+
+      if (!reply) continue;
+      if (bn && !/[\u0980-\u09FF]/.test(reply)) continue;
+      if (!bn && /[\u0980-\u09FF]/.test(reply)) continue;
+
+      return json({ reply, mode: 'ai', language: bn ? 'bn' : 'en', providerModel: model });
+    } catch {
+      continue;
     }
   }
-  if (!response || !response.ok) return fallback();
 
-  try {
-    const data: any = await response.json();
-    const candidate = data?.candidates?.[0];
-    // Never show an unfinished sentence or provider reasoning as a final answer.
-    if (candidate?.finishReason && candidate.finishReason !== 'STOP') return fallback();
-    const reply = candidate?.content?.parts?.filter((p: any) => !p.thought && typeof p.text === 'string').map((p: any) => p.text).join('').trim();
-    if ((bn && reply && !/[\u0980-\u09FF]/.test(reply)) || (!bn && reply && /[\u0980-\u09FF]/.test(reply))) return fallback();
-    return reply ? json({ reply, mode: 'ai', language: bn ? 'bn' : 'en', providerModel }) : fallback();
-  } catch {
-    return fallback();
-  }
+  return fallback();
 }
