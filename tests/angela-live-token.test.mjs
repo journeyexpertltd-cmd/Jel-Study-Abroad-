@@ -28,7 +28,7 @@ test('Live token endpoint creates a one-use short-lived token without exposing t
       const body = JSON.parse(options.body);
       assert.equal(body.uses, 1);
       assert.ok(body.expireTime);
-      assert.ok(body.newSessionExpireTime);
+      assert.equal(body.newSessionExpireTime, undefined);
       assert.equal(body.liveConnectConstraints.model, 'models/gemini-3.8-live');
       assert.deepEqual(body.liveConnectConstraints.config.sessionResumption, {});
       assert.deepEqual(body.liveConnectConstraints.config.responseModalities, ['AUDIO']);
