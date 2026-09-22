@@ -37,7 +37,7 @@ requireText(speech, "audio/wav", 'Angela TTS endpoint');
 
 requireText(chat, "const candidateModels = ['gemini-3.8-flash', 'gemini-3.5-flash']", 'Angela chat endpoint');
 requireText(chat, "for (const model of candidateModels)", 'Angela chat endpoint');
-requireText(chat, "thinkingConfig: { thinkingLevel: 'low' }", 'Angela chat endpoint');
+requireText(chat, "generationConfig.thinkingConfig = { thinkingLevel: 'low' }", 'Angela chat endpoint');
 requireText(chat, "maxOutputTokens: fromVoice ? 768 : 1024", 'Angela chat endpoint');
 requireText(chat, "GOOGLE_SEARCH_GROUNDING === 'true'", 'Angela chat endpoint');
 requireText(chat, "'gemini-3.5-flash'", 'Angela chat endpoint');
