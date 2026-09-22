@@ -12,7 +12,6 @@ const json = (body: unknown, status = 200) => Response.json(body, {
 
 export async function onRequest({ request, env }: Context): Promise<Response> {
   if (request.method !== 'POST') return new Response(null, { status: 405, headers: { Allow: 'POST' } });
-
   const url = new URL(request.url);
   const origin = request.headers.get('origin');
   if (origin && origin !== url.origin) return json({ error: 'origin_not_allowed' }, 403);
@@ -21,7 +20,6 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   if (!key) return json({ error: 'live_voice_not_configured' }, 503);
 
   const expireTime = new Date(Date.now() + 5 * 60 * 1000).toISOString();
-  const newSessionExpireTime = new Date(Date.now() + 60 * 1000).toISOString();
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 8000);
 
@@ -36,23 +34,12 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
       body: JSON.stringify({
         uses: 1,
         expireTime,
-        newSessionExpireTime,
-        bidiGenerateContentSetup: {
+        liveConnectConstraints: {
           model: 'models/gemini-3.8-live',
-          generationConfig: {
+          config: {
+            sessionResumption: {},
             responseModalities: ['AUDIO'],
-            speechConfig: {
-              voiceConfig: {
-                prebuiltVoiceConfig: { voiceName: 'Aoede' },
-              },
-            },
           },
-          systemInstruction: {
-            parts: [{
-              text: 'You are Angela, a professional adult female speech renderer. Speak the supplied transcript verbatim in the same language, including Bangla or English. Do not translate, summarize, answer, or add words.',
-            }],
-          },
-          sessionResumption: {},
         },
       }),
     });
@@ -68,11 +55,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
     const token = typeof data?.name === 'string' ? data.name : '';
     if (!token) return json({ error: 'live_voice_unavailable' }, 424);
 
-    return json({
-      token,
-      model: LIVE_MODEL,
-      expiresAt: expireTime,
-    });
+    return json({ token, model: LIVE_MODEL, expiresAt: expireTime });
   } catch (error) {
     if (controller.signal.aborted) return json({ error: 'live_voice_timeout' }, 503);
     console.warn('Angela Live token error', error instanceof Error ? error.message : 'unknown');
