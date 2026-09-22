@@ -169,3 +169,32 @@ test('Study Abroad Angela retries with the secondary Gemini credential', async (
   assert.equal(seen[0], 'primary-key');
   assert.ok(seen.includes('secondary-key'));
 });
+
+
+test('Study Abroad reuses the shared corporate Angela brain only after local AI paths degrade', async () => {
+  globalThis.fetch = async (url) => {
+    const target = String(url);
+    if (target.includes('generativelanguage.googleapis.com')) return new Response(null, { status: 429 });
+    if (target.includes('jel-study-abroad.ai.studio')) {
+      return Response.json({ reply: 'যাচাইকৃত স্থানীয় fallback', mode: 'fallback' });
+    }
+    if (target === 'https://journeyexpertltd.com/angela/chat') {
+      return Response.json({
+        reply: 'ইউকেতে মাস্টার্সের জন্য একাডেমিক ট্রান্সক্রিপ্ট, সার্টিফিকেট, ইংরেজি দক্ষতার প্রমাণ এবং বিশ্ববিদ্যালয়ভেদে প্রয়োজনীয় অতিরিক্ত কাগজপত্র প্রস্তুত করুন।',
+        language: 'bn',
+        mode: 'ai',
+        providerModel: 'gemini-3.8-flash',
+      });
+    }
+    throw new Error('unexpected URL: ' + target);
+  };
+  const response = await onRequest({
+    request: request({ message: 'ami UK te masters korte chai, ki documents lagbe?', language: 'bn' }),
+    env: { GEMINI_API_KEY: 'quota-key' },
+  });
+  const data = await response.json();
+  assert.equal(data.mode, 'ai');
+  assert.equal(data.language, 'bn');
+  assert.match(data.providerModel, /^jel-corporate-/);
+  assert.match(data.reply, /[\u0980-\u09FF]/);
+});
