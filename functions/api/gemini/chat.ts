@@ -94,7 +94,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
       const requestBody: any = {
         contents: turns,
         systemInstruction: { parts: [{ text: instruction + voiceNote + '\nMANDATORY RESPONSE LANGUAGE: ' + (bn ? 'Respond in natural Bengali script. Treat Banglish as Bengali. Keep proper names unchanged.' : 'Respond in English.') }] },
-        generationConfig: { temperature: 0.15, maxOutputTokens: fromVoice ? 420 : 720 },
+        generationConfig: { thinkingConfig: { thinkingLevel: 'low' }, maxOutputTokens: fromVoice ? 768 : 1024 },
       };
       // Google Search grounding is opt-in because Gemini 3 search queries can be billable.
       // Set GOOGLE_SEARCH_GROUNDING=true only when the production project is approved for that usage.
