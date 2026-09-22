@@ -1,8 +1,8 @@
 type Context = { request: Request; env: Record<string, string | undefined> };
 
 const instruction = `You are Angela, the official AI Study Abroad assistant for JEL Study Abroad, a brand of Journey Expert Ltd., Bangladesh, on journeyexpertbd.com.
-This website is education-focused. Help with study-abroad counselling, profile assessment, country/course/university selection, admissions, scholarships, English-test guidance, academic documents, SOP guidance, student-visa document preparation, pre-departure and post-arrival guidance in concise Bangla or English matching the user's language.
-Understand Banglish (Bengali written in Latin letters) as Bengali and answer naturally in Bengali script unless the user explicitly asks for English.
+This website is education-focused. Help with study-abroad counselling, profile assessment, country/course/university selection, admissions, scholarships, English-test guidance, academic documents, SOP guidance, student-visa document preparation, pre-departure and post-arrival guidance.
+The visitor explicitly selects either Bangla or English. The selector is authoritative: reply only in Bengali script when Bangla is selected, and only in English when English is selected. Never auto-detect or switch languages.
 Never invent university partnerships, prices, live availability, admission results, visa rules or processing times.
 Visa and admission decisions belong to the relevant authorities. Never guarantee outcomes.
 Do not request passport numbers, payment details, passwords or OTPs. Do not claim a booking, payment or handoff has completed.
@@ -26,11 +26,9 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
     .slice(-6).map((m: any) => ({ role: m.sender === 'user' ? 'user' : 'model', parts: [{ text: m.text.slice(0, 2500) }] }));
   if (!turns.length || turns[turns.length - 1].role !== 'user') return json({ error: 'User message required' }, 400);
   const last = turns[turns.length - 1].parts[0].text;
-  const hasBanglaScript = /[\u0980-\u09FF]/.test(last);
-  const looksBanglish = /\b(ami|amar|amake|apni|apnar|tumi|tomar|chai|jabo|jete|koto|kivabe|ki|keno|kobe|hobe|korbo|korte|lagbe|apnader|kothay|banglay|bolen|diben|pari|parbo|porte|bidesh)\b/i.test(last);
   const fromVoice = body.source === 'voice';
-  // Actual Bengali script always wins over a stale/manual UI language selection.
-  const bn = hasBanglaScript || body.language === 'bn' || (body.language !== 'en' && looksBanglish);
+  // The visible selector is authoritative: only explicit Bangla or English.
+  const bn = body.language !== 'en';
   const fallback = () => {
     const query = last.toLowerCase();
     const asksContact = /যোগাযোগ|ফোন|নাম্বার|হোয়াটসঅ্যাপ|ঠিকানা|অফিস|contact|phone|address|office/.test(query);
@@ -131,7 +129,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
     // Never show an unfinished sentence or provider reasoning as a final answer.
     if (candidate?.finishReason && candidate.finishReason !== 'STOP') return fallback();
     const reply = candidate?.content?.parts?.filter((p: any) => !p.thought && typeof p.text === 'string').map((p: any) => p.text).join('').trim();
-    if (bn && reply && !/[\u0980-\u09FF]/.test(reply)) return fallback();
+    if ((bn && reply && !/[\u0980-\u09FF]/.test(reply)) || (!bn && reply && /[\u0980-\u09FF]/.test(reply))) return fallback();
     return reply ? json({ reply, mode: 'ai', language: bn ? 'bn' : 'en', providerModel }) : fallback();
   } catch {
     return fallback();
