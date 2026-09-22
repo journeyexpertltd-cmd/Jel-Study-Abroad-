@@ -38,7 +38,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   const key = (env.GEMINI_TTS_API_KEY || env.GEMINI_API_KEY)?.trim();
   if (!key || env.ANGELA_SERVER_VOICE === 'off') return json('voice_not_configured', 503);
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 25000);
+  const timer = setTimeout(() => controller.abort(), 7000);
   const abort = () => controller.abort();
   request.signal.addEventListener('abort', abort, { once: true });
   try {
