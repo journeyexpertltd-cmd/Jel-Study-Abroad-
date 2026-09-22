@@ -51,7 +51,7 @@ requireText(chat, "'gemini-3.5-flash'", 'Angela chat endpoint');
 forbidText(chat, "'gemini-2.5-flash'", 'Angela chat endpoint');
 forbidText(chat, "'gemini-flash-latest'", 'Angela chat endpoint');
 
-requireText(token, "request.headers.get('origin') !== url.origin", 'Angela Live token');
+requireText(token, "origin && origin !== url.origin", 'Angela Live token');
 requireText(token, "bidiGenerateContentSetup", 'Angela Live token');
 forbidText(token, "liveConnectConstraints", 'Angela Live token');
 requireText(token, "model: 'models/gemini-3.8-live'", 'Angela Live token');
