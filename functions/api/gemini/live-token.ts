@@ -24,7 +24,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   if (!key) return json({ error: 'live_voice_not_configured' }, 503);
 
   const expireTime = new Date(Date.now() + 5 * 60 * 1000).toISOString();
-  const newSessionExpireTime = new Date(Date.now() + 2 * 60 * 1000).toISOString();
+  const newSessionExpireTime = new Date(Date.now() + 60 * 1000).toISOString();
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 8000);
 
@@ -40,7 +40,13 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
         uses: 1,
         expireTime,
         newSessionExpireTime,
-
+        liveConnectConstraints: {
+          model: 'models/gemini-3.8-live',
+          config: {
+            sessionResumption: {},
+            responseModalities: ['AUDIO'],
+          },
+        },
       }),
     });
 
