@@ -65,8 +65,11 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
     return json({ reply, mode: 'fallback', language: bn ? 'bn' : 'en', retryable: true });
   };
   // Reuse the working server-side Gemini auth key when deployments expose text and TTS keys separately.
-  const apiKey = env.GEMINI_API_KEY?.trim() || env.GEMINI_TTS_API_KEY?.trim();
-  if (!apiKey) {
+  const apiKeys = Array.from(new Set([
+    env.GEMINI_API_KEY?.trim(),
+    env.GEMINI_TTS_API_KEY?.trim(),
+  ].filter((key): key is string => Boolean(key))));
+  if (!apiKeys.length) {
     const studyAiStudioOrigin = (env.STUDY_AI_STUDIO_ORIGIN || 'https://jel-study-abroad.ai.studio').replace(/\/$/, '');
     try {
       const response = await fetch(`${studyAiStudioOrigin}/api/gemini/chat`, {
@@ -85,7 +88,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   // Gemini 3.8 Flash is primary. Gemini 3.5 Flash is a bounded AI fallback
   // so a model-specific quota/outage does not collapse Angela into canned text.
   const candidateModels = ['gemini-3.8-flash', 'gemini-3.5-flash', 'gemini-2.5-flash'];
-  const makeRequest = async (model: string, timeoutMs: number): Promise<Response | null> => {
+  const makeRequest = async (model: string, apiKey: string, timeoutMs: number): Promise<Response | null> => {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
@@ -119,28 +122,30 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   // (empty, truncated, or wrong-language), continue to Gemini 3.5 instead of
   // collapsing immediately into canned fallback.
   for (const model of candidateModels) {
-    const response = await makeRequest(model, model === 'gemini-3.8-flash' ? 8500 : 6500);
-    if (!response?.ok) continue;
+    for (const apiKey of apiKeys) {
+      const response = await makeRequest(model, apiKey, model === 'gemini-3.8-flash' ? 8500 : 6500);
+      if (!response?.ok) continue;
 
-    try {
-      const data: any = await response.json();
-      const candidate = data?.candidates?.[0];
-      if (!candidate) continue;
-      if (candidate.finishReason && candidate.finishReason !== 'STOP') continue;
+      try {
+        const data: any = await response.json();
+        const candidate = data?.candidates?.[0];
+        if (!candidate) continue;
+        if (candidate.finishReason && candidate.finishReason !== 'STOP') continue;
 
-      const reply = candidate.content?.parts
-        ?.filter((p: any) => !p.thought && typeof p.text === 'string')
-        .map((p: any) => p.text)
-        .join('')
-        .trim();
+        const reply = candidate.content?.parts
+          ?.filter((p: any) => !p.thought && typeof p.text === 'string')
+          .map((p: any) => p.text)
+          .join('')
+          .trim();
 
-      if (!reply) continue;
-      if (bn && !/[\u0980-\u09FF]/.test(reply)) continue;
-      if (!bn && /[\u0980-\u09FF]/.test(reply)) continue;
+        if (!reply) continue;
+        if (bn && !/[\u0980-\u09FF]/.test(reply)) continue;
+        if (!bn && /[\u0980-\u09FF]/.test(reply)) continue;
 
-      return json({ reply, mode: 'ai', language: bn ? 'bn' : 'en', providerModel: model });
-    } catch {
-      continue;
+        return json({ reply, mode: 'ai', language: bn ? 'bn' : 'en', providerModel: model });
+      } catch {
+        continue;
+      }
     }
   }
 
