@@ -22,13 +22,13 @@ requireText(audio, "fetch('/api/gemini/live-token'", 'Angela browser audio');
 requireText(audio, "voiceName: 'Aoede'", 'Angela browser audio');
 requireText(audio, "gemini-3.8-live", 'Angela browser audio');
 requireText(audio, "fetch('/angela/speech'", 'Angela browser audio');
-requireText(audio, "window.setTimeout(() => ttsController.abort(), 4500)", 'Angela browser audio');
+requireText(audio, "window.setTimeout(() => ttsController.abort(), 9000)", 'Angela browser audio');
 requireText(audio, "return await fetchAngelaLiveSpeech(speechText, signal)", 'Angela browser audio');
 requireText(audio, "live_voice_timeout')), 3500", 'Angela browser audio');
 
 requireText(speech, "env.GEMINI_TTS_API_KEY || env.GEMINI_API_KEY", 'Angela TTS endpoint');
 requireText(speech, "env.ANGELA_SERVER_VOICE === 'off'", 'Angela TTS endpoint');
-requireText(speech, "setTimeout(() => controller.abort(), 25000)", 'Angela TTS endpoint');
+requireText(speech, "setTimeout(() => controller.abort(), 7000)", 'Angela TTS endpoint');
 requireText(speech, "gemini-3.1-flash-tts-preview", 'Angela TTS endpoint');
 requireText(speech, "voiceName: 'Kore'", 'Angela TTS endpoint');
 requireText(speech, "responseModalities: ['AUDIO']", 'Angela TTS endpoint');

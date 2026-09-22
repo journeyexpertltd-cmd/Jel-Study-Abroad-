@@ -140,8 +140,10 @@ export function AIChatAssistant() {
     requestRef.current?.abort();
     requestRef.current = null;
     if (recognitionRef.current) {
-      recognitionRef.current.onend = null;
-      recognitionRef.current.abort();
+      const recognition = recognitionRef.current;
+      recognitionRef.current = null;
+      recognition.onend = null;
+      try { recognition.abort(); } catch { /* recognition already ended */ }
     }
   };
 
@@ -536,7 +538,10 @@ export function AIChatAssistant() {
 
     try {
       if (recognitionRef.current) {
-        recognitionRef.current.abort();
+        const previous = recognitionRef.current;
+        recognitionRef.current = null;
+        previous.onend = null;
+        try { previous.abort(); } catch { /* previous recognition already ended */ }
       }
 
       const recognition = new SpeechRec();
@@ -573,6 +578,7 @@ export function AIChatAssistant() {
       };
 
       recognition.onerror = (event: any) => {
+        if (recognitionRef.current === recognition) recognitionRef.current = null;
         console.warn("Speech recognition event:", event.error);
         if (event.error === "not-allowed") {
           // Phase 12 & Phase 4: Microphone permission denied
@@ -589,6 +595,7 @@ export function AIChatAssistant() {
       };
 
       recognition.onend = () => {
+        if (recognitionRef.current === recognition) recognitionRef.current = null;
         const spoken = finalTranscript.trim() || latestInterim.trim();
         if (spoken) {
           handleSendMessage(spoken, true);
@@ -607,9 +614,9 @@ export function AIChatAssistant() {
   };
 
   const stopListening = () => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-    }
+    const recognition = recognitionRef.current;
+    recognitionRef.current = null;
+    try { recognition?.stop(); } catch { /* recognition already ended */ }
     setVoiceState("READY");
   };
 
@@ -631,34 +638,34 @@ export function AIChatAssistant() {
         id: `welcome-${Date.now()}`,
         sender: "assistant",
         text: languageMode === "bn"
-          ? "আসসালামু আলাইকুম! কথোপকথন নতুন করে শুরু হয়েছে। এয়ার টিকিট, ভিজিট বা মেডিকেল ভিসা, ট্যুর প্যাকেজ, ওমরাহ কিংবা উচ্চশিক্ষা নিয়ে প্রশ্ন করুন।"
-          : "Assalamu Alaikum! Conversation refreshed. Ask me anything about flight tickets, visit visas, medical visas, tour packages, Umrah, or study abroad programs!",
+          ? "আসসালামু আলাইকুম! কথোপকথন নতুন করে শুরু হয়েছে। Study Abroad, বিশ্ববিদ্যালয় ও কোর্স নির্বাচন, admission, scholarship, SOP, English test এবং student visa documents নিয়ে প্রশ্ন করুন।"
+          : "Assalamu Alaikum! Conversation refreshed. Ask me about study destinations, universities, courses, admissions, scholarships, SOPs, English tests, and student-visa documents.",
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
       }
     ]);
   };
 
-  // Verified quick inquiry prompts covering all JEL core verticals
+  // Study-abroad-only quick inquiry prompts
   const quickPrompts = [
     {
-      en: "Need Dubai / Bangkok flight ticket",
-      bn: "দুবাই বা ব্যাংককের এয়ার টিকিট ফেয়ার কেমন?",
-      icon: Plane
+      en: "UK university and intake options",
+      bn: "UK-তে কোন university ও intake আমার জন্য উপযুক্ত?",
+      icon: Award
     },
     {
-      en: "Tourist visa requirements for Malaysia / Thailand",
-      bn: "মালয়েশিয়া / থাইল্যান্ডের ভিজিট ভিসা রিকোয়ারমেন্ট?",
-      icon: Compass
-    },
-    {
-      en: "VIP Umrah packages for 2026/2027",
-      bn: "২০২৬/২০২৭ সালের ওমরাহ প্যাকেজের বিবরণ?",
+      en: "Canada study requirements and documents",
+      bn: "Canada study-এর requirements ও documents কী?",
       icon: Building2
     },
     {
-      en: "UK & Canada Study Abroad Intake details",
-      bn: "ইউকে এবং কানাডা স্টাডি ইনটেক রিকোয়ারমেন্ট?",
-      icon: Award
+      en: "Scholarship and tuition guidance",
+      bn: "Scholarship ও tuition planning কীভাবে করব?",
+      icon: Compass
+    },
+    {
+      en: "SOP, IELTS and student visa documents",
+      bn: "SOP, IELTS এবং student visa documents সম্পর্কে বলুন",
+      icon: Plane
     }
   ];
 
@@ -691,7 +698,7 @@ export function AIChatAssistant() {
   };
 
   return (
-    <div className="fixed bottom-6 right-4 sm:right-6 z-50 font-sans" id="angela-ai-voice-assistant-widget">
+    <div className="fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] right-3 sm:right-6 z-50 font-sans" id="angela-ai-voice-assistant-widget">
       {/* Floating Action Button with Angela Avatar & Glowing Voice Wave */}
       {!isOpen && (
         <button
@@ -700,8 +707,8 @@ export function AIChatAssistant() {
             setIsOpen(true);
             if (isVoiceEnabled && messages.length === 1) {
               speakText(languageMode === "bn"
-                ? "আসসালামু আলাইকুম! আমি অ্যাঞ্জেলা। ভ্রমণ বা বিদেশে উচ্চশিক্ষা নিয়ে আপনাকে কীভাবে সাহায্য করতে পারি?"
-                : "Assalamu Alaikum! I am Angela, your official AI Voice Assistant for Journey Expert Limited. How can I assist you with travel or study abroad today?", "welcome");
+                ? "আসসালামু আলাইকুম! আমি অ্যাঞ্জেলা, JEL Study Abroad-এর AI সহকারী। বিদেশে উচ্চশিক্ষা নিয়ে আপনাকে কীভাবে সাহায্য করতে পারি?"
+                : "Assalamu Alaikum! I am Angela, the JEL Study Abroad AI assistant. How can I help with your study-abroad plans today?", "welcome");
             }
           }}
           className="flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-gradient-to-tr from-[#0B5D3B] via-[#0D7A4D] to-[#D4AF37] text-white shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 relative group cursor-pointer border-2 border-white/50"
@@ -747,8 +754,8 @@ export function AIChatAssistant() {
           lang={isBanglaMode ? "bn-BD" : "en"}
           className={`bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200/90 dark:border-slate-800 flex flex-col overflow-hidden transition-all duration-300 animate-in zoom-in-95 ${
             isMaximized 
-              ? "w-[calc(100vw-24px)] sm:w-[650px] max-w-[650px] h-[88vh] max-h-[88vh]" 
-              : "w-[calc(100vw-24px)] sm:w-[420px] max-w-[420px] h-[640px] max-h-[85vh]"
+              ? "w-[calc(100vw-24px)] sm:w-[650px] max-w-[650px] h-[88dvh] max-h-[88dvh]" 
+              : "w-[calc(100vw-24px)] sm:w-[420px] max-w-[420px] h-[min(640px,85dvh)] max-h-[85dvh]"
           }`}
           id="angela-ai-voice-panel"
         >
