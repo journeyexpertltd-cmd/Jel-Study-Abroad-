@@ -53,8 +53,8 @@ requireText(chat, "study-ai-studio", 'Angela chat endpoint');
 forbidText(chat, "'gemini-flash-latest'", 'Angela chat endpoint');
 
 requireText(token, "origin && origin !== url.origin", 'Angela Live token');
-requireText(token, "bidiGenerateContentSetup", 'Angela Live token');
-forbidText(token, "liveConnectConstraints", 'Angela Live token');
+requireText(token, "liveConnectConstraints", 'Angela Live token');
+forbidText(token, "bidiGenerateContentSetup", 'Angela Live token');
 requireText(token, "model: 'models/gemini-3.8-live'", 'Angela Live token');
 requireText(token, "responseModalities: ['AUDIO']", 'Angela Live token');
 requireText(token, "gemini-3.8-live", 'Angela Live token');
