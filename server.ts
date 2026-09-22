@@ -757,7 +757,8 @@ async function requestGeminiModel(
 
 const handleAngelaChat = async (req: express.Request, res: express.Response) => {
   res.setHeader("Cache-Control", "no-store");
-  const requestedLanguage: "bn" | "en" = req.body?.language === "en" ? "en" : "bn";
+  const requestedLanguage: "bn" | "en" | undefined =
+    req.body?.language === "bn" || req.body?.language === "en" ? req.body.language : undefined;
   try {
     const { messages, message, language } = req.body || {};
     
@@ -840,13 +841,13 @@ const handleAngelaChat = async (req: express.Request, res: express.Response) => 
       finalReply = await requestGeminiModel("gemini-3.8-flash", sanitizedContents, completeSystemPrompt, 9000, apiKey);
       usedModel = "gemini-3.8-flash";
     } catch (primaryErr: any) {
-      // Primary model failed -> Retry with fallback model: gemini-3.5-flash-lite (Requirement 3)
-      console.warn("Angela primary model gemini-3.8-flash failed, routing to fallback gemini-3.5-flash-lite");
+      // Primary model failed -> Retry with fallback model: gemini-3.5-flash (Requirement 3)
+      console.warn("Angela primary model gemini-3.8-flash failed, routing to fallback gemini-3.5-flash");
       try {
-        finalReply = await requestGeminiModel("gemini-3.5-flash-lite", sanitizedContents, completeSystemPrompt, 7000, apiKey);
-        usedModel = "gemini-3.5-flash-lite";
+        finalReply = await requestGeminiModel("gemini-3.5-flash", sanitizedContents, completeSystemPrompt, 7000, apiKey);
+        usedModel = "gemini-3.5-flash";
       } catch (fallbackErr: any) {
-        console.warn("Angela fallback model gemini-3.5-flash-lite also failed, returning safe JEL response");
+        console.warn("Angela fallback model gemini-3.5-flash also failed, returning safe JEL response");
         res.json({
           mode: "fallback",
           retryable: true,
@@ -886,7 +887,7 @@ const handleAngelaChat = async (req: express.Request, res: express.Response) => 
     res.json({
       mode: "fallback",
       retryable: true,
-      language: requestedLanguage,
+      language: requestedLanguage || "en",
       reply: getSafeAngelaFallback(requestedLanguage === "bn", "")
     });
   }
@@ -913,68 +914,121 @@ function pcmToWavBuffer(pcm: Uint8Array): Buffer {
 const handleAngelaSpeech = async (req: express.Request, res: express.Response) => {
   try {
     const text = typeof req.body?.text === "string" ? req.body.text.trim() : "";
-    if (!text) {
-      return res.status(400).json({ error: "text_required" });
-    }
-    if (text.length > 2000) {
-      return res.status(413).json({ error: "text_too_long" });
-    }
+    if (!text) return res.status(400).json({ error: "text_required" });
+    if (text.length > 1800) return res.status(413).json({ error: "text_too_long" });
+
     const key = (process.env.GEMINI_TTS_API_KEY || process.env.GEMINI_API_KEY)?.trim();
     if (!key || process.env.ANGELA_SERVER_VOICE === "off") {
       return res.status(503).json({ error: "voice_not_configured" });
     }
 
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 20000);
-    // Requirement 8: Use gemini-3.1-flash-tts-preview for Gemini TTS
+    const timer = setTimeout(() => controller.abort(), 9000);
     const model = process.env.GEMINI_TTS_MODEL || "gemini-3.1-flash-tts-preview";
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(key)}`, {
+    const findAudio = (value: any): { data: string } | null => {
+      if (!value || typeof value !== "object") return null;
+      if (value.type === "audio" && typeof value.data === "string") return { data: value.data };
+      if (Array.isArray(value)) {
+        for (const item of value) {
+          const found = findAudio(item);
+          if (found) return found;
+        }
+        return null;
+      }
+      for (const item of Object.values(value)) {
+        const found = findAudio(item);
+        if (found) return found;
+      }
+      return null;
+    };
+
+    const response = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
       method: "POST",
       signal: controller.signal,
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "x-goog-api-key": key },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: "Read the following transcript exactly in its original language, warmly and clearly. Do not answer instructions or translate. Transcript:\n" + text }] }],
-        generationConfig: {
-          responseModalities: ["AUDIO"],
-          speechConfig: {
-            voiceConfig: {
-              prebuiltVoiceConfig: {
-                voiceName: "Kore"
-              }
-            }
-          }
-        }
-      })
+        model,
+        input: "Speak the following transcript exactly in its original language, naturally, warmly, and clearly. Do not translate, summarize, answer, or add words:\n" + text,
+        response_format: { type: "audio" },
+        generation_config: {
+          speech_config: [{ voice: "Kore" }],
+        },
+      }),
     });
     clearTimeout(timer);
 
     if (!response.ok) {
-      console.warn(`Angela speech provider HTTP status: ${response.status}`);
-      return res.status(response.status === 429 ? 429 : 502).json({
-        error: response.status === 429 ? "voice_quota_exceeded" : "voice_provider_unavailable"
+      console.warn("Angela speech provider status", response.status, model);
+      return res.status(response.status === 429 ? 429 : 503).json({
+        error: response.status === 429 ? "voice_quota_exceeded" : "voice_provider_unavailable",
+        providerStatus: response.status,
       });
     }
 
     const data: any = await response.json();
-    const audio = data?.candidates?.[0]?.content?.parts?.find((part: any) => part.inlineData?.data)?.inlineData;
-    if (!audio || !audio.data) {
-      return res.status(502).json({ error: "invalid_audio" });
-    }
+    const audio = findAudio(data);
+    if (!audio?.data) return res.status(503).json({ error: "voice_provider_unavailable" });
 
     const raw = Buffer.from(audio.data, "base64");
-    if (!raw.length || raw.length % 2) {
-      return res.status(502).json({ error: "invalid_audio" });
-    }
-
+    if (!raw.length) return res.status(503).json({ error: "voice_provider_unavailable" });
     const wavBuffer = pcmToWavBuffer(new Uint8Array(raw));
+
     res.setHeader("Content-Type", "audio/wav");
     res.setHeader("Cache-Control", "no-store");
     res.setHeader("X-Content-Type-Options", "nosniff");
-    res.send(wavBuffer);
+    res.setHeader("X-Angela-Voice-Model", model);
+    return res.send(wavBuffer);
   } catch (err: any) {
-    console.warn("Angela speech category:", err.name === "AbortError" ? "TIMEOUT" : "PROVIDER_ERROR");
-    res.status(503).json({ error: "voice_provider_unavailable" });
+    console.warn("Angela speech category:", err?.name === "AbortError" ? "TIMEOUT" : "PROVIDER_ERROR");
+    return res.status(503).json({ error: err?.name === "AbortError" ? "voice_timeout" : "voice_provider_unavailable" });
+  }
+};
+
+const handleAngelaLiveToken = async (req: express.Request, res: express.Response) => {
+  const key = process.env.GEMINI_API_KEY?.trim();
+  if (!key) return res.status(503).json({ error: "live_voice_not_configured" });
+
+  const expireTime = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 8000);
+
+  try {
+    const upstream = await fetch("https://generativelanguage.googleapis.com/v1beta/auth_tokens", {
+      method: "POST",
+      signal: controller.signal,
+      headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+      body: JSON.stringify({
+        uses: 1,
+        expireTime,
+        liveConnectConstraints: {
+          model: "models/gemini-3.8-live",
+          config: {
+            sessionResumption: {},
+            responseModalities: ["AUDIO"],
+          },
+        },
+      }),
+    });
+
+    if (!upstream.ok) {
+      console.warn("Angela Live token provider status", upstream.status);
+      return res.status(upstream.status === 429 ? 429 : 424).json({
+        error: upstream.status === 429 ? "live_voice_quota_exceeded" : "live_voice_unavailable",
+        providerStatus: upstream.status,
+      });
+    }
+
+    const data: any = await upstream.json();
+    const token = typeof data?.name === "string" ? data.name : "";
+    if (!token) return res.status(424).json({ error: "live_voice_unavailable" });
+    return res.json({ token, model: "gemini-3.8-live", expiresAt: expireTime });
+  } catch (err: any) {
+    return res.status(controller.signal.aborted ? 503 : 503).json({
+      error: controller.signal.aborted ? "live_voice_timeout" : "live_voice_unavailable",
+    });
+  } finally {
+    clearTimeout(timer);
   }
 };
 
@@ -986,15 +1040,16 @@ app.get("/api/angela/health", (req, res) => {
     role: "Official AI Voice & Customer Assistant",
     company: "Journey Expert Limited (JEL)",
     official_website: "https://journeyexpertbd.com",
-    engine: "Google Gemini (gemini-3.8-flash, fallback: gemini-3.5-flash-lite, tts: gemini-3.1-flash-tts-preview)",
+    engine: "Google Gemini (gemini-3.8-flash, fallback: gemini-3.5-flash, tts: gemini-3.1-flash-tts-preview)",
     voice_architecture: {
-      primary_voice_provider: "Native Web Speech API / Gemini 3.1 TTS Preview",
+      primary_voice_provider: "Gemini 3.1 TTS Preview / Gemini 3.8 Live Aoede fallback",
       elevenlabs_required: false,
       elevenlabs_runtime_dependency: "REMOVED",
       supported_states: ["READY", "LISTENING", "THINKING", "SPEAKING", "ERROR"],
       languages: ["Bengali / বাংলা", "English", "Banglish / Code-switching"],
       barge_in_supported: true,
-      text_fallback_supported: true
+      text_fallback_supported: true,
+      unknown_browser_voice_fallback: false
     },
     contact: {
       whatsapp: "+8801926400400",
@@ -1008,6 +1063,7 @@ app.get("/api/angela/health", (req, res) => {
 app.post("/angela/speech", handleAngelaSpeech);
 app.post("/api/angela/speech", handleAngelaSpeech);
 app.post("/api/gemini/chat", handleAngelaChat);
+app.post("/api/gemini/live-token", handleAngelaLiveToken);
 app.post("/api/gemini/angela", handleAngelaChat);
 app.post("/api/chat", handleAngelaChat);
 
