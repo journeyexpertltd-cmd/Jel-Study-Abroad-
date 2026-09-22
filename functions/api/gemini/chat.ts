@@ -84,7 +84,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
 
   // Gemini 3.8 Flash is primary. Gemini 3.5 Flash is a bounded AI fallback
   // so a model-specific quota/outage does not collapse Angela into canned text.
-  const candidateModels = ['gemini-3.8-flash', 'gemini-3.5-flash'];
+  const candidateModels = ['gemini-3.8-flash', 'gemini-3.5-flash', 'gemini-2.5-flash'];
   const makeRequest = async (model: string, timeoutMs: number): Promise<Response | null> => {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -142,6 +142,41 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
     } catch {
       continue;
     }
+  }
+
+  // If all direct Gemini models are unavailable, try the dedicated Study AI Studio
+  // before degrading to the verified local fallback.
+  const studyAiStudioOrigin = (env.STUDY_AI_STUDIO_ORIGIN || 'https://jel-study-abroad.ai.studio').replace(/\/$/, '');
+  try {
+    const response = await fetch(`${studyAiStudioOrigin}/api/gemini/chat`, {
+      method: 'POST',
+      signal: AbortSignal.timeout(8000),
+      headers: { 'Content-Type': 'application/json', 'Origin': new URL(request.url).origin },
+      body: JSON.stringify({
+        message: last,
+        language: bn ? 'bn' : 'en',
+        history: turns.slice(0, -1).map((turn: any) => ({
+          role: turn.role === 'model' ? 'assistant' : 'user',
+          content: turn.parts[0].text,
+        })),
+      }),
+    });
+    if (response.ok) {
+      const data: any = await response.json();
+      if (typeof data.reply === 'string' && data.reply.trim()
+        && !(bn && !/[\u0980-\u09FF]/.test(data.reply))
+        && !(!bn && /[\u0980-\u09FF]/.test(data.reply))) {
+        const degraded = data.mode === 'fallback' || data.usedSources?.includes('JEL safe fallback');
+        return json({
+          reply: data.reply.slice(0, 1800),
+          mode: degraded ? 'fallback' : 'ai',
+          language: bn ? 'bn' : 'en',
+          providerModel: data.providerModel || 'study-ai-studio',
+        });
+      }
+    }
+  } catch {
+    // Continue to the verified local fallback.
   }
 
   return fallback();
