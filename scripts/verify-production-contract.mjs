@@ -34,13 +34,13 @@ requireText(speech, "voiceName: 'Kore'", 'Angela TTS endpoint');
 requireText(speech, "responseModalities: ['AUDIO']", 'Angela TTS endpoint');
 requireText(speech, "audio/wav", 'Angela TTS endpoint');
 
-requireText(chat, "'gemini-3.8-flash'", 'Angela chat endpoint');
-requireText(chat, "'gemini-3.5-flash'", 'Angela chat endpoint');
-requireText(chat, "'gemini-flash-latest'", 'Angela chat endpoint');
-requireText(chat, "'gemini-2.5-flash'", 'Angela chat endpoint');
-requireText(chat, "'gemini-2.5-flash-lite'", 'Angela chat endpoint');
+requireText(chat, "const candidateModels = ['gemini-3.8-flash']", 'Angela chat endpoint');
 requireText(chat, "for (const model of candidateModels)", 'Angela chat endpoint');
-requireText(chat, "maxOutputTokens: fromVoice ? 512 : 896", 'Angela chat endpoint');
+requireText(chat, "maxOutputTokens: fromVoice ? 420 : 720", 'Angela chat endpoint');
+requireText(chat, "GOOGLE_SEARCH_GROUNDING === 'true'", 'Angela chat endpoint');
+forbidText(chat, "'gemini-3.5-flash'", 'Angela chat endpoint');
+forbidText(chat, "'gemini-2.5-flash'", 'Angela chat endpoint');
+forbidText(chat, "'gemini-flash-latest'", 'Angela chat endpoint');
 
 requireText(token, "request.headers.get('origin') !== url.origin", 'Angela Live token');
 requireText(token, "liveConnectConstraints", 'Angela Live token');
@@ -59,4 +59,4 @@ for (const loc of locs) {
 forbidText(redirects, '/about /about/ 301', 'Redirects');
 forbidText(redirects, '/ects-calculator /ects-calculator/ 301', 'Redirects');
 
-console.log('Production contract verified: Angela fast chat/voice fallback, domain and canonical rules are locked.');
+console.log('Production contract verified: Gemini 3.8 chat, female voice, domain and canonical rules are locked.');
