@@ -149,3 +149,23 @@ test('Study Abroad production brain is Gemini 3.8 and supports opt-in search gro
   assert.match(observed.url, /gemini-3\.8-flash/);
   assert.deepEqual(observed.body.tools, [{ google_search: {} }]);
 });
+
+
+test('Study Abroad Angela retries with the secondary Gemini credential', async () => {
+  const seen = [];
+  globalThis.fetch = async (_url, options) => {
+    const key = options.headers['x-goog-api-key'];
+    seen.push(key);
+    if (key === 'primary-key') return new Response(null, { status: 429 });
+    return Response.json({ candidates: [{ finishReason: 'STOP', content: { parts: [{ text: 'ইউকেতে মাস্টার্সের জন্য আপনার একাডেমিক প্রোফাইল ও ডকুমেন্ট দিয়ে শুরু করুন।' }] } }] });
+  };
+  const response = await onRequest({
+    request: request({ message: 'ami UK te masters korte chai', language: 'bn' }),
+    env: { GEMINI_API_KEY: 'primary-key', GEMINI_TTS_API_KEY: 'secondary-key' },
+  });
+  const data = await response.json();
+  assert.equal(data.mode, 'ai');
+  assert.equal(data.language, 'bn');
+  assert.equal(seen[0], 'primary-key');
+  assert.ok(seen.includes('secondary-key'));
+});
