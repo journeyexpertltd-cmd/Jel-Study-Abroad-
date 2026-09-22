@@ -28,11 +28,12 @@ test('Live token endpoint creates a one-use short-lived token without exposing t
       const body = JSON.parse(options.body);
       assert.equal(body.uses, 1);
       assert.ok(body.expireTime);
-      assert.equal(body.newSessionExpireTime, undefined);
-      assert.equal(body.liveConnectConstraints.model, 'models/gemini-3.8-live');
-      assert.deepEqual(body.liveConnectConstraints.config.sessionResumption, {});
-      assert.deepEqual(body.liveConnectConstraints.config.responseModalities, ['AUDIO']);
-      assert.equal(body.bidiGenerateContentSetup, undefined);
+      assert.ok(body.newSessionExpireTime);
+      assert.equal(body.bidiGenerateContentSetup.model, 'models/gemini-3.8-live');
+      assert.deepEqual(body.bidiGenerateContentSetup.sessionResumption, {});
+      assert.deepEqual(body.bidiGenerateContentSetup.generationConfig.responseModalities, ['AUDIO']);
+      assert.equal(body.bidiGenerateContentSetup.generationConfig.speechConfig.voiceConfig.prebuiltVoiceConfig.voiceName, 'Aoede');
+      assert.equal(body.liveConnectConstraints, undefined);
       return Response.json({ name: 'auth_tokens/test-ephemeral-token' });
     };
 
