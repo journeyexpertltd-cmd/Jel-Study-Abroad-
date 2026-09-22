@@ -19,9 +19,16 @@ export function pcmToWav(pcm: Uint8Array): ArrayBuffer {
   return output;
 }
 
-function findAudio(value: any): { data: string } | null {
+function findAudio(value: any): { data: string; mimeType?: string } | null {
   if (!value || typeof value !== 'object') return null;
-  if (value.type === 'audio' && typeof value.data === 'string') return { data: value.data };
+  if (typeof value.data === 'string' && (
+    value.type === 'audio' ||
+    (typeof value.mimeType === 'string' && value.mimeType.startsWith('audio/'))
+  )) return { data: value.data, mimeType: value.mimeType };
+  if (value.inlineData && typeof value.inlineData.data === 'string' &&
+      String(value.inlineData.mimeType || '').startsWith('audio/')) {
+    return { data: value.inlineData.data, mimeType: value.inlineData.mimeType };
+  }
   if (Array.isArray(value)) {
     for (const item of value) {
       const found = findAudio(item);
@@ -63,23 +70,38 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   ].filter((model): model is string => Boolean(model))));
 
   let sawQuota = false;
+  let lastProviderStatus = 0;
 
   for (const model of models) {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 7000);
+    const timer = setTimeout(() => controller.abort(), 20000);
     try {
-      const response = await fetch('https://generativelanguage.googleapis.com/v1beta/interactions', {
-        method: 'POST',
-        signal: controller.signal,
-        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
-        body: JSON.stringify({
-          model,
-          input: 'Speak the following transcript exactly in its original language, naturally, warmly, clearly, and in a professional adult female voice. Do not translate, summarize, answer, or add words:\n' + text,
-          response_format: { type: 'audio' },
-          generation_config: { speech_config: [{ voice: 'Kore' }] },
-        }),
-      });
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
+        {
+          method: 'POST',
+          signal: controller.signal,
+          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+          body: JSON.stringify({
+            contents: [{
+              role: 'user',
+              parts: [{
+                text: 'Speak the following transcript exactly in its original language, naturally, warmly, clearly, and in a professional adult female voice. Do not translate, summarize, answer, or add words:\n' + text,
+              }],
+            }],
+            generationConfig: {
+              responseModalities: ['AUDIO'],
+              speechConfig: {
+                voiceConfig: {
+                  prebuiltVoiceConfig: { voiceName: 'Kore' },
+                },
+              },
+            },
+          }),
+        },
+      );
 
+      lastProviderStatus = response.status;
       if (!response.ok) {
         if (response.status === 429) sawQuota = true;
         continue;
@@ -88,10 +110,12 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
       const data: any = await response.json();
       const audio = findAudio(data);
       if (!audio?.data) continue;
-      const pcm = Uint8Array.from(atob(audio.data), character => character.charCodeAt(0));
-      if (!pcm.length) continue;
+      const rawAudio = Uint8Array.from(atob(audio.data), character => character.charCodeAt(0));
+      if (!rawAudio.length) continue;
 
-      return new Response(pcmToWav(pcm), {
+      const sourceMime = audio.mimeType || '';
+      const outputBody = sourceMime.includes('wav') ? rawAudio : pcmToWav(rawAudio);
+      return new Response(outputBody, {
         headers: {
           'Content-Type': 'audio/wav',
           'Cache-Control': 'no-store',
@@ -100,8 +124,8 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
           'X-Angela-Voice-Model': model,
         },
       });
-    } catch {
-      // Try the next supported Google TTS model.
+    } catch (error) {
+      console.warn('Angela TTS model failed', model, controller.signal.aborted ? 'timeout' : (error instanceof Error ? error.message : 'unknown'));
     } finally {
       clearTimeout(timer);
     }
@@ -109,5 +133,6 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
 
   return json({
     error: sawQuota ? 'voice_quota_exceeded' : 'voice_provider_unavailable',
+    providerStatus: lastProviderStatus || undefined,
   }, sawQuota ? 429 : 503);
 }
