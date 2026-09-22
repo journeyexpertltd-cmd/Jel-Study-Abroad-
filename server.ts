@@ -912,10 +912,12 @@ function pcmToWavBuffer(pcm: Uint8Array): Buffer {
 }
 
 const handleAngelaSpeech = async (req: express.Request, res: express.Response) => {
+  let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     const text = typeof req.body?.text === "string" ? req.body.text.trim() : "";
     if (!text) return res.status(400).json({ error: "text_required" });
     if (text.length > 1800) return res.status(413).json({ error: "text_too_long" });
+    res.setHeader("Cache-Control", "no-store");
 
     const key = (process.env.GEMINI_TTS_API_KEY || process.env.GEMINI_API_KEY)?.trim();
     if (!key || process.env.ANGELA_SERVER_VOICE === "off") {
@@ -923,40 +925,27 @@ const handleAngelaSpeech = async (req: express.Request, res: express.Response) =
     }
 
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 9000);
+    timer = setTimeout(() => controller.abort(), 9000);
     const model = process.env.GEMINI_TTS_MODEL || "gemini-3.1-flash-tts-preview";
-
-    const findAudio = (value: any): { data: string } | null => {
-      if (!value || typeof value !== "object") return null;
-      if (value.type === "audio" && typeof value.data === "string") return { data: value.data };
-      if (Array.isArray(value)) {
-        for (const item of value) {
-          const found = findAudio(item);
-          if (found) return found;
-        }
-        return null;
-      }
-      for (const item of Object.values(value)) {
-        const found = findAudio(item);
-        if (found) return found;
-      }
-      return null;
-    };
-
-    const response = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
-      method: "POST",
-      signal: controller.signal,
-      headers: { "Content-Type": "application/json", "x-goog-api-key": key },
-      body: JSON.stringify({
-        model,
-        input: "Speak the following transcript exactly in its original language, naturally, warmly, and clearly. Do not translate, summarize, answer, or add words:\n" + text,
-        response_format: { type: "audio" },
-        generation_config: {
-          speech_config: [{ voice: "Kore" }],
-        },
-      }),
-    });
-    clearTimeout(timer);
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
+      {
+        method: "POST",
+        signal: controller.signal,
+        headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{
+            text: "Speak the following transcript exactly in its original language, naturally, warmly, and clearly. Do not translate, summarize, answer, or add words:\n" + text,
+          }] }],
+          generationConfig: {
+            responseModalities: ["AUDIO"],
+            speechConfig: {
+              voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } },
+            },
+          },
+        }),
+      },
+    );
 
     if (!response.ok) {
       console.warn("Angela speech provider status", response.status, model);
@@ -967,21 +956,33 @@ const handleAngelaSpeech = async (req: express.Request, res: express.Response) =
     }
 
     const data: any = await response.json();
-    const audio = findAudio(data);
+    const parts = data?.candidates?.[0]?.content?.parts;
+    const audio = Array.isArray(parts)
+      ? parts.find((part: any) =>
+          typeof part?.inlineData?.data === "string" &&
+          /^audio\/L16(?:;|$)/i.test(part.inlineData.mimeType || "")
+        )?.inlineData
+      : undefined;
     if (!audio?.data) return res.status(503).json({ error: "voice_provider_unavailable" });
-
+    const rate = /(?:^|;)\s*rate=(\d+)/i.exec(audio.mimeType);
+    if (rate && Number(rate[1]) !== 24000) {
+      return res.status(503).json({ error: "voice_audio_format_unsupported" });
+    }
     const raw = Buffer.from(audio.data, "base64");
-    if (!raw.length) return res.status(503).json({ error: "voice_provider_unavailable" });
+    if (!raw.length || raw.length % 2 !== 0) {
+      return res.status(503).json({ error: "voice_provider_unavailable" });
+    }
     const wavBuffer = pcmToWavBuffer(new Uint8Array(raw));
-
     res.setHeader("Content-Type", "audio/wav");
-    res.setHeader("Cache-Control", "no-store");
     res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-Angela-Voice", "Kore");
     res.setHeader("X-Angela-Voice-Model", model);
     return res.send(wavBuffer);
   } catch (err: any) {
     console.warn("Angela speech category:", err?.name === "AbortError" ? "TIMEOUT" : "PROVIDER_ERROR");
     return res.status(503).json({ error: err?.name === "AbortError" ? "voice_timeout" : "voice_provider_unavailable" });
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
   }
 };
 
