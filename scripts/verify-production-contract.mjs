@@ -42,13 +42,14 @@ forbidText(speech, "responseModalities: ['AUDIO']", 'Angela TTS endpoint');
 requireText(speech, "gemini-2.5-flash-preview-tts", 'Angela TTS endpoint');
 requireText(speech, "gemini-2.5-pro-preview-tts", 'Angela TTS endpoint');
 
-requireText(chat, "const candidateModels = ['gemini-3.8-flash', 'gemini-3.5-flash']", 'Angela chat endpoint');
+requireText(chat, "const candidateModels = ['gemini-3.8-flash', 'gemini-3.5-flash', 'gemini-2.5-flash']", 'Angela chat endpoint');
 requireText(chat, "for (const model of candidateModels)", 'Angela chat endpoint');
 requireText(chat, "generationConfig.thinkingConfig = { thinkingLevel: 'low' }", 'Angela chat endpoint');
 requireText(chat, "maxOutputTokens: fromVoice ? 768 : 1024", 'Angela chat endpoint');
 requireText(chat, "GOOGLE_SEARCH_GROUNDING === 'true'", 'Angela chat endpoint');
 requireText(chat, "'gemini-3.5-flash'", 'Angela chat endpoint');
-forbidText(chat, "'gemini-2.5-flash'", 'Angela chat endpoint');
+requireText(chat, "'gemini-2.5-flash'", 'Angela chat endpoint');
+requireText(chat, "study-ai-studio", 'Angela chat endpoint');
 forbidText(chat, "'gemini-flash-latest'", 'Angela chat endpoint');
 
 requireText(token, "origin && origin !== url.origin", 'Angela Live token');
