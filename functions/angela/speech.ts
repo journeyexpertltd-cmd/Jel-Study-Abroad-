@@ -43,9 +43,13 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   if (origin && origin !== url.origin) return json({ error: 'origin_not_allowed' }, 403);
   if (!request.headers.get('content-type')?.includes('application/json')) return json({ error: 'json_required' }, 415);
 
+  const raw = await request.text();
+  if (new TextEncoder().encode(raw).length > 8192) return json({ error: 'text_too_large' }, 413);
   let body: any;
-  try { body = await request.json(); } catch { return json({ error: 'invalid_json' }, 400); }
-  const text = typeof body?.text === 'string' ? body.text.replace(/\s+/g, ' ').trim().slice(0, 1800) : '';
+  try { body = JSON.parse(raw); } catch { return json({ error: 'invalid_json' }, 400); }
+  const originalText = typeof body?.text === 'string' ? body.text : '';
+  if (originalText.length > 1800) return json({ error: 'text_too_long' }, 413);
+  const text = originalText.replace(/\s+/g, ' ').trim();
   if (!text) return json({ error: 'text_required' }, 400);
 
   const key = (env.GEMINI_TTS_API_KEY || env.GEMINI_API_KEY || '').trim();
