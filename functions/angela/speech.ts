@@ -74,7 +74,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
 
   for (const model of models) {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 20000);
+    const timer = setTimeout(() => controller.abort(), 6500);
     try {
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
