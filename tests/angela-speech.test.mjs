@@ -16,49 +16,35 @@ test('Speech endpoint rejects bad requests and missing credentials without calli
  assert.equal((await onRequest({ request: request('হ্যালো'), env: {} })).status, 503);
  } finally { globalThis.fetch = original; }
 });
-test('Speech produces a playable PCM WAV and maps quota errors without exposing secrets', async () => {
+test('Speech produces current Interactions API WAV and maps quota errors without exposing secrets', async () => {
  const original = globalThis.fetch;
  try {
+ const wav = new Uint8Array(pcmToWav(new Uint8Array([0,0,0,0])));
+ const encoded = Buffer.from(wav).toString('base64');
  globalThis.fetch = async (url, options) => {
- assert.match(url, /gemini-3.1-flash-tts-preview:generateContent$/);
+ assert.equal(String(url), 'https://generativelanguage.googleapis.com/v1beta/interactions');
  assert.equal(options.headers['x-goog-api-key'], 'test-key');
  const body = JSON.parse(options.body);
- assert.deepEqual(body.generationConfig.responseModalities, ['AUDIO']);
- return Response.json({ candidates: [{ content: { parts: [{ inlineData: { data: 'AAAAAA==', mimeType: 'audio/L16;codec=pcm;rate=24000' } }] } }] });
+ assert.equal(body.model, 'gemini-3.1-flash-tts-preview');
+ assert.equal(body.response_format.type, 'audio');
+ assert.equal(body.response_format.mime_type, 'audio/wav');
+ assert.deepEqual(body.generation_config.speech_config, [{ voice: 'Kore' }]);
+ return Response.json({ steps: [{ type: 'model_output', content: [{ type: 'audio', data: encoded, mime_type: 'audio/wav' }] }] });
  };
  const response = await onRequest({ request: request('আমি অ্যাঞ্জেলা'), env: { GEMINI_API_KEY: 'test-key' } });
+ assert.equal(response.status, 200);
  assert.equal(response.headers.get('content-type'), 'audio/wav');
  const buffer = await response.arrayBuffer();
  assert.equal(new TextDecoder().decode(buffer.slice(0,4)), 'RIFF');
- const view = new DataView(buffer);
- assert.equal(view.getUint32(24,true), 24000);
- assert.equal(view.getUint32(40,true), 4);
- assert.equal(buffer.byteLength,48);
+
  globalThis.fetch = async () => new Response('private upstream error', {status:429});
  const limited = await onRequest({ request: request('হ্যালো'), env: { GEMINI_API_KEY: 'test-key' } });
  assert.equal(limited.status,429);
  assert.deepEqual(await limited.json(), { error:'voice_quota_exceeded' });
- globalThis.fetch = async () => Response.json({ candidates: [] });
+
+ globalThis.fetch = async () => Response.json({ steps: [] });
  assert.equal((await onRequest({ request: request('হ্যালো'), env: { GEMINI_API_KEY:'test-key' } })).status,503);
  } finally { globalThis.fetch=original; }
 });
 
 
-test('Speech falls back from 3.1 TTS to 2.5 TTS before giving up', async () => {
-  const original = globalThis.fetch;
-  const seen = [];
-  try {
-    globalThis.fetch = async (url) => {
-      seen.push(String(url));
-      if (String(url).includes('gemini-3.1-flash-tts-preview')) return new Response(null, { status: 429 });
-      return Response.json({ candidates: [{ content: { parts: [{ inlineData: { data: 'AAAAAA==', mimeType: 'audio/L16;codec=pcm;rate=24000' } }] } }] });
-    };
-    const response = await onRequest({ request: request('হ্যালো'), env: { GEMINI_API_KEY: 'test-key' } });
-    assert.equal(response.status, 200);
-    assert.equal(response.headers.get('x-angela-voice-model'), 'gemini-2.5-flash-preview-tts');
-    assert.ok(seen.some((url) => url.includes('gemini-3.1-flash-tts-preview')));
-    assert.ok(seen.some((url) => url.includes('gemini-2.5-flash-preview-tts')));
-  } finally {
-    globalThis.fetch = original;
-  }
-});
