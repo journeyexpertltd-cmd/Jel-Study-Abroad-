@@ -75,7 +75,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
       });
       if (!response.ok) return fallback();
       const data: any = await response.json();
-      if (typeof data.reply !== 'string' || !data.reply.trim() || (bn && !/[\u0980-\u09FF]/.test(data.reply))) return fallback();
+      if (typeof data.reply !== 'string' || !data.reply.trim() || (bn && !/[\u0980-\u09FF]/.test(data.reply)) || (!bn && /[\u0980-\u09FF]/.test(data.reply))) return fallback();
       const degraded = data.mode === 'fallback' || data.usedSources?.includes('JEL safe fallback');
       return json({ reply: data.reply.slice(0, 1800), mode: degraded ? 'fallback' : 'ai', language: bn ? 'bn' : 'en' });
     } catch { return fallback(); }
