@@ -16,34 +16,34 @@ test('Speech endpoint rejects bad requests and missing credentials without calli
  assert.equal((await onRequest({ request: request('হ্যালো'), env: {} })).status, 503);
  } finally { globalThis.fetch = original; }
 });
-test('Speech produces current Interactions API WAV and maps quota errors without exposing secrets', async () => {
+test('Speech produces current Generate Content WAV and maps quota errors without exposing secrets', async () => {
  const original = globalThis.fetch;
  try {
  const pcm = new Uint8Array([0,0,0,0]);
  const encoded = Buffer.from(pcm).toString('base64');
  globalThis.fetch = async (url, options) => {
- assert.equal(String(url), 'https://generativelanguage.googleapis.com/v1beta/interactions');
+ assert.match(String(url), /\/v1beta\/models\/gemini-3\.1-flash-tts-preview:generateContent$/);
  assert.equal(options.headers['x-goog-api-key'], 'test-key');
  const body = JSON.parse(options.body);
- assert.equal(body.model, 'gemini-3.1-flash-tts-preview');
- assert.equal(body.response_format.type, 'audio');
- assert.equal(body.response_format.mime_type, undefined);
- assert.deepEqual(body.response_format, { type: 'audio' });
- assert.deepEqual(body.generation_config.speech_config, [{ voice: 'Kore' }]);
- return Response.json({ steps: [{ type: 'model_output', content: [{ type: 'audio', data: encoded }] }] });
+ assert.deepEqual(body.generationConfig.responseModalities, ['AUDIO']);
+ assert.equal(body.generationConfig.speechConfig.voiceConfig.prebuiltVoiceConfig.voiceName, 'Kore');
+ return Response.json({ candidates: [{ content: { parts: [{ inlineData: { data: encoded, mimeType: 'audio/L16;rate=24000' } }] } }] });
  };
  const response = await onRequest({ request: request('আমি অ্যাঞ্জেলা'), env: { GEMINI_API_KEY: 'test-key' } });
  assert.equal(response.status, 200);
  assert.equal(response.headers.get('content-type'), 'audio/wav');
+ assert.equal(response.headers.get('x-angela-voice'), 'Kore');
  const buffer = await response.arrayBuffer();
  assert.equal(new TextDecoder().decode(buffer.slice(0,4)), 'RIFF');
 
  globalThis.fetch = async () => new Response('private upstream error', {status:429});
  const limited = await onRequest({ request: request('হ্যালো'), env: { GEMINI_API_KEY: 'test-key' } });
  assert.equal(limited.status,429);
- assert.deepEqual(await limited.json(), { error:'voice_quota_exceeded' });
+ const limitedBody = await limited.json();
+ assert.equal(limitedBody.error,'voice_quota_exceeded');
+ assert.equal(limitedBody.providerStatus,429);
 
- globalThis.fetch = async () => Response.json({ steps: [] });
+ globalThis.fetch = async () => Response.json({ candidates: [] });
  assert.equal((await onRequest({ request: request('হ্যালো'), env: { GEMINI_API_KEY:'test-key' } })).status,503);
  } finally { globalThis.fetch=original; }
 });
