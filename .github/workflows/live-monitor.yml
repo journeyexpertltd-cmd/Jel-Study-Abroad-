@@ -123,7 +123,7 @@ jobs:
             --max-time 20 \
             --header 'Content-Type: application/json' \
             --header 'Origin: https://journeyexpertbd.com' \
-            --data '{"message":"ami UK te masters korte chai, ki ki documents lagbe?","language":"auto"}' \
+            --data '{"message":"ami UK te masters korte chai, ki ki documents lagbe?","language":"bn"}' \
             --output "$body" \
             https://journeyexpertbd.com/api/gemini/chat
           grep -q '"mode":"ai"' "$body"
