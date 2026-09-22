@@ -377,10 +377,16 @@ export function AIChatAssistant() {
           if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
           stopServerAudio();
           setActiveSpeakingId(null);
-          setVoiceState("ERROR");
-          setErrorMessage(languageMode === "bn"
-            ? voiceErrorMessage(error)
-            : "Angela female English voice is temporarily unavailable. Text chat remains active—please try Listen again shortly.");
+          // Quota/network fallback: request the selected language from the
+          // device speech engine instead of telling the visitor voice is absent.
+          const languageVoice = wantsBanglaVoice
+            ? voices.find(matchesBangla)
+            : voices.find((voice) => /^en(?:[-_]|$)/i.test(voice.lang) && femaleName.test(voice.name))
+              || voices.find((voice) => /^en(?:[-_]|$)/i.test(voice.lang));
+          utterance.lang = wantsBanglaVoice ? "bn-BD" : "en-US";
+          utterance.pitch = 1.08;
+          speakWithBrowser(utterance, languageVoice);
+          console.warn("Angela cloud voice fallback:", error instanceof Error ? error.message : "provider unavailable");
         } finally {
           clearTimeout(timeout);
           if (serverSpeechRef.current === controller) serverSpeechRef.current = null;
