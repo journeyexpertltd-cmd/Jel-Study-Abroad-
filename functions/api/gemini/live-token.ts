@@ -11,19 +11,17 @@ const json = (body: unknown, status = 200) => Response.json(body, {
 });
 
 export async function onRequest({ request, env }: Context): Promise<Response> {
-  if (request.method !== 'POST') {
-    return new Response(null, { status: 405, headers: { Allow: 'POST' } });
-  }
+  if (request.method !== 'POST') return new Response(null, { status: 405, headers: { Allow: 'POST' } });
 
   const url = new URL(request.url);
-  if (request.headers.get('origin') !== url.origin) {
-    return json({ error: 'origin_not_allowed' }, 403);
-  }
+  const origin = request.headers.get('origin');
+  if (origin && origin !== url.origin) return json({ error: 'origin_not_allowed' }, 403);
 
-  const key = env.GEMINI_API_KEY?.trim();
+  const key = (env.GEMINI_API_KEY || env.GEMINI_TTS_API_KEY || '').trim();
   if (!key) return json({ error: 'live_voice_not_configured' }, 503);
 
   const expireTime = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+  const newSessionExpireTime = new Date(Date.now() + 60 * 1000).toISOString();
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 8000);
 
@@ -38,21 +36,31 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
       body: JSON.stringify({
         uses: 1,
         expireTime,
-        liveConnectConstraints: {
+        newSessionExpireTime,
+        bidiGenerateContentSetup: {
           model: 'models/gemini-3.8-live',
-          config: {
-            sessionResumption: {},
+          generationConfig: {
             responseModalities: ['AUDIO'],
+            speechConfig: {
+              voiceConfig: {
+                prebuiltVoiceConfig: { voiceName: 'Aoede' },
+              },
+            },
           },
+          systemInstruction: {
+            parts: [{
+              text: 'You are Angela, a professional adult female speech renderer. Speak the supplied transcript verbatim in the same language, including Bangla or English. Do not translate, summarize, answer, or add words.',
+            }],
+          },
+          sessionResumption: {},
         },
       }),
     });
 
     if (!upstream.ok) {
-      console.warn('Angela Live token provider status', upstream.status);
-      if (upstream.status === 429) {
-        return json({ error: 'live_voice_quota_exceeded' }, 429);
-      }
+      const detail = await upstream.text().catch(() => '');
+      console.warn('Angela Live token provider status', upstream.status, detail.slice(0, 300));
+      if (upstream.status === 429) return json({ error: 'live_voice_quota_exceeded', providerStatus: 429 }, 429);
       return json({ error: 'live_voice_unavailable', providerStatus: upstream.status }, 424);
     }
 
