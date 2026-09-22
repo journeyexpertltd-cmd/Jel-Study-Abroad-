@@ -1,2 +1,1 @@
-{"version":1,"include":["/api/*","/angela/speech"],"exclude":[]}
-
+{"version":1,"include":["/api/*","/angela/*"],"exclude":[]}
