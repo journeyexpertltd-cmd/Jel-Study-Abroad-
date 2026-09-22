@@ -27,8 +27,11 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   if (!turns.length || turns[turns.length - 1].role !== 'user') return json({ error: 'User message required' }, 400);
   const last = turns[turns.length - 1].parts[0].text;
   const fromVoice = body.source === 'voice';
-  // The visible selector is authoritative: only explicit Bangla or English.
-  const bn = body.language !== 'en';
+  // Prefer actual Bengali script when present, preserve an explicit Bangla choice,
+  // otherwise detect common Banglish only for auto/unspecified mode.
+  const hasBanglaScript = /[\u0980-\u09FF]/.test(last);
+  const looksBanglish = /\b(ami|amar|amake|apni|apnar|tumi|tomar|chai|jabo|jete|koto|kivabe|ki|keno|kobe|hobe|korbo|korte|lagbe|bolen|diben|pari|parbo|porte|bidesh)\b/i.test(last);
+  const bn = hasBanglaScript || body.language === 'bn' || ((body.language === 'auto' || !body.language) && looksBanglish);
   const fallback = () => {
     const query = last.toLowerCase();
     const asksContact = /যোগাযোগ|ফোন|নাম্বার|হোয়াটসঅ্যাপ|ঠিকানা|অফিস|contact|phone|address|office/.test(query);
@@ -83,7 +86,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   const voiceModel = env.GEMINI_VOICE_MODEL?.trim() || 'gemini-3.5-flash-lite';
   const candidateModels = Array.from(new Set((fromVoice
     ? [voiceModel, configuredModel, 'gemini-3.8-flash', 'gemini-3.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-flash-latest']
-    : [voiceModel, configuredModel, 'gemini-3.8-flash', 'gemini-3.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-flash-latest']
+    : [configuredModel, voiceModel, 'gemini-3.8-flash', 'gemini-3.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-flash-latest']
   ).filter((model): model is string => Boolean(model))));
   const makeRequest = async (model: string, timeoutMs: number): Promise<Response | null> => {
     const controller = new AbortController();
