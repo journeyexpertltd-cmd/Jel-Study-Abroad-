@@ -82,8 +82,9 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
     } catch { return fallback(); }
   }
 
-  // Single production brain for both text and voice requests.
-  const candidateModels = ['gemini-3.8-flash'];
+  // Gemini 3.8 Flash is primary. Gemini 3.5 Flash is a bounded AI fallback
+  // so a model-specific quota/outage does not collapse Angela into canned text.
+  const candidateModels = ['gemini-3.8-flash', 'gemini-3.5-flash'];
   const makeRequest = async (model: string, timeoutMs: number): Promise<Response | null> => {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -91,10 +92,12 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
       const voiceNote = fromVoice
         ? '\nVOICE TRANSCRIPT NOTE: The latest user message came from speech recognition and may contain small phonetic or transcription errors. Infer the likely intended Bangla, Banglish, or English question only when the intent is reasonably clear. If it is ambiguous, ask one short clarification question instead of inventing meaning. Keep spoken answers concise: normally 60-90 words unless the user explicitly asks for detail.'
         : '';
+      const generationConfig: any = { maxOutputTokens: fromVoice ? 768 : 1024 };
+      if (model === 'gemini-3.8-flash') generationConfig.thinkingConfig = { thinkingLevel: 'low' };
       const requestBody: any = {
         contents: turns,
         systemInstruction: { parts: [{ text: instruction + voiceNote + '\nMANDATORY RESPONSE LANGUAGE: ' + (bn ? 'Respond in natural Bengali script. Treat Banglish as Bengali. Keep proper names unchanged.' : 'Respond in English.') }] },
-        generationConfig: { thinkingConfig: { thinkingLevel: 'low' }, maxOutputTokens: fromVoice ? 768 : 1024 },
+        generationConfig,
       };
       // Google Search grounding is opt-in because Gemini 3 search queries can be billable.
       // Set GOOGLE_SEARCH_GROUNDING=true only when the production project is approved for that usage.
@@ -112,11 +115,11 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
     }
   };
 
-  // Gemini 3.8 Flash is the single production reasoning model for consistent behavior.
+  // Prefer Gemini 3.8 Flash; use Gemini 3.5 Flash only on bounded provider failure.
   let response: Response | null = null;
   let providerModel = '';
   for (const model of candidateModels) {
-    response = await makeRequest(model, 10000);
+    response = await makeRequest(model, model === 'gemini-3.8-flash' ? 7500 : 5500);
     if (response?.ok) {
       providerModel = model;
       break;
