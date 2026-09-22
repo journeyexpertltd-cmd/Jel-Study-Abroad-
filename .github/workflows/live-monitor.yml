@@ -126,6 +126,17 @@ jobs:
             --data '{"message":"ami UK te masters korte chai, ki ki documents lagbe?","language":"bn"}' \
             --output "$body" \
             https://journeyexpertbd.com/api/gemini/chat
+          python - "$body" <<'PY'
+          import json, sys
+          with open(sys.argv[1], encoding='utf-8') as f:
+              data = json.load(f)
+          print("Angela diagnostic:", {
+              "mode": data.get("mode"),
+              "language": data.get("language"),
+              "providerModel": data.get("providerModel"),
+              "replyLength": len(str(data.get("reply") or "")),
+          })
+          PY
           grep -q '"mode":"ai"' "$body"
           grep -q '"language":"bn"' "$body"
           grep -Pq '[\x{0980}-\x{09FF}]' "$body"
