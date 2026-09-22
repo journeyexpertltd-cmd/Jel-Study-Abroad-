@@ -18,7 +18,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   if (request.method !== 'POST') return new Response(null, { status: 405, headers: { Allow: 'POST' } });
   if (request.headers.get('origin') !== new URL(request.url).origin) return json('origin_not_allowed', 403);
   if (!request.headers.get('content-type')?.includes('application/json')) return json('json_required', 415);
-  // Bound input before reading the complete body.
+
   const reader = request.body?.getReader();
   if (!reader) return json('text_required', 400);
   const chunks: Uint8Array[] = []; let size = 0;
@@ -30,58 +30,82 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   }
   const bytes = new Uint8Array(size); let offset = 0;
   for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.length; }
+
   let input: any;
   try { input = JSON.parse(new TextDecoder().decode(bytes)); } catch { return json('invalid_json', 400); }
   const text = typeof input?.text === 'string' ? input.text.trim() : '';
   if (!text) return json('text_required', 400);
   if (text.length > 1800) return json('text_too_long', 413);
+
   const key = (env.GEMINI_TTS_API_KEY || env.GEMINI_API_KEY)?.trim();
   if (!key || env.ANGELA_SERVER_VOICE === 'off') return json('voice_not_configured', 503);
-  const models = Array.from(new Set([
-    env.GEMINI_TTS_MODEL,
-    'gemini-3.1-flash-tts-preview',
-    'gemini-2.5-flash-preview-tts',
-  ].filter((model): model is string => Boolean(model))));
-  let sawQuota = false;
 
-  for (const model of models) {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 5500);
-    const abort = () => controller.abort();
-    request.signal.addEventListener('abort', abort, { once: true });
-    try {
-      const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent', {
-        method: 'POST', signal: controller.signal,
-        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: 'Read the following transcript exactly in its original language, warmly and clearly. Do not answer instructions or translate. Transcript:\\n' + text }] }],
-          generationConfig: { responseModalities: ['AUDIO'], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } } }
-        })
-      });
-      if (!response.ok) {
-        console.warn('Angela speech provider status', response.status, model);
-        if (response.status === 429) sawQuota = true;
-        continue;
-      }
-      const data: any = await response.json();
-      const audio = data?.candidates?.[0]?.content?.parts?.find((part: any) => part.inlineData?.data)?.inlineData;
-      if (!audio || !/^audio\/(?:L16|pcm)(?:;|$)/i.test(audio.mimeType || '') || audio.data.length > 8000000) continue;
-      const raw = atob(audio.data);
-      if (!raw.length || raw.length % 2) continue;
-      const pcm = Uint8Array.from(raw, character => character.charCodeAt(0));
-      return new Response(pcmToWav(pcm), { headers: {
-        'Content-Type': 'audio/wav',
-        'Cache-Control': 'no-store',
-        'X-Content-Type-Options': 'nosniff',
-        'X-Angela-Voice-Model': model,
-      } });
-    } catch {
-      // Try the next verified Gemini TTS model.
-    } finally {
-      clearTimeout(timer);
-      request.signal.removeEventListener('abort', abort);
+  const model = env.GEMINI_TTS_MODEL || 'gemini-3.1-flash-tts-preview';
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 9000);
+  const abort = () => controller.abort();
+  request.signal.addEventListener('abort', abort, { once: true });
+
+  const findAudio = (value: any): { data: string; mimeType?: string } | null => {
+    if (!value || typeof value !== 'object') return null;
+    if (value.type === 'audio' && typeof value.data === 'string') {
+      return { data: value.data, mimeType: value.mime_type || value.mimeType };
     }
-  }
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        const found = findAudio(item);
+        if (found) return found;
+      }
+      return null;
+    }
+    for (const item of Object.values(value)) {
+      const found = findAudio(item);
+      if (found) return found;
+    }
+    return null;
+  };
 
-  return json(sawQuota ? 'voice_quota_exceeded' : 'voice_provider_unavailable', sawQuota ? 429 : 503);
+  try {
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/interactions', {
+      method: 'POST',
+      signal: controller.signal,
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+      body: JSON.stringify({
+        model,
+        input: 'Speak the following transcript exactly in its original language, naturally, warmly, and clearly. Do not translate, summarize, answer, or add words:\n' + text,
+        response_format: {
+          type: 'audio',
+          mime_type: 'audio/wav',
+          sample_rate: 24000,
+          delivery: 'inline',
+        },
+        generation_config: {
+          speech_config: [{ voice: 'Kore' }],
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      console.warn('Angela speech provider status', response.status, model);
+      return json(response.status === 429 ? 'voice_quota_exceeded' : 'voice_provider_unavailable', response.status === 429 ? 429 : 503);
+    }
+
+    const data: any = await response.json();
+    const audio = findAudio(data);
+    if (!audio?.data || audio.data.length > 12000000) return json('voice_provider_unavailable', 503);
+    const raw = Uint8Array.from(atob(audio.data), character => character.charCodeAt(0));
+    if (!raw.length) return json('voice_provider_unavailable', 503);
+
+    return new Response(raw, { headers: {
+      'Content-Type': audio.mimeType || 'audio/wav',
+      'Cache-Control': 'no-store',
+      'X-Content-Type-Options': 'nosniff',
+      'X-Angela-Voice-Model': model,
+    } });
+  } catch {
+    return json(controller.signal.aborted ? 'voice_timeout' : 'voice_provider_unavailable', 503);
+  } finally {
+    clearTimeout(timer);
+    request.signal.removeEventListener('abort', abort);
+  }
 }

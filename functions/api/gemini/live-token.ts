@@ -40,13 +40,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
         uses: 1,
         expireTime,
         newSessionExpireTime,
-        liveConnectConstraints: {
-          model: `models/${LIVE_MODEL}`,
-          config: {
-            sessionResumption: {},
-            responseModalities: ['AUDIO'],
-          },
-        },
+
       }),
     });
 

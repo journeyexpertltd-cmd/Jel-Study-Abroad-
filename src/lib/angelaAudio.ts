@@ -146,8 +146,12 @@ async function fetchAngelaLiveSpeech(text: string, signal: AbortSignal): Promise
         if (message.setupComplete && !sentTranscript) {
           sentTranscript = true;
           socket.send(JSON.stringify({
-            realtimeInput: {
-              text: `Speak this transcript exactly as written:\n${text}`,
+            clientContent: {
+              turns: [{
+                role: 'user',
+                parts: [{ text: `Speak this transcript exactly as written:\n${text}` }],
+              }],
+              turnComplete: true,
             },
           }));
           return;

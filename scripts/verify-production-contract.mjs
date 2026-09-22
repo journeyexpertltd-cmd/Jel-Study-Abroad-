@@ -25,15 +25,20 @@ requireText(audio, "fetch('/angela/speech'", 'Angela browser audio');
 requireText(audio, "window.setTimeout(() => ttsController.abort(), 13000)", 'Angela browser audio');
 requireText(audio, "return await fetchAngelaLiveSpeech(speechText, signal)", 'Angela browser audio');
 requireText(audio, "live_voice_timeout')), 3500", 'Angela browser audio');
+requireText(audio, "clientContent", 'Angela browser audio');
+requireText(audio, "turnComplete: true", 'Angela browser audio');
+forbidText(audio, "realtimeInput: {\n              text:", 'Angela browser audio');
 
 requireText(speech, "env.GEMINI_TTS_API_KEY || env.GEMINI_API_KEY", 'Angela TTS endpoint');
 requireText(speech, "env.ANGELA_SERVER_VOICE === 'off'", 'Angela TTS endpoint');
-requireText(speech, "setTimeout(() => controller.abort(), 5500)", 'Angela TTS endpoint');
+requireText(speech, "setTimeout(() => controller.abort(), 9000)", 'Angela TTS endpoint');
 requireText(speech, "gemini-3.1-flash-tts-preview", 'Angela TTS endpoint');
-requireText(speech, "gemini-2.5-flash-preview-tts", 'Angela TTS endpoint');
-requireText(speech, "voiceName: 'Kore'", 'Angela TTS endpoint');
-requireText(speech, "responseModalities: ['AUDIO']", 'Angela TTS endpoint');
+requireText(speech, "v1beta/interactions", 'Angela TTS endpoint');
+requireText(speech, "response_format", 'Angela TTS endpoint');
+requireText(speech, "speech_config: [{ voice: 'Kore' }]", 'Angela TTS endpoint');
 requireText(speech, "audio/wav", 'Angela TTS endpoint');
+forbidText(speech, "responseModalities: ['AUDIO']", 'Angela TTS endpoint');
+forbidText(speech, "gemini-2.5-flash-preview-tts", 'Angela TTS endpoint');
 
 requireText(chat, "const candidateModels = ['gemini-3.8-flash', 'gemini-3.5-flash']", 'Angela chat endpoint');
 requireText(chat, "for (const model of candidateModels)", 'Angela chat endpoint');
@@ -45,8 +50,7 @@ forbidText(chat, "'gemini-2.5-flash'", 'Angela chat endpoint');
 forbidText(chat, "'gemini-flash-latest'", 'Angela chat endpoint');
 
 requireText(token, "request.headers.get('origin') !== url.origin", 'Angela Live token');
-requireText(token, "liveConnectConstraints", 'Angela Live token');
-requireText(token, "responseModalities: ['AUDIO']", 'Angela Live token');
+forbidText(token, "liveConnectConstraints", 'Angela Live token');
 requireText(token, "gemini-3.8-live", 'Angela Live token');
 
 const locs = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]);
