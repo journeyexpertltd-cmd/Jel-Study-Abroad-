@@ -35,6 +35,7 @@ requireText(speech, "setTimeout(() => controller.abort(), 9000)", 'Angela TTS en
 requireText(speech, "gemini-3.1-flash-tts-preview", 'Angela TTS endpoint');
 requireText(speech, "v1beta/interactions", 'Angela TTS endpoint');
 requireText(speech, "response_format", 'Angela TTS endpoint');
+forbidText(speech, "sample_rate", 'Angela TTS endpoint');
 requireText(speech, "speech_config: [{ voice: 'Kore' }]", 'Angela TTS endpoint');
 requireText(speech, "audio/wav", 'Angela TTS endpoint');
 forbidText(speech, "responseModalities: ['AUDIO']", 'Angela TTS endpoint');
@@ -50,7 +51,9 @@ forbidText(chat, "'gemini-2.5-flash'", 'Angela chat endpoint');
 forbidText(chat, "'gemini-flash-latest'", 'Angela chat endpoint');
 
 requireText(token, "request.headers.get('origin') !== url.origin", 'Angela Live token');
-forbidText(token, "liveConnectConstraints", 'Angela Live token');
+requireText(token, "liveConnectConstraints", 'Angela Live token');
+requireText(token, "model: 'models/gemini-3.8-live'", 'Angela Live token');
+requireText(token, "responseModalities: ['AUDIO']", 'Angela Live token');
 requireText(token, "gemini-3.8-live", 'Angela Live token');
 
 const locs = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]);
