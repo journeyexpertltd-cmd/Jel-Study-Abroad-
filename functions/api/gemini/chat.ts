@@ -172,16 +172,57 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
         && !(bn && !/[\u0980-\u09FF]/.test(data.reply))
         && !(!bn && /[\u0980-\u09FF]/.test(data.reply))) {
         const degraded = data.mode === 'fallback' || data.usedSources?.includes('JEL safe fallback');
-        return json({
-          reply: data.reply.slice(0, 1800),
-          mode: degraded ? 'fallback' : 'ai',
-          language: bn ? 'bn' : 'en',
-          providerModel: data.providerModel || 'study-ai-studio',
-        });
+        if (!degraded) {
+          return json({
+            reply: data.reply.slice(0, 1800),
+            mode: 'ai',
+            language: bn ? 'bn' : 'en',
+            providerModel: data.providerModel || 'study-ai-studio',
+          });
+        }
       }
     }
   } catch {
-    // Continue to the verified local fallback.
+    // Continue to the shared JEL AI fallback.
+  }
+
+  // Reuse the already-validated corporate Angela brain for Study Abroad questions
+  // when this deployment's direct Gemini credentials and dedicated AI Studio are degraded.
+  // Non-education travel questions remain isolated to the main Journey Expert website.
+  const mainTravelQuery = /টিকিট|ফ্লাইট|ভাড়া|ফেয়ার|ticket|flight|fare|ওমরাহ|উমরাহ|umrah|hajj|হজ|tour|ট্যুর|medical tourism|মেডিকেল ট্যুরিজম|halal tourism|হালাল ট্যুরিজম|hotel|হোটেল|corporate travel|কর্পোরেট/.test(last.toLowerCase());
+  if (!mainTravelQuery) {
+    try {
+      const response = await fetch('https://journeyexpertltd.com/angela/chat', {
+        method: 'POST',
+        signal: AbortSignal.timeout(8000),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: last,
+          language: bn ? 'bn' : 'en',
+          history: turns.slice(0, -1).map((turn: any) => ({
+            role: turn.role === 'model' ? 'assistant' : 'user',
+            content: turn.parts[0].text,
+          })),
+        }),
+      });
+      if (response.ok) {
+        const data: any = await response.json();
+        if (data.mode === 'ai'
+          && typeof data.reply === 'string'
+          && data.reply.trim()
+          && !(bn && !/[\u0980-\u09FF]/.test(data.reply))
+          && !(!bn && /[\u0980-\u09FF]/.test(data.reply))) {
+          return json({
+            reply: data.reply.slice(0, 1800),
+            mode: 'ai',
+            language: bn ? 'bn' : 'en',
+            providerModel: 'jel-corporate-' + (data.providerModel || 'gemini'),
+          });
+        }
+      }
+    } catch {
+      // Continue to the verified local fallback.
+    }
   }
 
   return fallback();
