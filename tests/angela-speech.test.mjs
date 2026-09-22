@@ -19,17 +19,18 @@ test('Speech endpoint rejects bad requests and missing credentials without calli
 test('Speech produces current Interactions API WAV and maps quota errors without exposing secrets', async () => {
  const original = globalThis.fetch;
  try {
- const wav = new Uint8Array(pcmToWav(new Uint8Array([0,0,0,0])));
- const encoded = Buffer.from(wav).toString('base64');
+ const pcm = new Uint8Array([0,0,0,0]);
+ const encoded = Buffer.from(pcm).toString('base64');
  globalThis.fetch = async (url, options) => {
  assert.equal(String(url), 'https://generativelanguage.googleapis.com/v1beta/interactions');
  assert.equal(options.headers['x-goog-api-key'], 'test-key');
  const body = JSON.parse(options.body);
  assert.equal(body.model, 'gemini-3.1-flash-tts-preview');
  assert.equal(body.response_format.type, 'audio');
- assert.equal(body.response_format.mime_type, 'audio/wav');
+ assert.equal(body.response_format.mime_type, undefined);
+ assert.deepEqual(body.response_format, { type: 'audio' });
  assert.deepEqual(body.generation_config.speech_config, [{ voice: 'Kore' }]);
- return Response.json({ steps: [{ type: 'model_output', content: [{ type: 'audio', data: encoded, mime_type: 'audio/wav' }] }] });
+ return Response.json({ steps: [{ type: 'model_output', content: [{ type: 'audio', data: encoded }] }] });
  };
  const response = await onRequest({ request: request('আমি অ্যাঞ্জেলা'), env: { GEMINI_API_KEY: 'test-key' } });
  assert.equal(response.status, 200);
