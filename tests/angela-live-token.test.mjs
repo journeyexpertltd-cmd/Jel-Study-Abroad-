@@ -19,7 +19,7 @@ test('Live token endpoint rejects invalid access and missing credentials', async
   }
 });
 
-test('Live token endpoint creates a one-use audio-only constrained token without exposing the API key', async () => {
+test('Live token endpoint creates a one-use short-lived token without exposing the API key', async () => {
   const original = globalThis.fetch;
   try {
     globalThis.fetch = async (url, options) => {
@@ -29,9 +29,7 @@ test('Live token endpoint creates a one-use audio-only constrained token without
       assert.equal(body.uses, 1);
       assert.ok(body.expireTime);
       assert.ok(body.newSessionExpireTime);
-      assert.equal(body.liveConnectConstraints.model, 'models/gemini-3.8-live');
-      assert.deepEqual(body.liveConnectConstraints.config.responseModalities, ['AUDIO']);
-      assert.deepEqual(body.liveConnectConstraints.config.sessionResumption, {});
+      assert.equal(body.liveConnectConstraints, undefined);
       assert.equal(body.bidiGenerateContentSetup, undefined);
       return Response.json({ name: 'auth_tokens/test-ephemeral-token' });
     };
