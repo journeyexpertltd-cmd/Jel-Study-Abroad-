@@ -23,7 +23,7 @@ test('Complete Bengali answers retain a usable budget and exclude thought parts'
   const answer = 'কাউন্সেলিং শুরু করতে আপনার শিক্ষাগত যোগ্যতা ও পছন্দের দেশ জানান।';
   globalThis.fetch = async (_url, options) => {
     const maxTokens = JSON.parse(options.body).generationConfig.maxOutputTokens;
-    assert.ok(maxTokens >= 512 && maxTokens <= 896, 'low-latency output budget should remain sufficient for complete concise answers');
+    assert.ok(maxTokens >= 420 && maxTokens <= 720, 'output budget should remain sufficient for concise complete answers');
     return Response.json({ candidates: [{ finishReason: 'STOP', content: { parts: [{ thought: true, text: 'internal reasoning' }, { text: answer }] } }] });
   };
   for (const source of ['text', 'voice']) {
@@ -60,14 +60,14 @@ test('Gemini receives bounded history and quota failures return usable fallback'
   const originalFetch = globalThis.fetch;
   try {
     globalThis.fetch = async (url, options) => {
-      assert.match(url, /configured-model/);
+      assert.match(url, /gemini-3\.8-flash/);
       assert.equal(options.headers['x-goog-api-key'], 'test-only');
       const body = JSON.parse(options.body);
       assert.ok(body.contents.length <= 8);
       assert.equal(body.contents.at(-1).role, 'user');
       return Response.json({ candidates: [{ content: { parts: [{ text: 'Hello from Angela' }] } }] });
     };
-    const response = await onRequest({ request: request({ messages: [{ sender: 'assistant', text: 'Hello' }, { sender: 'user', text: 'Study in UK' }] }), env: { GEMINI_API_KEY: 'test-only', GEMINI_MODEL: 'configured-model' } });
+    const response = await onRequest({ request: request({ messages: [{ sender: 'assistant', text: 'Hello' }, { sender: 'user', text: 'Study in UK' }] }), env: { GEMINI_API_KEY: 'test-only' } });
     assert.equal((await response.json()).reply, 'Hello from Angela');
     globalThis.fetch = async () => new Response(null, { status: 429 });
     assert.equal((await (await onRequest({ request: request({ message: 'hello' }), env: { GEMINI_API_KEY: 'test-only' } })).json()).mode, 'fallback');
@@ -85,7 +85,7 @@ test('Actual Bengali input overrides stale UI language and rejects an English-on
       assert.match(payload.systemInstruction.parts[0].text, /Respond in natural Bengali script/);
       return Response.json({ candidates: [{ content: { parts: [{ text: answer }] } }] });
     };
-    const send = () => onRequest({ request: request({ language: 'bn', messages: [{ sender: 'assistant', text: 'Hello' }, { sender: 'user', text: 'Introduce yourself' }] }), env: { GEMINI_API_KEY: 'test-only', GEMINI_MODEL: 'configured-model' } });
+    const send = () => onRequest({ request: request({ language: 'bn', messages: [{ sender: 'assistant', text: 'Hello' }, { sender: 'user', text: 'Introduce yourself' }] }), env: { GEMINI_API_KEY: 'test-only' } });
     const wrongLanguage = await (await send()).json();
     assert.equal(wrongLanguage.mode, 'fallback');
     assert.match(wrongLanguage.reply, /[\u0980-\u09FF]/);
@@ -134,4 +134,16 @@ test('Cloudflare dispatch includes the Bengali speech function', async () => {
   const { readFile } = await import('node:fs/promises');
   const routes = JSON.parse(await readFile(new URL('../public/_routes.json', import.meta.url), 'utf8'));
   assert.ok(routes.include.includes('/angela/speech'));
+});
+
+
+test('Study Abroad production brain is Gemini 3.8 and supports opt-in search grounding', async () => {
+  let observed;
+  globalThis.fetch = async (url, options) => {
+    observed = { url: String(url), body: JSON.parse(options.body) };
+    return Response.json({ candidates: [{ finishReason: 'STOP', content: { parts: [{ text: 'Study guidance response' }] } }] });
+  };
+  await onRequest({ request: request({ message: 'Study options in the UK', language: 'en' }), env: { GEMINI_API_KEY: 'test-only', GOOGLE_SEARCH_GROUNDING: 'true' } });
+  assert.match(observed.url, /gemini-3\.8-flash/);
+  assert.deepEqual(observed.body.tools, [{ google_search: {} }]);
 });
