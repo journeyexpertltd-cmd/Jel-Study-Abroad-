@@ -31,7 +31,7 @@ forbidText(audio, "realtimeInput: {\n              text:", 'Angela browser audio
 
 requireText(speech, "env.GEMINI_TTS_API_KEY || env.GEMINI_API_KEY", 'Angela TTS endpoint');
 requireText(speech, "env.ANGELA_SERVER_VOICE === 'off'", 'Angela TTS endpoint');
-requireText(speech, "setTimeout(() => controller.abort(), 9000)", 'Angela TTS endpoint');
+requireText(speech, "setTimeout(() => controller.abort(), 7000)", 'Angela TTS endpoint');
 requireText(speech, "gemini-3.1-flash-tts-preview", 'Angela TTS endpoint');
 requireText(speech, "v1beta/interactions", 'Angela TTS endpoint');
 requireText(speech, "response_format", 'Angela TTS endpoint');
@@ -39,7 +39,8 @@ forbidText(speech, "sample_rate", 'Angela TTS endpoint');
 requireText(speech, "speech_config: [{ voice: 'Kore' }]", 'Angela TTS endpoint');
 requireText(speech, "audio/wav", 'Angela TTS endpoint');
 forbidText(speech, "responseModalities: ['AUDIO']", 'Angela TTS endpoint');
-forbidText(speech, "gemini-2.5-flash-preview-tts", 'Angela TTS endpoint');
+requireText(speech, "gemini-2.5-flash-preview-tts", 'Angela TTS endpoint');
+requireText(speech, "gemini-2.5-pro-preview-tts", 'Angela TTS endpoint');
 
 requireText(chat, "const candidateModels = ['gemini-3.8-flash', 'gemini-3.5-flash']", 'Angela chat endpoint');
 requireText(chat, "for (const model of candidateModels)", 'Angela chat endpoint');
@@ -50,8 +51,9 @@ requireText(chat, "'gemini-3.5-flash'", 'Angela chat endpoint');
 forbidText(chat, "'gemini-2.5-flash'", 'Angela chat endpoint');
 forbidText(chat, "'gemini-flash-latest'", 'Angela chat endpoint');
 
-requireText(token, "request.headers.get('origin') !== url.origin", 'Angela Live token');
-requireText(token, "liveConnectConstraints", 'Angela Live token');
+requireText(token, "origin && origin !== url.origin", 'Angela Live token');
+requireText(token, "bidiGenerateContentSetup", 'Angela Live token');
+forbidText(token, "liveConnectConstraints", 'Angela Live token');
 requireText(token, "model: 'models/gemini-3.8-live'", 'Angela Live token');
 requireText(token, "responseModalities: ['AUDIO']", 'Angela Live token');
 requireText(token, "gemini-3.8-live", 'Angela Live token');
