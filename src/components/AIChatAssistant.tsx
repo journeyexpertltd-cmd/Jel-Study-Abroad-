@@ -234,7 +234,9 @@ export function AIChatAssistant() {
       .replace(/https?:\/\/\S+/g, "")
       .replace(/[\u{1F600}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, "")
       .replace(/\n+/g, ". ")
-      .trim();
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 520);
 
     if (!cleanSpeech) {
       setVoiceState("READY");
@@ -379,16 +381,13 @@ export function AIChatAssistant() {
           if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
           stopServerAudio();
           setActiveSpeakingId(null);
-          // Quota/network fallback: request the selected language from the
-          // device speech engine instead of telling the visitor voice is absent.
-          const languageVoice = wantsBanglaVoice
-            ? voices.find(matchesBangla)
-            : voices.find((voice) => /^en(?:[-_]|$)/i.test(voice.lang) && femaleName.test(voice.name))
-              || voices.find((voice) => /^en(?:[-_]|$)/i.test(voice.lang));
-          utterance.lang = wantsBanglaVoice ? "bn-BD" : "en-US";
-          utterance.pitch = 1.08;
-          speakWithBrowser(utterance, languageVoice);
-          console.warn("Angela cloud voice fallback:", error instanceof Error ? error.message : "provider unavailable");
+          // Cross-device invariant: never allow the OS/browser to substitute
+          // an unknown or male voice. Cloud female TTS failure degrades to text only.
+          setVoiceState("ERROR");
+          setErrorMessage(wantsBanglaVoice
+            ? "Angela-র verified female voice সাময়িকভাবে পাওয়া যাচ্ছে না। উত্তরটি লেখা আকারে দেখানো হচ্ছে।"
+            : "Angela verified female voice is temporarily unavailable. The answer remains available as text.");
+          console.warn("Angela verified female TTS unavailable:", error instanceof Error ? error.message : "provider unavailable");
         } finally {
           clearTimeout(timeout);
           if (serverSpeechRef.current === controller) serverSpeechRef.current = null;
