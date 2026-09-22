@@ -15,7 +15,7 @@ const ENGLISH_WELCOME = "👋 Assalamu Alaikum! I am Angela, the AI Voice & Stud
 const BANGLA_WELCOME = "👋 আসসালামু আলাইকুম! আমি অ্যাঞ্জেলা—JEL Study Abroad-এর এআই ভয়েস ও শিক্ষা সহকারী।\n\nআমি উচ্চশিক্ষার দেশ, বিশ্ববিদ্যালয় ও কোর্স নির্বাচন, অ্যাডমিশন, স্কলারশিপ, SOP, ইংরেজি টেস্ট, স্টুডেন্ট ভিসার ডকুমেন্ট, প্রি-ডিপারচার ও পোস্ট-অ্যারাইভাল গাইডেন্সে সাহায্য করতে পারি।\n\nএয়ার টিকিট, ট্যুর, হজ-ওমরাহ, মেডিকেল/হালাল ট্যুরিজম, হোটেল ও কর্পোরেট ট্রাভেলের জন্য মূল ওয়েবসাইট journeyexpertltd.com ব্যবহার করুন।\n\nবাংলা, English বা Banglish-এ বলুন বা লিখুন।";
 
 const isBanglaText = (text: string) => /[\u0980-\u09FF]/.test(text);
-const welcomeFor = (mode: "auto" | "en" | "bn") => mode === "bn" ? BANGLA_WELCOME : ENGLISH_WELCOME;
+const welcomeFor = (mode: "en" | "bn") => mode === "bn" ? BANGLA_WELCOME : ENGLISH_WELCOME;
 
 // Voice States according to Phase 6 specifications
 export type AngelaVoiceState = "READY" | "LISTENING" | "THINKING" | "SPEAKING" | "ERROR";
@@ -56,7 +56,7 @@ declare global {
 export function AIChatAssistant() {
   const [isOpen, setIsOpen] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
-  const [languageMode, setLanguageMode] = useState<"auto" | "en" | "bn">("auto");
+  const [languageMode, setLanguageMode] = useState<"en" | "bn">("bn");
   const [voiceState, setVoiceState] = useState<AngelaVoiceState>("READY");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -71,7 +71,7 @@ export function AIChatAssistant() {
     {
       id: "welcome-angela-jel",
       sender: "assistant",
-      text: ENGLISH_WELCOME,
+      text: BANGLA_WELCOME,
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
     }
   ]);
@@ -135,7 +135,6 @@ export function AIChatAssistant() {
   };
   const requestRef = useRef<AbortController | null>(null);
   const enabledRef = useRef(isVoiceEnabled);
-  const autoRecognitionLangRef = useRef<"bn-BD" | "en-US">("bn-BD");
   enabledRef.current = isVoiceEnabled;
   const cancelPending = () => {
     requestRef.current?.abort();
@@ -197,7 +196,7 @@ export function AIChatAssistant() {
     setVoiceState((prev) => (prev === "SPEAKING" ? "READY" : prev));
   }, []);
 
-  const changeLanguage = (mode: "auto" | "en" | "bn") => {
+  const changeLanguage = (mode: "en" | "bn") => {
     cancelPending();
     stopSpeaking();
     setLanguageMode(mode);
@@ -308,22 +307,9 @@ export function AIChatAssistant() {
       utterance.rate = 1.0;
       utterance.pitch = 1.0;
 
-      if (wantsBanglaVoice) {
-        // Free-first path: use a device/browser Bengali voice immediately when available.
-        // Prefer a likely female voice, but keep any Bengali voice as a no-quota resilience fallback.
-        const localBanglaVoice =
-          voices.find((voice) => matchesBangla(voice) && femaleName.test(voice.name));
-
-        if (localBanglaVoice) {
-          speakWithBrowser(utterance, localBanglaVoice);
-          return;
-        }
-
-        // Never fall back to an arbitrary Bengali system voice because many
-        // Windows/browser defaults are male (for example Microsoft Bashkar).
-        // The server path below uses Gemini Kore, an explicitly female voice.
-
-        // No Bengali system voice: fall back to the same-origin Gemini Live/TTS bridge.
+      if (cleanSpeech) {
+        // Use the same JEL server-rendered Angela female voice for both Bangla
+        // and English on desktop and mobile. Never substitute a male OS voice.
         currentUtteranceRef.current = null;
         const controller = new AbortController();
         serverSpeechRef.current = controller;
@@ -392,7 +378,9 @@ export function AIChatAssistant() {
           stopServerAudio();
           setActiveSpeakingId(null);
           setVoiceState("ERROR");
-          setErrorMessage(voiceErrorMessage(error));
+          setErrorMessage(languageMode === "bn"
+            ? voiceErrorMessage(error)
+            : "Angela female English voice is temporarily unavailable. Text chat remains active—please try Listen again shortly.");
         } finally {
           clearTimeout(timeout);
           if (serverSpeechRef.current === controller) serverSpeechRef.current = null;
@@ -476,7 +464,7 @@ export function AIChatAssistant() {
 
       const data = await response.json();
       if (requestRef.current !== controller) return;
-      const wantsBangla = languageMode === "bn" || isBanglaText(trimmed);
+      const wantsBangla = languageMode === "bn";
       const replyText = data.reply || (wantsBangla
         ? "আপনার প্রশ্নটি প্রক্রিয়া করা যাচ্ছে না। দ্রুত সহায়তার জন্য JEL কাউন্সেলরের সঙ্গে +8801926400400 নম্বরে যোগাযোগ করুন।"
         : "I am processing your inquiry. Please reach out to our JEL Counselors at +8801926400400 for immediate assistance.");
@@ -501,7 +489,7 @@ export function AIChatAssistant() {
       if (requestRef.current !== controller) return;
       console.error("Angela Chat Error:", error);
       // Phase 12: Never display technical stack traces to customers
-      const wantsBangla = languageMode === "bn" || isBanglaText(trimmed);
+      const wantsBangla = languageMode === "bn";
       const friendlyError = wantsBangla
         ? "এই মুহূর্তে উত্তর দিতে পারছি না। আবার চেষ্টা করুন অথবা JEL-এর সঙ্গে সরাসরি যোগাযোগ করুন।"
         : "I'm temporarily unable to respond. Please try again or contact JEL directly.";
@@ -552,14 +540,7 @@ export function AIChatAssistant() {
       recognition.interimResults = true;
 
       // Language configuration
-      if (languageMode === "bn") {
-        recognition.lang = "bn-BD";
-      } else if (languageMode === "en") {
-        recognition.lang = "en-US";
-      } else {
-        // Web Speech API has no true multilingual auto-detect. Adapt from the last successful Auto transcript.
-        recognition.lang = autoRecognitionLangRef.current;
-      }
+      recognition.lang = languageMode === "bn" ? "bn-BD" : "en-US";
 
       recognition.onstart = () => {
         setVoiceState("LISTENING");
@@ -604,11 +585,6 @@ export function AIChatAssistant() {
       recognition.onend = () => {
         const spoken = finalTranscript.trim() || latestInterim.trim();
         if (spoken) {
-          if (languageMode === "auto") {
-            const transcriptHasBangla = /[\u0980-\u09FF]/.test(spoken);
-            const transcriptLooksBanglish = /\b(ami|amar|amake|apni|apnar|tumi|tomar|chai|jabo|jete|koto|kivabe|ki|keno|kobe|hobe|korbo|korte|lagbe|bolen|diben|pari|parbo|porte|bidesh)\b/i.test(spoken);
-            autoRecognitionLangRef.current = transcriptHasBangla || transcriptLooksBanglish ? "bn-BD" : "en-US";
-          }
           handleSendMessage(spoken, true);
         } else {
           setVoiceState("READY");
@@ -827,13 +803,6 @@ export function AIChatAssistant() {
             <div className="flex items-center space-x-1 z-10">
               {/* Language Switcher */}
               <div className="flex items-center bg-white/10 rounded-lg p-0.5 text-[10px] sm:text-[11px] font-medium mr-1">
-                <button
-                  onClick={() => changeLanguage("auto")}
-                  className={`px-1 sm:px-1.5 py-0.5 rounded transition-all ${languageMode === "auto" ? "bg-white text-[#0B5D3B] font-bold shadow-xs" : "text-white/80 hover:text-white"}`}
-                  title="Auto Detect Language"
-                >
-                  Auto
-                </button>
                 <button
                   onClick={() => changeLanguage("en")}
                   className={`px-1 sm:px-1.5 py-0.5 rounded transition-all ${languageMode === "en" ? "bg-white text-[#0B5D3B] font-bold shadow-xs" : "text-white/80 hover:text-white"}`}

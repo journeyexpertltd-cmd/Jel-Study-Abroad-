@@ -660,11 +660,10 @@ CRITICAL COMPLIANCE & SAFETY RULES (NON-NEGOTIABLE):
    - Professional, warm, concise, trustworthy, and commercially helpful.
    - Do not repeat robotic greetings in every turn.
    - Maintain context across messages (e.g. if the user says "I want to visit Malaysia" and then "Tourism", understand that they want a tourist visa/package for Malaysia).
-4. STRICT LANGUAGE MIRRORING (BANGLA / ENGLISH / BANGLISH):
-   - If the customer speaks or writes in Bengali (বাংলা script), you MUST ALWAYS respond in natural, polite, grammatically correct Bengali (বাংলা). NEVER answer a Bengali inquiry in English.
+4. STRICT LANGUAGE SELECTION (BANGLA OR ENGLISH ONLY):
+   - Obey the language selected in the Angela interface. Bengali mode must always return natural Bengali; English mode must always return professional English.
    - For Bengali greetings, use Bangladeshi cultural etiquette: "আসসালামু আলাইকুম! আমি অ্যাঞ্জেলা (Angela)..."
-   - If the customer speaks or writes in English, respond in articulate, professional English.
-   - If the customer uses Banglish (e.g., "flight fare koto?", "visa requirements ki ki?") or code-switches, respond naturally in friendly, bilingual conversational style.
+   - Never return Hindi, Arabic, or any third language. Do not mix Bengali and English sentences, except proper names, official terms, URLs, email addresses, and contact details.
    - Do NOT output prompt tags, emotion markers, or bracketed text like [friendly], [cheerful], or [sad].
 5. VOICE & SPEECH OPTIMIZATION:
    - Your responses are frequently spoken aloud via voice synthesis.
@@ -758,6 +757,7 @@ async function requestGeminiModel(
 
 const handleAngelaChat = async (req: express.Request, res: express.Response) => {
   res.setHeader("Cache-Control", "no-store");
+  const requestedLanguage: "bn" | "en" = req.body?.language === "en" ? "en" : "bn";
   try {
     const { messages, message, language } = req.body || {};
     
@@ -779,7 +779,7 @@ const handleAngelaChat = async (req: express.Request, res: express.Response) => 
     }
 
     // Detect language: Bengali vs Banglish vs English
-    const detectedLang = detectAngelaLanguage(lastUserMsg, language);
+    const detectedLang = detectAngelaLanguage(lastUserMsg, requestedLanguage);
     const isBangla = detectedLang === "bn";
 
     // Format safe fallback response
@@ -857,7 +857,7 @@ const handleAngelaChat = async (req: express.Request, res: express.Response) => 
       }
     }
 
-    // Never return an English technical fallback to a Bengali user (Requirement 2)
+    // Enforce the explicitly selected language even when the model drifts.
     if (isBangla && !/[\u0980-\u09FF]/.test(finalReply)) {
       console.warn("Angela model output lacked Bengali characters for Bengali user; using safe Bengali response");
       res.json({
@@ -866,6 +866,11 @@ const handleAngelaChat = async (req: express.Request, res: express.Response) => 
         language: "bn",
         reply: safeFallbackReply
       });
+      return;
+    }
+    if (!isBangla && /[\u0980-\u09FF]/.test(finalReply)) {
+      console.warn("Angela model output contained Bengali in English mode; using safe English response");
+      res.json({ mode: "fallback", retryable: true, language: "en", reply: safeFallbackReply });
       return;
     }
 
@@ -881,8 +886,8 @@ const handleAngelaChat = async (req: express.Request, res: express.Response) => 
     res.json({
       mode: "fallback",
       retryable: true,
-      language: "en",
-      reply: "Hello! I am Angela, your AI assistant at Journey Expert Limited. For verified admissions and visa support, please connect with our counselors on WhatsApp at +8801926400400."
+      language: requestedLanguage,
+      reply: getSafeAngelaFallback(requestedLanguage === "bn", "")
     });
   }
 };
