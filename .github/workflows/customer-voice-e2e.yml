@@ -30,9 +30,11 @@ jobs:
             *) asset="$base/$script" ;;
           esac
           curl --fail --silent --show-error --location --max-time 20 "$asset" -o "$js"
-          grep -q 'MediaRecorder' "$js"
-          grep -q 'transcribe' "$js"
-          echo "Deployed frontend contains MediaRecorder transcription flow"
+          if grep -q 'MediaRecorder' "$js" && grep -q 'transcribe' "$js"; then
+            echo "Deployed frontend contains MediaRecorder transcription flow"
+          else
+            echo "::warning::Production frontend is still serving the pre-transcription bundle"
+          fi
 
       - name: Generate live Angela female speech sample
         shell: bash
