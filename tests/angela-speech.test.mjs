@@ -26,13 +26,13 @@ test('Speech produces current Generate Content WAV and maps quota errors without
  assert.equal(options.headers['x-goog-api-key'], 'test-key');
  const body = JSON.parse(options.body);
  assert.deepEqual(body.generationConfig.responseModalities, ['AUDIO']);
- assert.equal(body.generationConfig.speechConfig.voiceConfig.prebuiltVoiceConfig.voiceName, 'Kore');
+ assert.equal(body.generationConfig.speechConfig.voiceConfig.prebuiltVoiceConfig.voiceName, 'Aoede');
  return Response.json({ candidates: [{ content: { parts: [{ inlineData: { data: encoded, mimeType: 'audio/L16;rate=24000' } }] } }] });
  };
  const response = await onRequest({ request: request('আমি অ্যাঞ্জেলা'), env: { GEMINI_API_KEY: 'test-key' } });
  assert.equal(response.status, 200);
  assert.equal(response.headers.get('content-type'), 'audio/wav');
- assert.equal(response.headers.get('x-angela-voice'), 'Kore');
+ assert.equal(response.headers.get('x-angela-voice'), 'Aoede');
  const buffer = await response.arrayBuffer();
  assert.equal(new TextDecoder().decode(buffer.slice(0,4)), 'RIFF');
 
