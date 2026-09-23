@@ -249,26 +249,9 @@ export function AIChatAssistant() {
 
     try {
       const wantsBanglaVoice = isBanglaText(cleanSpeech) || languageMode === "bn";
-      let voices = window.speechSynthesis.getVoices();
-
-      // Chromium/Safari often populate voices asynchronously after the first call.
-      if (!voices.length) {
-        await new Promise<void>((resolve) => {
-          const synthesis = window.speechSynthesis;
-          const finish = () => {
-            clearTimeout(timeout);
-            synthesis.removeEventListener("voiceschanged", onVoices);
-            resolve();
-          };
-          const onVoices = () => {
-            if (synthesis.getVoices().length > 0) finish();
-          };
-          const timeout = window.setTimeout(finish, 1200);
-          synthesis.addEventListener("voiceschanged", onVoices);
-          onVoices();
-        });
-        voices = window.speechSynthesis.getVoices();
-      }
+      // Do not await voice enumeration here. Waiting can lose the browser user
+      // activation window and make mobile/desktop speech silently fail.
+      const voices = window.speechSynthesis.getVoices();
 
       if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
 
@@ -315,7 +298,7 @@ export function AIChatAssistant() {
       utterance.rate = 1.0;
       utterance.pitch = 1.0;
 
-      // DEVICE_FIRST_ANGELA_VOICE
+      // DEVICE_FIRST_ANGELA_VOICE — device voice fallback is the production primary.
       // Cloud TTS can be quota-limited. Keep it off the critical speaking path so
       // Angela always attempts audible speech immediately on the customer's device.
       const preferredDeviceVoice = wantsBanglaVoice
