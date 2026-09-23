@@ -129,7 +129,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
     const studyAiStudioOrigin = (env.STUDY_AI_STUDIO_ORIGIN || 'https://jel-study-abroad.ai.studio').replace(/\/$/, '');
     try {
       const response = await fetch(`${studyAiStudioOrigin}/api/gemini/chat`, {
-        method: 'POST', signal: AbortSignal.timeout(8000),
+        method: 'POST', signal: AbortSignal.timeout(3500),
         headers: { 'Content-Type': 'application/json', 'Origin': new URL(request.url).origin },
         body: JSON.stringify({ message: last, language: bn ? 'bn' : 'en', history: turns.slice(0, -1).map((turn: any) => ({ role: turn.role === 'model' ? 'assistant' : 'user', content: turn.parts[0].text })) }),
       });
@@ -174,13 +174,21 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
     }
   };
 
-  // Prefer Gemini 3.8 Flash. If it returns HTTP 200 but unusable content
-  // (empty, truncated, or wrong-language), continue to Gemini 3.5 instead of
-  // collapsing immediately into canned fallback.
-  for (const model of candidateModels) {
-    for (const apiKey of apiKeys) {
-      const response = await makeRequest(model, apiKey, model === 'gemini-3.8-flash' ? 8500 : 6500);
-      if (!response?.ok) continue;
+  // Keep the customer-facing endpoint bounded. Free Gemini credentials can
+  // be rate-limited or temporarily slow; do not serially wait through every
+  // model/key combination. The direct provider gets one short total budget.
+  const directDeadline = Date.now() + 5500;
+  direct: for (const apiKey of apiKeys) {
+    for (const model of candidateModels) {
+      const remaining = directDeadline - Date.now();
+      if (remaining < 900) break direct;
+      const response = await makeRequest(model, apiKey, Math.min(model === 'gemini-3.8-flash' ? 3500 : 2200, remaining));
+      if (!response) continue;
+
+      // A quota/auth response applies to the credential, so trying more models
+      // with the same key only adds latency without improving the result.
+      if (response.status === 429 || response.status === 401 || response.status === 403) break;
+      if (!response.ok) continue;
 
       try {
         const data: any = await response.json();
@@ -205,13 +213,52 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
     }
   }
 
-  // If all direct Gemini models are unavailable, try the dedicated Study AI Studio
-  // before degrading to the verified local fallback.
+  // Reuse the already-validated corporate Angela brain before another slow
+  // external provider. This keeps Study Abroad responsive when its free quota
+  // is exhausted, while non-education travel queries remain isolated.
+  const mainTravelQuery = /টিকিট|ফ্লাইট|ভাড়া|ফেয়ার|ticket|flight|fare|ওমরাহ|উমরাহ|umrah|hajj|হজ|tour|ট্যুর|medical tourism|মেডিকেল ট্যুরিজম|halal tourism|হালাল ট্যুরিজম|hotel|হোটেল|corporate travel|কর্পোরেট/.test(last.toLowerCase());
+  if (!mainTravelQuery) {
+    try {
+      const response = await fetch('https://journeyexpertltd.com/angela/chat', {
+        method: 'POST',
+        signal: AbortSignal.timeout(4000),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: last,
+          language: bn ? 'bn' : 'en',
+          history: turns.slice(0, -1).map((turn: any) => ({
+            role: turn.role === 'model' ? 'assistant' : 'user',
+            content: turn.parts[0].text,
+          })),
+        }),
+      });
+      if (response.ok) {
+        const data: any = await response.json();
+        if (data.mode === 'ai'
+          && typeof data.reply === 'string'
+          && data.reply.trim()
+          && !(bn && !/[\u0980-\u09FF]/.test(data.reply))
+          && !(!bn && /[\u0980-\u09FF]/.test(data.reply))) {
+          return json({
+            reply: data.reply.slice(0, 1800),
+            mode: 'ai',
+            language: bn ? 'bn' : 'en',
+            providerModel: 'jel-corporate-' + (data.providerModel || 'gemini'),
+          });
+        }
+      }
+    } catch {
+      // Continue to the dedicated Study AI Studio fallback.
+    }
+  }
+
+  // One short dedicated Study AI Studio attempt remains useful when both direct
+  // Study credentials and the shared corporate AI are degraded.
   const studyAiStudioOrigin = (env.STUDY_AI_STUDIO_ORIGIN || 'https://jel-study-abroad.ai.studio').replace(/\/$/, '');
   try {
     const response = await fetch(`${studyAiStudioOrigin}/api/gemini/chat`, {
       method: 'POST',
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(3000),
       headers: { 'Content-Type': 'application/json', 'Origin': new URL(request.url).origin },
       body: JSON.stringify({
         message: last,
@@ -239,46 +286,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
       }
     }
   } catch {
-    // Continue to the shared JEL AI fallback.
-  }
-
-  // Reuse the already-validated corporate Angela brain for Study Abroad questions
-  // when this deployment's direct Gemini credentials and dedicated AI Studio are degraded.
-  // Non-education travel questions remain isolated to the main Journey Expert website.
-  const mainTravelQuery = /টিকিট|ফ্লাইট|ভাড়া|ফেয়ার|ticket|flight|fare|ওমরাহ|উমরাহ|umrah|hajj|হজ|tour|ট্যুর|medical tourism|মেডিকেল ট্যুরিজম|halal tourism|হালাল ট্যুরিজম|hotel|হোটেল|corporate travel|কর্পোরেট/.test(last.toLowerCase());
-  if (!mainTravelQuery) {
-    try {
-      const response = await fetch('https://journeyexpertltd.com/angela/chat', {
-        method: 'POST',
-        signal: AbortSignal.timeout(8000),
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: last,
-          language: bn ? 'bn' : 'en',
-          history: turns.slice(0, -1).map((turn: any) => ({
-            role: turn.role === 'model' ? 'assistant' : 'user',
-            content: turn.parts[0].text,
-          })),
-        }),
-      });
-      if (response.ok) {
-        const data: any = await response.json();
-        if (data.mode === 'ai'
-          && typeof data.reply === 'string'
-          && data.reply.trim()
-          && !(bn && !/[\u0980-\u09FF]/.test(data.reply))
-          && !(!bn && /[\u0980-\u09FF]/.test(data.reply))) {
-          return json({
-            reply: data.reply.slice(0, 1800),
-            mode: 'ai',
-            language: bn ? 'bn' : 'en',
-            providerModel: 'jel-corporate-' + (data.providerModel || 'gemini'),
-          });
-        }
-      }
-    } catch {
-      // Continue to the verified local fallback.
-    }
+    // Fall through immediately to verified local guidance.
   }
 
   return fallback();
