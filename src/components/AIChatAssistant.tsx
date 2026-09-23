@@ -21,30 +21,41 @@ const BANGLA_MALE_HINTS = ["pradeep", "pradip", "bhashkar", "bhaskar", "bashkar"
 const ENGLISH_FEMALE_HINTS = ["zira", "aria", "jenny", "sonia", "samantha", "victoria", "ava", "allison", "karen", "susan", "hazel", "libby", "natasha", "serena", "moira", "fiona", "tessa", "veena", "female", "woman", "google uk english female"];
 
 function pickAngelaDeviceVoice(voices: SpeechSynthesisVoice[], language: "bn" | "en"): SpeechSynthesisVoice | null {
+  // STRICT_FEMALE_ONLY: never let a language-only match select an arbitrary
+  // default voice. If an explicitly female voice cannot be identified, Angela
+  // stays text-only instead of ever falling back to a male/default voice.
+  const femaleHints = language === "bn" ? BANGLA_FEMALE_HINTS : ENGLISH_FEMALE_HINTS;
+  const maleHints = language === "bn" ? BANGLA_MALE_HINTS : ["david", "mark", "george", "daniel", "guy", "male", "man"];
+  const eligible = voices.filter((voice) => {
+    const name = voice.name.toLowerCase();
+    const lang = voice.lang.toLowerCase();
+    const femaleNamed = femaleHints.some((hint) => name.includes(hint));
+    const maleNamed = maleHints.some((hint) => name.includes(hint));
+    const languageMatch = language === "bn"
+      ? (lang.startsWith("bn") || /bangla|bengali/.test(name))
+      : lang.startsWith("en");
+    return femaleNamed && !maleNamed && languageMatch;
+  });
   const score = (voice: SpeechSynthesisVoice) => {
     const name = voice.name.toLowerCase();
     const lang = voice.lang.toLowerCase();
     let value = 0;
     if (language === "bn") {
-      if (lang.startsWith("bn-bd")) value += 120;
-      else if (lang.startsWith("bn")) value += 100;
-      else if (/bangla|bengali/.test(name)) value += 80;
-      if (BANGLA_FEMALE_HINTS.some((hint) => name.includes(hint))) value += 80;
-      if (BANGLA_MALE_HINTS.some((hint) => name.includes(hint))) value -= 180;
-    } else {
-      if (lang.startsWith("en")) value += 100;
-      if (ENGLISH_FEMALE_HINTS.some((hint) => name.includes(hint))) value += 80;
-      if (/male|man/.test(name)) value -= 180;
+      if (lang.startsWith("bn-bd")) value += 130;
+      else if (lang.startsWith("bn-in")) value += 120;
+      else if (lang.startsWith("bn")) value += 110;
+      else if (/bangla|bengali/.test(name)) value += 90;
+    } else if (lang.startsWith("en")) {
+      value += 110;
     }
+    if (femaleHints.some((hint) => name.includes(hint))) value += 100;
     if (voice.default) value += 4;
     if (voice.localService) value += 3;
     return value;
   };
-  const ranked = voices
+  return eligible
     .map((voice) => ({ voice, score: score(voice) }))
-    .filter((item) => item.score > 0)
-    .sort((a, b) => b.score - a.score);
-  return ranked[0]?.voice || null;
+    .sort((a, b) => b.score - a.score)[0]?.voice || null;
 }
 
 // Voice States according to Phase 6 specifications
@@ -415,8 +426,16 @@ export function AIChatAssistant() {
       utterance.pitch = wantsBanglaVoice ? 1.12 : 1.04;
 
       const preferredDeviceVoice = pickAngelaDeviceVoice(voices, wantsBanglaVoice ? "bn" : "en");
+      if (!preferredDeviceVoice) {
+        setVoiceState("ERROR");
+        setActiveSpeakingId(null);
+        setErrorMessage(wantsBanglaVoice
+          ? "Verified female device voice পাওয়া যায়নি। Male/default voice ব্যবহার না করে উত্তরটি text হিসেবে রাখা হয়েছে।"
+          : "A verified female device voice is unavailable. Angela will stay text-only rather than use a male/default voice.");
+        return;
+      }
       setErrorMessage(null);
-      speakWithBrowser(utterance, preferredDeviceVoice || undefined);
+      speakWithBrowser(utterance, preferredDeviceVoice);
       return;
     } catch (error) {
       console.warn("Text to speech exception:", error);
