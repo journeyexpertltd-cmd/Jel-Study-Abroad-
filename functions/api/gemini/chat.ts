@@ -55,9 +55,9 @@ const JEL_SEMANTIC_KNOWLEDGE: JelKnowledgeEntry[] = [
   {
     id: 'study_abroad',
     priority: 95,
-    keywords: ['study abroad', 'student visa', 'student', 'study', 'university', 'course', 'admission', 'scholarship', 'sop', 'ielts', 'masters', 'bachelor', 'cas', 'coe', 'i-20', 'i20', 'স্টাডি', 'স্টুডেন্ট', 'বিশ্ববিদ্যাল', 'অ্যাডমিশন', 'স্কলারশিপ', 'পড়াশোনা', 'পড়াশোনা'],
+    keywords: ['study abroad', 'student visa', 'student', 'study', 'university', 'course', 'admission', 'scholarship', 'sop', 'ielts', 'masters', 'bachelor', 'cas', 'coe', 'i-20', 'i20', 'স্টাডি', 'স্টুডেন্ট', 'বিশ্ববিদ্যাল', 'অ্যাডমিশন', 'স্কলারশিপ', 'পড়াশোনা', 'পড়াশোনা', 'পড়তে', 'পড়তে', 'মাস্টার্স', 'ব্যাচেলর'],
     facts: 'JEL Study Abroad scope: profile assessment; country/course/university selection; admissions guidance; scholarship guidance; SOP guidance; English-language test guidance; student-visa document preparation; pre-departure and post-arrival guidance. The dedicated portal is journeyexpertbd.com. Admission, scholarship and visa outcomes are never guaranteed.',
-    fallbackBn: 'JEL Study Abroad প্রোফাইল assessment, দেশ/কোর্স/বিশ্ববিদ্যালয় নির্বাচন, admission ও scholarship guidance, SOP, English-language test guidance, student-visa documents এবং pre-departure/post-arrival guidance দেয়। Admission, scholarship বা visa outcome গ্যারান্টি করা হয় না।',
+    fallbackBn: 'JEL Study Abroad প্রোফাইল মূল্যায়ন, দেশ/কোর্স/বিশ্ববিদ্যালয় নির্বাচন, admission ও scholarship guidance, SOP, English-language test guidance, student-visa documents এবং pre-departure/post-arrival guidance দেয়। Admission, scholarship বা visa outcome গ্যারান্টি করা হয় না।',
     fallbackEn: 'JEL Study Abroad supports profile assessment, country/course/university selection, admissions and scholarship guidance, SOP, English-language tests, student-visa documents, and pre-/post-arrival guidance. Admission, scholarship, and visa outcomes are not guaranteed.',
   },
   {
@@ -157,7 +157,7 @@ function retrieveJelKnowledge(query: string) {
       return { entry, score };
     })
     .filter(({ score }) => score > 0)
-    .sort((a, b) => (b.score - a.score) || (b.entry.priority - a.entry.priority));
+    .sort((a, b) => (b.entry.priority - a.entry.priority) || (b.score - a.score));
 
   const primary = scored[0]?.entry || null;
   const selected = scored.slice(0, 3).map(({ entry }) => entry);
