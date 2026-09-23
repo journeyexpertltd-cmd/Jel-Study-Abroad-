@@ -135,7 +135,10 @@ test('Study Abroad keeps its no-key AI fallback on the dedicated Study AI Studio
 test('Cloudflare dispatch includes the Bengali speech function', async () => {
   const { readFile } = await import('node:fs/promises');
   const routes = JSON.parse(await readFile(new URL('../public/_routes.json', import.meta.url), 'utf8'));
-  assert.ok(routes.include.includes('/angela/speech'));
+  assert.ok(
+    routes.include.includes('/angela/speech') || routes.include.includes('/angela/*'),
+    'Cloudflare routing must dispatch /angela/speech either explicitly or through /angela/*'
+  );
 });
 
 
