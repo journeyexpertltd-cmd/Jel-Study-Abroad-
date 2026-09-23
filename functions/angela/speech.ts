@@ -93,7 +93,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
               responseModalities: ['AUDIO'],
               speechConfig: {
                 voiceConfig: {
-                  prebuiltVoiceConfig: { voiceName: 'Kore' },
+                  prebuiltVoiceConfig: { voiceName: 'Aoede' },
                 },
               },
             },
@@ -120,7 +120,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
           'Content-Type': 'audio/wav',
           'Cache-Control': 'no-store',
           'X-Content-Type-Options': 'nosniff',
-          'X-Angela-Voice': 'Kore',
+          'X-Angela-Voice': 'Aoede',
           'X-Angela-Voice-Model': model,
         },
       });
