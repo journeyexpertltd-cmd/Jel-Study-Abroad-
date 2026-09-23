@@ -20,9 +20,7 @@ const [assistant, audio, speech, chat, token, sitemap, redirects] = await Promis
 
 requireText(assistant, "MediaRecorder", 'Angela customer voice input');
 requireText(assistant, "startBrowserRecognitionFallback(notice)", 'Angela customer voice input');
-requireText(assistant, "CLOUD_FEMALE_PRIMARY_FAST", 'Angela cloud female primary voice');
-requireText(assistant, "device voice fallback", 'Angela resilient device fallback');
-requireText(assistant, 'data-voice-contract="cloud female primary; device voice fallback"', 'Angela deployed voice contract');
+requireText(assistant, "DEVICE_FIRST_ANGELA_VOICE", 'Angela customer voice output');
 requireText(assistant, "BANGLA_FEMALE_HINTS", 'Angela cross-platform female voice selection');
 requireText(assistant, "BANGLA_MALE_HINTS", 'Angela male voice exclusion');
 requireText(assistant, "pickAngelaDeviceVoice", 'Angela cross-platform voice ranking');
