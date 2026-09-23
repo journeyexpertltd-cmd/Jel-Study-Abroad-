@@ -16,7 +16,9 @@ test('Angela prioritizes a localized female voice without allowing cloud quota t
   assert.match(component, /BANGLA_FEMALE_HINTS/);
   assert.match(component, /BANGLA_MALE_HINTS/);
   assert.match(component, /pickAngelaDeviceVoice/);
+  assert.match(component, /STRICT_FEMALE_ONLY/);
+  assert.match(component, /verified female device voice/i);
   assert.match(component, /DEVICE_FIRST_ANGELA_VOICE/);
-  assert.match(server, /voiceName: "Kore"/);
+  assert.match(server, /voiceName: "Aoede"/);
   assert.match(server, /Never return Hindi, Arabic, or any third language/);
 });

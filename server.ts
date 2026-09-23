@@ -940,7 +940,7 @@ const handleAngelaSpeech = async (req: express.Request, res: express.Response) =
           generationConfig: {
             responseModalities: ["AUDIO"],
             speechConfig: {
-              voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } },
+              voiceConfig: { prebuiltVoiceConfig: { voiceName: "Aoede" } },
             },
           },
         }),
@@ -975,7 +975,7 @@ const handleAngelaSpeech = async (req: express.Request, res: express.Response) =
     const wavBuffer = pcmToWavBuffer(new Uint8Array(raw));
     res.setHeader("Content-Type", "audio/wav");
     res.setHeader("X-Content-Type-Options", "nosniff");
-    res.setHeader("X-Angela-Voice", "Kore");
+    res.setHeader("X-Angela-Voice", "Aoede");
     res.setHeader("X-Angela-Voice-Model", model);
     return res.send(wavBuffer);
   } catch (err: any) {

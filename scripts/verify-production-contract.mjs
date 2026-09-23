@@ -26,6 +26,7 @@ requireText(assistant, 'data-voice-contract="cloud female primary; device voice 
 requireText(assistant, "BANGLA_FEMALE_HINTS", 'Angela cross-platform female voice selection');
 requireText(assistant, "BANGLA_MALE_HINTS", 'Angela male voice exclusion');
 requireText(assistant, "pickAngelaDeviceVoice", 'Angela cross-platform voice ranking');
+requireText(assistant, "STRICT_FEMALE_ONLY", 'Angela must never use an unverified male/default device voice');
 requireText(chat, "You serve visitors on both journeyexpertbd.com and journeyexpertltd.com", 'Angela unified JEL knowledge');
 requireText(chat, "air ticketing; fare quotation; reissue/refund support", 'Angela unified JEL services');
 requireText(chat, "https://journeyexpertltd.com/angela/transcribe", 'Angela transcription failover');
@@ -48,7 +49,7 @@ requireText(speech, "gemini-3.1-flash-tts-preview", 'Angela TTS endpoint');
 requireText(speech, "v1beta/models/", 'Angela TTS endpoint');
 requireText(speech, ":generateContent", 'Angela TTS endpoint');
 forbidText(speech, "sample_rate", 'Angela TTS endpoint');
-requireText(speech, "prebuiltVoiceConfig: { voiceName: 'Kore' }", 'Angela TTS endpoint');
+requireText(speech, "prebuiltVoiceConfig: { voiceName: 'Aoede' }", 'Angela TTS endpoint');
 requireText(speech, "audio/wav", 'Angela TTS endpoint');
 requireText(speech, "responseModalities: ['AUDIO']", 'Angela TTS endpoint');
 requireText(speech, "gemini-2.5-flash-preview-tts", 'Angela TTS endpoint');
