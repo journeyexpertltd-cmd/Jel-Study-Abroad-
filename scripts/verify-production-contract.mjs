@@ -19,10 +19,7 @@ const [assistant, audio, speech, chat, token, sitemap, redirects] = await Promis
 ]);
 
 requireText(assistant, "MediaRecorder", 'Angela customer voice input');
-requireText(assistant, "FREE_VOICE_INPUT_PRIMARY", 'Angela customer voice input');
-requireText(assistant, "if (SpeechRec) {", 'Angela customer voice input');
-requireText(assistant, "startBrowserRecognitionFallback();", 'Angela customer voice input');
-requireText(assistant, 'data-language-contract="bangla-only"', 'Angela Bangla-only production mode');
+requireText(assistant, "startBrowserRecognitionFallback(notice)", 'Angela customer voice input');
 requireText(assistant, "CLOUD_FEMALE_PRIMARY_FAST", 'Angela cloud female primary voice');
 requireText(assistant, "device voice fallback", 'Angela resilient device fallback');
 requireText(assistant, 'data-voice-contract="cloud female primary; device voice fallback"', 'Angela deployed voice contract');
@@ -86,4 +83,4 @@ for (const loc of locs) {
 forbidText(redirects, '/about /about/ 301', 'Redirects');
 forbidText(redirects, '/ects-calculator /ects-calculator/ 301', 'Redirects');
 
-console.log('Production contract verified: Bangla-only Angela, browser speech-recognition first, cloud/device voice resilience, verified JEL fallback knowledge, domain and canonical rules are locked.');
+console.log('Production contract verified: bounded bilingual AI, cloud-to-device voice resilience, transcription failover, domain and canonical rules are locked.');
