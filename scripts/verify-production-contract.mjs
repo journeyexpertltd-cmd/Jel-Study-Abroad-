@@ -8,7 +8,8 @@ const forbidText = (text, needle, label) => {
   if (text.includes(needle)) throw new Error(`${label}: forbidden legacy contract found: ${needle}`);
 };
 
-const [audio, speech, chat, token, sitemap, redirects] = await Promise.all([
+const [assistant, audio, speech, chat, token, sitemap, redirects] = await Promise.all([
+  read('src/components/AIChatAssistant.tsx'),
   read('src/lib/angelaAudio.ts'),
   read('functions/angela/speech.ts'),
   read('functions/api/gemini/chat.ts'),
@@ -17,6 +18,10 @@ const [audio, speech, chat, token, sitemap, redirects] = await Promise.all([
   read('public/_redirects'),
 ]);
 
+requireText(assistant, "MediaRecorder", 'Angela customer voice input');
+requireText(assistant, "startBrowserRecognitionFallback(notice)", 'Angela customer voice input');
+requireText(assistant, "device voice fallback", 'Angela customer voice output');
+requireText(assistant, "https://journeyexpertltd.com/angela/transcribe", 'Angela transcription failover');
 requireText(audio, "data instanceof Blob", 'Angela browser audio');
 requireText(audio, "fetch('/api/gemini/live-token'", 'Angela browser audio');
 requireText(audio, "voiceName: 'Aoede'", 'Angela browser audio');
@@ -71,4 +76,4 @@ for (const loc of locs) {
 forbidText(redirects, '/about /about/ 301', 'Redirects');
 forbidText(redirects, '/ects-calculator /ects-calculator/ 301', 'Redirects');
 
-console.log('Production contract verified: Gemini 3.8 chat, female voice, domain and canonical rules are locked.');
+console.log('Production contract verified: bounded bilingual AI, cloud-to-device voice resilience, transcription failover, domain and canonical rules are locked.');
