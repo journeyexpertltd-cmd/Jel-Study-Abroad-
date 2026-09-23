@@ -30,9 +30,42 @@ test('Angela transcribe sends inline audio to Gemini and returns Bangla transcri
   assert.match(data.transcript, /[\u0980-\u09FF]/);
 });
 
-test('Angela transcribe validates requests without exposing keys', async () => {
+test('Angela transcribe fails over to corporate transcription after local quota', async () => {
+  globalThis.fetch = async (url, options) => {
+    if (String(url).includes('generativelanguage.googleapis.com')) {
+      return new Response(JSON.stringify({ error: 'quota' }), { status: 429, headers: { 'Content-Type': 'application/json' } });
+    }
+    assert.equal(String(url), 'https://journeyexpertltd.com/angela/transcribe');
+    const payload = JSON.parse(options.body);
+    assert.equal(payload.language, 'en');
+    return Response.json({ transcript: 'Hello Angela I want to study in the United Kingdom', language: 'en', mode: 'ai', providerModel: 'gemini-3.8-flash' });
+  };
+
+  const response = await onRequest({
+    request: request({ mode: 'transcribe', audio: 'AQID', mimeType: 'audio/wav', language: 'en' }),
+    env: { GEMINI_API_KEY: 'quota-key' },
+  });
+  const data = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(data.mode, 'ai');
+  assert.equal(data.language, 'en');
+  assert.match(data.providerModel, /^jel-corporate-/);
+});
+
+test('Angela transcribe validates requests and signals browser fallback when providers are unavailable', async () => {
   const noAudio = await onRequest({ request: request({ mode: 'transcribe', language: 'en' }), env: { GEMINI_API_KEY: 'test-key' } });
   assert.equal(noAudio.status, 400);
-  const noKey = await onRequest({ request: request({ mode: 'transcribe', audio: 'AQID', mimeType: 'audio/webm', language: 'en' }), env: {} });
+
+  globalThis.fetch = async (url) => {
+    assert.equal(String(url), 'https://journeyexpertltd.com/angela/transcribe');
+    return new Response(JSON.stringify({ error: 'transcription_unavailable' }), { status: 503, headers: { 'Content-Type': 'application/json' } });
+  };
+  const noKey = await onRequest({
+    request: request({ mode: 'transcribe', audio: 'AQID', mimeType: 'audio/webm', language: 'en' }),
+    env: {},
+  });
+  const data = await noKey.json();
   assert.equal(noKey.status, 503);
+  assert.equal(data.browserFallback, true);
+  assert.equal(data.error, 'transcription_not_configured');
 });
