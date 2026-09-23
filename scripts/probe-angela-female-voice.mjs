@@ -24,7 +24,10 @@ async function liveFallback() {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Origin: origin },
   });
-  if (!tokenResponse.ok) throw new Error('Live token failed: ' + tokenResponse.status);
+  if (!tokenResponse.ok) {
+    const detail = await tokenResponse.json().catch(() => ({}));
+    throw new Error('Live token failed: ' + tokenResponse.status + ' provider=' + (detail.providerStatus ?? 'unknown') + ' error=' + (detail.error ?? 'unknown'));
+  }
   const tokenData = await tokenResponse.json();
   if (!tokenData.token || !tokenData.model) throw new Error('Live token payload invalid');
 
