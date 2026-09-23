@@ -20,7 +20,12 @@ const [assistant, audio, speech, chat, token, sitemap, redirects] = await Promis
 
 requireText(assistant, "MediaRecorder", 'Angela customer voice input');
 requireText(assistant, "startBrowserRecognitionFallback(notice)", 'Angela customer voice input');
-requireText(assistant, "device voice fallback", 'Angela customer voice output');
+requireText(assistant, "DEVICE_FIRST_ANGELA_VOICE", 'Angela customer voice output');
+requireText(assistant, "BANGLA_FEMALE_HINTS", 'Angela cross-platform female voice selection');
+requireText(assistant, "BANGLA_MALE_HINTS", 'Angela male voice exclusion');
+requireText(assistant, "pickAngelaDeviceVoice", 'Angela cross-platform voice ranking');
+requireText(chat, "You serve visitors on both journeyexpertbd.com and journeyexpertltd.com", 'Angela unified JEL knowledge');
+requireText(chat, "air ticketing; fare quotation; reissue/refund support", 'Angela unified JEL services');
 requireText(chat, "https://journeyexpertltd.com/angela/transcribe", 'Angela transcription failover');
 requireText(audio, "data instanceof Blob", 'Angela browser audio');
 requireText(audio, "fetch('/api/gemini/live-token'", 'Angela browser audio');

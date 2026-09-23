@@ -12,8 +12,11 @@ test('Angela exposes only explicit Bangla and English modes', () => {
   assert.match(component, /recognition\.lang = languageMode === "bn" \? "bn-BD" : "en-US"/);
 });
 
-test('Angela uses female-only server speech across languages', () => {
-  assert.match(component, /same JEL server-rendered Angela female voice for both Bangla/);
+test('Angela prioritizes a localized female voice without allowing cloud quota to mute the assistant', () => {
+  assert.match(component, /BANGLA_FEMALE_HINTS/);
+  assert.match(component, /BANGLA_MALE_HINTS/);
+  assert.match(component, /pickAngelaDeviceVoice/);
+  assert.match(component, /DEVICE_FIRST_ANGELA_VOICE/);
   assert.match(server, /voiceName: "Kore"/);
   assert.match(server, /Never return Hindi, Arabic, or any third language/);
 });

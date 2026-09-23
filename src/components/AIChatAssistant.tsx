@@ -10,12 +10,43 @@ import { fetchAngelaSpeech, voiceErrorMessage } from "../lib/angelaAudio";
 
 const jelBrandIcon = new URL("../assets/images/jel-study-abroad-official.webp", import.meta.url).href;
 
-const ENGLISH_WELCOME = "👋 Assalamu Alaikum! I am Angela, the AI Voice & Study Abroad Assistant for JEL Study Abroad, a brand of Journey Expert Ltd.\n\nI can help with study destinations, university and course selection, admissions, scholarships, SOP guidance, English tests, student-visa documents, and pre-departure/post-arrival guidance.\n\nFor air tickets, tours, Hajj/Umrah, medical or halal tourism, hotels and corporate travel, please use our main website journeyexpertltd.com.\n\nSpeak or type in English, বাংলা, or Banglish.";
+const ENGLISH_WELCOME = "Assalamu Alaikum. I am Angela, Journey Expert Limited's AI assistant. How can I help you today? You can ask me about air tickets, visa assistance, tours and hotels, Hajj and Umrah, halal tourism, medical tourism, insurance, corporate travel, Meet & Greet, or Study Abroad.";
 
-const BANGLA_WELCOME = "👋 আসসালামু আলাইকুম! আমি অ্যাঞ্জেলা—JEL Study Abroad-এর এআই ভয়েস ও শিক্ষা সহকারী।\n\nআমি উচ্চশিক্ষার দেশ, বিশ্ববিদ্যালয় ও কোর্স নির্বাচন, অ্যাডমিশন, স্কলারশিপ, SOP, ইংরেজি টেস্ট, স্টুডেন্ট ভিসার ডকুমেন্ট, প্রি-ডিপারচার ও পোস্ট-অ্যারাইভাল গাইডেন্সে সাহায্য করতে পারি।\n\nএয়ার টিকিট, ট্যুর, হজ-ওমরাহ, মেডিকেল/হালাল ট্যুরিজম, হোটেল ও কর্পোরেট ট্রাভেলের জন্য মূল ওয়েবসাইট journeyexpertltd.com ব্যবহার করুন।\n\nবাংলা, English বা Banglish-এ বলুন বা লিখুন।";
+const BANGLA_WELCOME = "আসসালামু আলাইকুম। আমি অ্যাঞ্জেলা, Journey Expert Limited-এর AI সহকারী। আমি আপনাকে কীভাবে সাহায্য করতে পারি? এয়ার টিকিট, ভিসা সহায়তা, ট্যুর ও হোটেল, হজ ও ওমরাহ, হালাল ট্যুরিজম, মেডিকেল ট্যুরিজম, ইন্স্যুরেন্স, কর্পোরেট ট্রাভেল, Meet & Greet অথবা Study Abroad—যেকোনো বিষয়ে প্রশ্ন করতে পারেন।";
 
 const isBanglaText = (text: string) => /[\u0980-\u09FF]/.test(text);
 const welcomeFor = (mode: "en" | "bn") => mode === "bn" ? BANGLA_WELCOME : ENGLISH_WELCOME;
+
+const BANGLA_FEMALE_HINTS = ["nabanita", "tanishaa", "heera", "female", "woman"];
+const BANGLA_MALE_HINTS = ["pradeep", "bashkar", "male", "man"];
+const ENGLISH_FEMALE_HINTS = ["zira", "aria", "jenny", "sonia", "samantha", "victoria", "ava", "allison", "karen", "susan", "hazel", "libby", "natasha", "serena", "moira", "fiona", "tessa", "veena", "female", "woman", "google uk english female"];
+
+function pickAngelaDeviceVoice(voices: SpeechSynthesisVoice[], language: "bn" | "en"): SpeechSynthesisVoice | null {
+  const score = (voice: SpeechSynthesisVoice) => {
+    const name = voice.name.toLowerCase();
+    const lang = voice.lang.toLowerCase();
+    let value = 0;
+    if (language === "bn") {
+      if (lang.startsWith("bn-bd")) value += 120;
+      else if (lang.startsWith("bn")) value += 100;
+      else if (/bangla|bengali/.test(name)) value += 80;
+      if (BANGLA_FEMALE_HINTS.some((hint) => name.includes(hint))) value += 80;
+      if (BANGLA_MALE_HINTS.some((hint) => name.includes(hint))) value -= 180;
+    } else {
+      if (lang.startsWith("en")) value += 100;
+      if (ENGLISH_FEMALE_HINTS.some((hint) => name.includes(hint))) value += 80;
+      if (/male|man/.test(name)) value -= 180;
+    }
+    if (voice.default) value += 4;
+    if (voice.localService) value += 3;
+    return value;
+  };
+  const ranked = voices
+    .map((voice) => ({ voice, score: score(voice) }))
+    .filter((item) => item.score > 0)
+    .sort((a, b) => b.score - a.score);
+  return ranked[0]?.voice || null;
+}
 
 // Voice States according to Phase 6 specifications
 export type AngelaVoiceState = "READY" | "LISTENING" | "THINKING" | "SPEAKING" | "ERROR";
@@ -95,6 +126,7 @@ export function AIChatAssistant() {
   const serverAudioRef = useRef<HTMLAudioElement | null>(null);
   const serverAudioSourceRef = useRef<AudioBufferSourceNode | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
+  const voiceCatalogRef = useRef<SpeechSynthesisVoice[]>([]);
   const stopServerAudio = () => {
     serverSpeechRef.current?.abort();
     serverSpeechRef.current = null;
@@ -166,6 +198,21 @@ export function AIChatAssistant() {
       const recorderSupported = typeof MediaRecorder !== "undefined" && Boolean(navigator.mediaDevices?.getUserMedia);
       setSpeechSupported(Boolean(recorderSupported || SpeechRec));
     }
+  }, []);
+
+  // Preload the OS/browser voice catalogue before the customer opens Angela.
+  // This avoids selecting the first arbitrary Bengali voice on Windows/Android/macOS.
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.speechSynthesis) return;
+    const syncVoices = () => {
+      const voices = voiceCatalogRef.current.length
+        ? voiceCatalogRef.current
+        : window.speechSynthesis.getVoices();
+      if (voices.length) voiceCatalogRef.current = voices;
+    };
+    syncVoices();
+    window.speechSynthesis.addEventListener("voiceschanged", syncVoices);
+    return () => window.speechSynthesis.removeEventListener("voiceschanged", syncVoices);
   }, []);
 
   // Voice toggle handler
@@ -255,9 +302,7 @@ export function AIChatAssistant() {
 
       if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
 
-      const matchesBangla = (voice: SpeechSynthesisVoice) =>
-        /^bn(?:[-_]|$)/i.test(voice.lang) || /bangla|bengali/i.test(voice.name);
-      const femaleName = /female|woman|nabanita|zira|aria|jenny|sonia|samantha|victoria|karen|moira|fiona|ava|allison|susan|kathy|heera|hazel|libby|natasha|serena|tessa|veena|google.*female/i;
+
 
       const speakWithBrowser = (utterance: SpeechSynthesisUtterance, voice?: SpeechSynthesisVoice) => {
         if (voice) {
@@ -295,17 +340,13 @@ export function AIChatAssistant() {
 
       const utterance = new SpeechSynthesisUtterance(cleanSpeech);
       utterance.lang = wantsBanglaVoice ? "bn-BD" : "en-US";
-      utterance.rate = 1.0;
-      utterance.pitch = 1.0;
+      utterance.rate = wantsBanglaVoice ? 1.03 : 1.0;
+      utterance.pitch = wantsBanglaVoice ? 1.12 : 1.04;
 
-      // DEVICE_FIRST_ANGELA_VOICE — device voice fallback is the production primary.
-      // Cloud TTS can be quota-limited. Keep it off the critical speaking path so
-      // Angela always attempts audible speech immediately on the customer's device.
-      const preferredDeviceVoice = wantsBanglaVoice
-        ? (voices.find((voice) => matchesBangla(voice) && femaleName.test(voice.name))
-          || voices.find((voice) => matchesBangla(voice)))
-        : (voices.find((voice) => /^en(?:[-_]|$)/i.test(voice.lang) && femaleName.test(voice.name))
-          || voices.find((voice) => /^en(?:[-_]|$)/i.test(voice.lang)));
+      // DEVICE_FIRST_ANGELA_VOICE — choose a ranked female/localized voice first.
+      // Known male Bengali voices are explicitly penalized so Pradeep/Bashkar-type
+      // voices do not win merely because they appear first in the OS voice list.
+      const preferredDeviceVoice = pickAngelaDeviceVoice(voices, wantsBanglaVoice ? "bn" : "en");
 
       setErrorMessage(null);
       speakWithBrowser(utterance, preferredDeviceVoice || undefined);
@@ -709,8 +750,8 @@ export function AIChatAssistant() {
             setIsOpen(true);
             if (isVoiceEnabled && messages.length === 1) {
               speakText(languageMode === "bn"
-                ? "আসসালামু আলাইকুম! আমি অ্যাঞ্জেলা, JEL Study Abroad-এর AI সহকারী। বিদেশে উচ্চশিক্ষা নিয়ে আপনাকে কীভাবে সাহায্য করতে পারি?"
-                : "Assalamu Alaikum! I am Angela, the JEL Study Abroad AI assistant. How can I help with your study-abroad plans today?", "welcome");
+                ? BANGLA_WELCOME
+                : ENGLISH_WELCOME, "welcome");
             }
           }}
           className="flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-gradient-to-tr from-[#0B5D3B] via-[#0D7A4D] to-[#D4AF37] text-white shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 relative group cursor-pointer border-2 border-white/50"
