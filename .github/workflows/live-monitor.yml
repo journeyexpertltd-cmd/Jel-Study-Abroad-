@@ -149,28 +149,20 @@ jobs:
           ! grep -Eq 'â|Ã|Â|ï¿½|�|à¦|à§' "$body"
           echo "Angela production English response probe passed"
 
-      - name: Check deployed free-tier microphone and voice fallbacks
+      - name: Check rendered Angela microphone and voice contract
         if: always() && !cancelled()
         shell: bash
         run: |
           set -euo pipefail
-          base="https://journeyexpertbd.com"
-          html="$(mktemp)"
-          js="$(mktemp)"
-          trap 'rm -f "$html" "$js"' EXIT
-          curl --fail --silent --show-error --location --max-time 20 "$base/" -o "$html"
-          script="$(grep -oE 'src="[^"]+\.js' "$html" | head -n1 | sed 's/^src="//')"
-          test -n "$script"
-          case "$script" in
-            http*) asset="$script" ;;
-            /*) asset="$base$script" ;;
-            *) asset="$base/$script" ;;
-          esac
-          curl --fail --silent --show-error --location --max-time 20 "$asset" -o "$js"
-          grep -q 'MediaRecorder' "$js"
-          grep -q 'browser voice recognition' "$js"
-          grep -q 'device voice fallback' "$js"
-          echo "Angela deployed free-tier microphone and voice fallbacks passed"
+          chrome="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || true)"
+          test -n "$chrome"
+          dom="$(mktemp)"
+          trap 'rm -f "$dom"' EXIT
+          "$chrome" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage \
+            --virtual-time-budget=6000 --dump-dom "https://journeyexpertbd.com/?monitor=angela-contract" > "$dom"
+          grep -q 'id="angela-ai-voice-assistant-widget"' "$dom"
+          grep -q 'data-voice-contract="cloud female primary; device voice fallback"' "$dom"
+          echo "Angela rendered microphone/voice contract passed"
 
       - name: Check live Angela cloud female audio or verified device fallback
         if: always() && !cancelled()
