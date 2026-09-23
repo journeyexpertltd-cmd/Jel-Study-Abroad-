@@ -16,8 +16,8 @@ const BANGLA_WELCOME = "আসসালামু আলাইকুম। আম
 const isBanglaText = (text: string) => /[\u0980-\u09FF]/.test(text);
 const welcomeFor = (mode: "en" | "bn") => mode === "bn" ? BANGLA_WELCOME : ENGLISH_WELCOME;
 
-const BANGLA_FEMALE_HINTS = ["nabanita", "tanishaa", "heera", "female", "woman"];
-const BANGLA_MALE_HINTS = ["pradeep", "bashkar", "male", "man"];
+const BANGLA_FEMALE_HINTS = ["nabanita", "tanishaa", "lekha", "sangeeta", "heera", "female", "woman", "google bengali", "google bangla", "microsoft nabanita"];
+const BANGLA_MALE_HINTS = ["pradeep", "pradip", "bhashkar", "bhaskar", "bashkar", "male", "man"];
 const ENGLISH_FEMALE_HINTS = ["zira", "aria", "jenny", "sonia", "samantha", "victoria", "ava", "allison", "karen", "susan", "hazel", "libby", "natasha", "serena", "moira", "fiona", "tessa", "veena", "female", "woman", "google uk english female"];
 
 function pickAngelaDeviceVoice(voices: SpeechSynthesisVoice[], language: "bn" | "en"): SpeechSynthesisVoice | null {
