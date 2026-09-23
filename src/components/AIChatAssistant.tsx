@@ -635,8 +635,9 @@ export function AIChatAssistant() {
     }
   };
 
-  // Primary cross-device microphone path: record audio, transcribe it on the
-  // same-origin Gemini endpoint, then send the transcript to Angela's existing brain.
+  // FREE_VOICE_INPUT_PRIMARY: use browser SpeechRecognition first when available.
+  // This avoids forcing the free Gemini transcription quota into the critical path.
+  // MediaRecorder + cloud transcription remains the compatibility fallback.
   const startListening = async () => {
     void unlockAudio();
     cancelPending();
@@ -645,9 +646,17 @@ export function AIChatAssistant() {
     setInterimTranscript("");
 
     if (typeof window === "undefined") return;
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRec) {
+      startBrowserRecognitionFallback();
+      return;
+    }
     const recorderSupported = typeof MediaRecorder !== "undefined" && Boolean(navigator.mediaDevices?.getUserMedia);
     if (!recorderSupported) {
-      startBrowserRecognitionFallback();
+      setErrorMessage(languageMode === "bn"
+        ? "এই ব্রাউজারে voice input চালু করা যাচ্ছে না। নিচে লিখে প্রশ্ন করুন।"
+        : "Voice input is unavailable in this browser. Please type your question.");
+      setVoiceState("ERROR");
       return;
     }
 
@@ -683,17 +692,10 @@ export function AIChatAssistant() {
           await handleSendMessage(transcript, true);
         } catch {
           setInterimTranscript("");
-          const notice = languageMode === "bn"
-            ? "Cloud transcription ব্যস্ত। Angela browser voice recognition দিয়ে আবার শুনছে—প্রশ্নটি আরেকবার বলুন।"
-            : "Cloud transcription is busy. Angela is listening again with browser voice recognition—please repeat your question.";
-          if (typeof window !== "undefined" && (window.SpeechRecognition || window.webkitSpeechRecognition)) {
-            startBrowserRecognitionFallback(notice);
-          } else {
-            setErrorMessage(languageMode === "bn"
-              ? "Cloud transcription এখন পাওয়া যাচ্ছে না। নিচে লিখে প্রশ্ন করুন।"
-              : "Cloud transcription is unavailable right now. Please type your question.");
-            setVoiceState("ERROR");
-          }
+          setErrorMessage(languageMode === "bn"
+            ? "এই ব্রাউজারে browser speech recognition নেই এবং cloud transcription এখন পাওয়া যাচ্ছে না। নিচে লিখে প্রশ্ন করুন।"
+            : "Browser speech recognition is unavailable here and cloud transcription is currently unavailable. Please type your question.");
+          setVoiceState("ERROR");
         }
       };
 
@@ -712,7 +714,10 @@ export function AIChatAssistant() {
         setVoiceState("ERROR");
         return;
       }
-      startBrowserRecognitionFallback();
+      setErrorMessage(languageMode === "bn"
+        ? "Microphone চালু করা যায়নি। আবার চেষ্টা করুন অথবা লিখে প্রশ্ন করুন।"
+        : "Microphone could not be started. Please try again or type your question.");
+      setVoiceState("ERROR");
     }
   };
 
@@ -748,8 +753,8 @@ export function AIChatAssistant() {
         id: `welcome-${Date.now()}`,
         sender: "assistant",
         text: languageMode === "bn"
-          ? "আসসালামু আলাইকুম! কথোপকথন নতুন করে শুরু হয়েছে। Study Abroad, বিশ্ববিদ্যালয় ও কোর্স নির্বাচন, admission, scholarship, SOP, English test এবং student visa documents নিয়ে প্রশ্ন করুন।"
-          : "Assalamu Alaikum! Conversation refreshed. Ask me about study destinations, universities, courses, admissions, scholarships, SOPs, English tests, and student-visa documents.",
+          ? BANGLA_WELCOME
+          : ENGLISH_WELCOME,
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
       }
     ]);
