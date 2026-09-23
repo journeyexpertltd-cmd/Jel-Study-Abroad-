@@ -216,8 +216,8 @@ export function AIChatAssistant() {
 
   // Text-to-speech engine with natural voice matching
   const speakText = useCallback(async (text: string, messageId?: string) => {
-    // Unlock Web Audio during the user's gesture so async cloud playback remains allowed.
-    const audioUnlockPromise = unlockAudio();
+    // Prime browser audio during the user's gesture. Speech itself is device-first.
+    void unlockAudio();
     const attempt = ++speechAttemptRef.current;
     stopServerAudio();
 
@@ -249,26 +249,9 @@ export function AIChatAssistant() {
 
     try {
       const wantsBanglaVoice = isBanglaText(cleanSpeech) || languageMode === "bn";
-      let voices = window.speechSynthesis.getVoices();
-
-      // Chromium/Safari often populate voices asynchronously after the first call.
-      if (!voices.length) {
-        await new Promise<void>((resolve) => {
-          const synthesis = window.speechSynthesis;
-          const finish = () => {
-            clearTimeout(timeout);
-            synthesis.removeEventListener("voiceschanged", onVoices);
-            resolve();
-          };
-          const onVoices = () => {
-            if (synthesis.getVoices().length > 0) finish();
-          };
-          const timeout = window.setTimeout(finish, 1200);
-          synthesis.addEventListener("voiceschanged", onVoices);
-          onVoices();
-        });
-        voices = window.speechSynthesis.getVoices();
-      }
+      // Do not await voice enumeration here. Waiting can lose the browser user
+      // activation window and make mobile/desktop speech silently fail.
+      const voices = window.speechSynthesis.getVoices();
 
       if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
 
@@ -315,118 +298,18 @@ export function AIChatAssistant() {
       utterance.rate = 1.0;
       utterance.pitch = 1.0;
 
-      if (cleanSpeech) {
-        // Use the same JEL server-rendered Angela female voice for both Bangla
-        // and English on desktop and mobile. Never substitute a male OS voice.
-        currentUtteranceRef.current = null;
-        const controller = new AbortController();
-        serverSpeechRef.current = controller;
-        const timeout = window.setTimeout(() => controller.abort(), 30000);
-        setVoiceState("THINKING");
-        setErrorMessage(null);
+      // DEVICE_FIRST_ANGELA_VOICE — device voice fallback is the production primary.
+      // Cloud TTS can be quota-limited. Keep it off the critical speaking path so
+      // Angela always attempts audible speech immediately on the customer's device.
+      const preferredDeviceVoice = wantsBanglaVoice
+        ? (voices.find((voice) => matchesBangla(voice) && femaleName.test(voice.name))
+          || voices.find((voice) => matchesBangla(voice)))
+        : (voices.find((voice) => /^en(?:[-_]|$)/i.test(voice.lang) && femaleName.test(voice.name))
+          || voices.find((voice) => /^en(?:[-_]|$)/i.test(voice.lang)));
 
-        try {
-          const blob = await fetchAngelaSpeech(cleanSpeech, controller.signal);
-          if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
-
-          const context = await audioUnlockPromise;
-          let playedWithWebAudio = false;
-          if (context?.state === "running") {
-            try {
-              const wav = await blob.arrayBuffer();
-              const decoded = await context.decodeAudioData(wav.slice(0));
-              if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
-              const source = context.createBufferSource();
-              source.buffer = decoded;
-              source.connect(context.destination);
-              serverAudioSourceRef.current = source;
-              source.onended = () => {
-                if (serverAudioSourceRef.current !== source) return;
-                serverAudioSourceRef.current = null;
-                try { source.disconnect(); } catch { /* already disconnected */ }
-                setVoiceState("READY");
-                setActiveSpeakingId(null);
-              };
-              source.start(0);
-              playedWithWebAudio = true;
-              setVoiceState("SPEAKING");
-              setErrorMessage(null);
-              if (messageId) setActiveSpeakingId(messageId);
-            } catch (webAudioError) {
-              console.warn("Angela Web Audio playback notice:", webAudioError);
-            }
-          }
-
-          if (!playedWithWebAudio) {
-            const audio = new Audio(URL.createObjectURL(blob));
-            serverAudioRef.current = audio;
-            audio.preload = "auto";
-            audio.volume = 1;
-            audio.onended = () => {
-              if (serverAudioRef.current !== audio) return;
-              stopServerAudio();
-              setVoiceState("READY");
-              setActiveSpeakingId(null);
-            };
-            audio.onerror = () => {
-              if (serverAudioRef.current !== audio) return;
-              stopServerAudio();
-              setVoiceState("ERROR");
-              setActiveSpeakingId(null);
-              setErrorMessage("কণ্ঠ চালানো যায়নি। Listen চেপে আবার চেষ্টা করুন।");
-            };
-            await audio.play();
-            if (attempt !== speechAttemptRef.current) return;
-            setVoiceState("SPEAKING");
-            setErrorMessage(null);
-            if (messageId) setActiveSpeakingId(messageId);
-          }
-        } catch (error) {
-          if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
-          stopServerAudio();
-          setActiveSpeakingId(null);
-          console.warn("Angela cloud female TTS unavailable; using free device voice fallback:", error instanceof Error ? error.message : "provider unavailable");
-
-          // Free resilience layer: Gemini TTS -> Gemini Live -> device speech.
-          // Prefer a female/localized voice when the OS exposes one; otherwise
-          // use the locale voice so Angela does not become silent when free quota ends.
-          const preferredDeviceVoice = wantsBanglaVoice
-            ? (voices.find((voice) => matchesBangla(voice) && femaleName.test(voice.name))
-              || voices.find((voice) => matchesBangla(voice)))
-            : (voices.find((voice) => /^en(?:[-_]|$)/i.test(voice.lang) && femaleName.test(voice.name))
-              || voices.find((voice) => /^en(?:[-_]|$)/i.test(voice.lang)));
-
-          try {
-            setErrorMessage(wantsBanglaVoice
-              ? "Cloud voice quota ব্যস্ত—Angela এই ডিভাইসের voice fallback ব্যবহার করছে।"
-              : "Cloud voice quota is busy—Angela is using this device voice fallback.");
-            speakWithBrowser(utterance, preferredDeviceVoice || undefined);
-            return;
-          } catch {
-            setVoiceState("ERROR");
-            setErrorMessage(wantsBanglaVoice
-              ? "Cloud ও device voice দুটোই পাওয়া যাচ্ছে না; উত্তরটি লেখা আকারে দেখানো হচ্ছে।"
-              : "Cloud and device voice are both unavailable; the answer remains available as text.");
-          }
-        } finally {
-          clearTimeout(timeout);
-          if (serverSpeechRef.current === controller) serverSpeechRef.current = null;
-        }
-        return;
-      }
-
-      const preferredEnglishVoice =
-        voices.find((voice) => /^en(?:[-_]|$)/i.test(voice.lang) && femaleName.test(voice.name));
-
-      if (!preferredEnglishVoice) {
-        // Do not allow the browser to substitute its default male English voice.
-        setVoiceState("ERROR");
-        setActiveSpeakingId(null);
-        setErrorMessage("A female English voice is not available on this device. Male default voice was not used.");
-        return;
-      }
-
-      speakWithBrowser(utterance, preferredEnglishVoice);
+      setErrorMessage(null);
+      speakWithBrowser(utterance, preferredDeviceVoice || undefined);
+      return;
     } catch (error) {
       console.warn("Text to speech exception:", error);
       setErrorMessage("I can still help you by text.");
