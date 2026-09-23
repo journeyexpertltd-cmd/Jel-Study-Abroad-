@@ -113,6 +113,7 @@ jobs:
                 if (audit.overflow) failures.push({...row, reason: 'horizontal-overflow'});
                 if (!audit.hasMain) failures.push({...row, reason: 'missing-main'});
                 if (audit.visibleActions < 1) failures.push({...row, reason: 'no-visible-navigation-or-action'});
+                if (pageErrors.length) failures.push({...row, reason: 'page-javascript-error'});
               }
               await page.close();
             }
