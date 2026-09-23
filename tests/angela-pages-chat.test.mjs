@@ -214,3 +214,37 @@ test('Hajj or Umrah context takes priority over generic visa/package fallback', 
   assert.match(bn.reply, /মক্কা|Makkah/);
   assert.match(bn.reply, /visa\/document guidance/);
 });
+
+
+test('semantic router keeps adjacent JEL intents separate', async () => {
+  globalThis.fetch = async () => { throw new Error('offline'); };
+  const cases = [
+    ['হজ ভিসা ও মক্কা হোটেল সম্পর্কে বলুন', 'bn', 'hajj_umrah', /হজ ও ওমরাহ|Makkah\/Madinah/],
+    ['I need Hajj visa and hotel guidance', 'en', 'hajj_umrah', /Hajj and Umrah/],
+    ['স্টুডেন্ট ভিসা ও CAS সম্পর্কে জানতে চাই', 'bn', 'study_abroad', /JEL Study Abroad/],
+    ['medical visa and hospital support', 'en', 'medical_tourism', /medical-tourism/],
+    ['টিকিট রিফান্ড এবং reissue কীভাবে হয়?', 'bn', 'air_ticketing', /air ticketing/],
+    ['travel insurance coverage সম্পর্কে বলুন', 'bn', 'insurance', /travel-insurance/],
+    ['corporate travel management কী?', 'bn', 'corporate_travel', /corporate travel/],
+    ['Craft Bangla কি JEL-এর brand?', 'bn', 'brands', /Craft Bangla/],
+  ];
+
+  for (const [message, language, intent, replyPattern] of cases) {
+    const data = await (await onRequest({ request: request({ message, language }), env: {} })).json();
+    assert.equal(data.primaryIntent, intent, message);
+    assert.ok(Array.isArray(data.groundingIds));
+    assert.equal(data.groundingIds[0], intent, message);
+    assert.match(data.reply, replyPattern, message);
+  }
+});
+
+test('unknown JEL-specific detail is not invented by fallback', async () => {
+  globalThis.fetch = async () => { throw new Error('offline'); };
+  const data = await (await onRequest({
+    request: request({ message: 'Who is the current chairman and what is their mobile number?', language: 'en' }),
+    env: {},
+  })).json();
+  assert.equal(data.primaryIntent, 'unverified');
+  assert.match(data.reply, /not present|verified/i);
+  assert.doesNotMatch(data.reply, /chairman is/i);
+});
