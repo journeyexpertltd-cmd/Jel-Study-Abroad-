@@ -25,7 +25,8 @@ requireText(assistant, "device voice fallback", 'Angela resilient device fallbac
 requireText(assistant, 'data-voice-contract="cloud female primary; device voice fallback"', 'Angela deployed voice contract');
 requireText(assistant, "BANGLA_FEMALE_HINTS", 'Angela cross-platform female voice selection');
 requireText(assistant, "BANGLA_MALE_HINTS", 'Angela male voice exclusion');
-requireText(assistant, "pickAngelaDeviceVoice", 'Angela cross-platform voice ranking');\nrequireText(assistant, "STRICT_FEMALE_ONLY", 'Angela must never use an unverified male/default device voice');
+requireText(assistant, "pickAngelaDeviceVoice", 'Angela cross-platform voice ranking');
+requireText(assistant, "STRICT_FEMALE_ONLY", 'Angela must never use an unverified male/default device voice');
 requireText(chat, "You serve visitors on both journeyexpertbd.com and journeyexpertltd.com", 'Angela unified JEL knowledge');
 requireText(chat, "air ticketing; fare quotation; reissue/refund support", 'Angela unified JEL services');
 requireText(chat, "https://journeyexpertltd.com/angela/transcribe", 'Angela transcription failover');
