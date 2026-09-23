@@ -84,6 +84,10 @@ export function AIChatAssistant() {
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const mediaChunksRef = useRef<Blob[]>([]);
+  const recordingTimeoutRef = useRef<number | null>(null);
   const currentUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   const speechAttemptRef = useRef(0);
@@ -154,13 +158,13 @@ export function AIChatAssistant() {
     }
   }, [messages, voiceState, interimTranscript]);
 
-  // Check Web Speech Recognition support
+  // Prefer MediaRecorder + server-side Gemini transcription for consistent
+  // mobile/desktop input. Browser SpeechRecognition remains a compatibility fallback.
   useEffect(() => {
     if (typeof window !== "undefined") {
       const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SpeechRec) {
-        setSpeechSupported(false);
-      }
+      const recorderSupported = typeof MediaRecorder !== "undefined" && Boolean(navigator.mediaDevices?.getUserMedia);
+      setSpeechSupported(Boolean(recorderSupported || SpeechRec));
     }
   }, []);
 
@@ -420,6 +424,11 @@ export function AIChatAssistant() {
       speechAttemptRef.current += 1;
       stopServerAudio();
       cancelPending();
+      if (recordingTimeoutRef.current) window.clearTimeout(recordingTimeoutRef.current);
+      if (mediaRecorderRef.current?.state === "recording") {
+        try { mediaRecorderRef.current.stop(); } catch { /* already stopped */ }
+      }
+      mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
       if (typeof window !== "undefined" && window.speechSynthesis) {
         window.speechSynthesis.cancel();
       }
@@ -518,101 +527,188 @@ export function AIChatAssistant() {
     }
   };
 
-  // Start Voice Listening (Speech-to-Text) with full Interruption logic
-  const startListening = () => {
-    void unlockAudio();
-    cancelPending();
-    // Interruption: halt Angela's voice immediately when user taps mic
-    stopSpeaking();
-    setErrorMessage(null);
+  const blobToBase64 = async (blob: Blob): Promise<string> => {
+    const buffer = await blob.arrayBuffer();
+    const bytes = new Uint8Array(buffer);
+    let binary = "";
+    const chunkSize = 0x8000;
+    for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+      binary += String.fromCharCode(...bytes.subarray(offset, Math.min(offset + chunkSize, bytes.length)));
+    }
+    return btoa(binary);
+  };
 
-    if (typeof window === "undefined") return;
+  const transcribeRecordedAudio = async (blob: Blob): Promise<string> => {
+    if (!blob.size) throw new Error("empty_audio");
+    if (blob.size > 2_500_000) throw new Error("audio_too_large");
+    const audio = await blobToBase64(blob);
+    const response = await fetch("/angela/transcribe", {
+      method: "POST",
+      signal: AbortSignal.timeout(15000),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        audio,
+        mimeType: (blob.type || "audio/webm").split(";")[0],
+        language: languageMode,
+      }),
+    });
+    const data = await response.json().catch(() => ({}));
+    const transcript = typeof data.transcript === "string" ? data.transcript.trim() : "";
+    if (!response.ok || !transcript) throw new Error(data.error || "transcription_failed");
+    return transcript;
+  };
 
+  const startBrowserRecognitionFallback = () => {
     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRec) {
-      setErrorMessage("Voice input is not supported in this browser. Please use Google Chrome, Edge, or Safari.");
+      setErrorMessage(languageMode === "bn"
+        ? "এই ব্রাউজারে microphone transcription চালু করা যাচ্ছে না। নিচে লিখে প্রশ্ন করুন।"
+        : "Microphone transcription is unavailable in this browser. Please type your question.");
       setVoiceState("ERROR");
       return;
     }
 
-    try {
-      if (recognitionRef.current) {
-        const previous = recognitionRef.current;
-        recognitionRef.current = null;
-        previous.onend = null;
-        try { previous.abort(); } catch { /* previous recognition already ended */ }
+    if (recognitionRef.current) {
+      const previous = recognitionRef.current;
+      recognitionRef.current = null;
+      previous.onend = null;
+      try { previous.abort(); } catch { /* previous recognition already ended */ }
+    }
+
+    const recognition = new SpeechRec();
+    recognitionRef.current = recognition;
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = languageMode === "bn" ? "bn-BD" : "en-US";
+
+    let finalTranscript = "";
+    let latestInterim = "";
+
+    recognition.onstart = () => {
+      setVoiceState("LISTENING");
+      setInterimTranscript("");
+      setErrorMessage(null);
+    };
+    recognition.onresult = (event: SpeechRecognitionEventLike) => {
+      let interim = "";
+      finalTranscript = "";
+      for (let i = 0; i < event.results.length; ++i) {
+        const res = event.results[i];
+        if (res.isFinal) finalTranscript += res[0].transcript;
+        else interim += res[0].transcript;
       }
+      latestInterim = interim;
+      setInterimTranscript(interim || finalTranscript);
+    };
+    recognition.onerror = (event: any) => {
+      if (recognitionRef.current === recognition) recognitionRef.current = null;
+      setInterimTranscript("");
+      if (event.error === "no-speech") {
+        setVoiceState("READY");
+        return;
+      }
+      setErrorMessage(event.error === "not-allowed"
+        ? (languageMode === "bn" ? "Microphone permission বন্ধ আছে। Browser settings থেকে Allow করুন।" : "Microphone permission is blocked. Allow it in browser settings.")
+        : (languageMode === "bn" ? "আপনার কথা শোনা যায়নি। আবার চেষ্টা করুন বা লিখুন।" : "Voice input could not be heard. Please try again or type."));
+      setVoiceState("ERROR");
+    };
+    recognition.onend = () => {
+      if (recognitionRef.current === recognition) recognitionRef.current = null;
+      const spoken = finalTranscript.trim() || latestInterim.trim();
+      setInterimTranscript("");
+      if (spoken) handleSendMessage(spoken, true);
+      else setVoiceState("READY");
+    };
 
-      const recognition = new SpeechRec();
-      recognitionRef.current = recognition;
-
-      recognition.continuous = false;
-      recognition.interimResults = true;
-
-      // Language configuration
-      recognition.lang = languageMode === "bn" ? "bn-BD" : "en-US";
-
-      recognition.onstart = () => {
-        setVoiceState("LISTENING");
-        setInterimTranscript("");
-        setErrorMessage(null);
-      };
-
-      let finalTranscript = "";
-      let latestInterim = "";
-
-      recognition.onresult = (event: SpeechRecognitionEventLike) => {
-        let interim = "";
-        finalTranscript = "";
-        for (let i = 0; i < event.results.length; ++i) {
-          const res = event.results[i];
-          if (res.isFinal) {
-            finalTranscript += res[0].transcript;
-          } else {
-            interim += res[0].transcript;
-          }
-        }
-        latestInterim = interim;
-        setInterimTranscript(interim || finalTranscript);
-      };
-
-      recognition.onerror = (event: any) => {
-        if (recognitionRef.current === recognition) recognitionRef.current = null;
-        console.warn("Speech recognition event:", event.error);
-        if (event.error === "not-allowed") {
-          // Phase 12 & Phase 4: Microphone permission denied
-          setErrorMessage("Microphone access is unavailable. You can type your question instead.");
-        } else if (event.error === "no-speech") {
-          // Silent timeout, reset to ready
-          setVoiceState("READY");
-          return;
-        } else {
-          setErrorMessage("I can still help you by text.");
-        }
-        setVoiceState("ERROR");
-        setInterimTranscript("");
-      };
-
-      recognition.onend = () => {
-        if (recognitionRef.current === recognition) recognitionRef.current = null;
-        const spoken = finalTranscript.trim() || latestInterim.trim();
-        if (spoken) {
-          handleSendMessage(spoken, true);
-        } else {
-          setVoiceState("READY");
-        }
-        setInterimTranscript("");
-      };
-
-      recognition.start();
-    } catch (err) {
-      console.error("Failed to start speech recognition:", err);
-      setErrorMessage("Microphone access is unavailable. You can type your question instead.");
+    try { recognition.start(); }
+    catch {
+      setErrorMessage(languageMode === "bn" ? "Microphone চালু করা যায়নি। নিচে লিখে প্রশ্ন করুন।" : "Microphone could not be started. Please type your question.");
       setVoiceState("ERROR");
     }
   };
 
+  // Primary cross-device microphone path: record audio, transcribe it on the
+  // same-origin Gemini endpoint, then send the transcript to Angela's existing brain.
+  const startListening = async () => {
+    void unlockAudio();
+    cancelPending();
+    stopSpeaking();
+    setErrorMessage(null);
+    setInterimTranscript("");
+
+    if (typeof window === "undefined") return;
+    const recorderSupported = typeof MediaRecorder !== "undefined" && Boolean(navigator.mediaDevices?.getUserMedia);
+    if (!recorderSupported) {
+      startBrowserRecognitionFallback();
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaStreamRef.current = stream;
+      const candidates = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"];
+      const mimeType = candidates.find((type) => MediaRecorder.isTypeSupported(type)) || "";
+      const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+      mediaRecorderRef.current = recorder;
+      mediaChunksRef.current = [];
+
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) mediaChunksRef.current.push(event.data);
+      };
+      recorder.onerror = () => {
+        setVoiceState("ERROR");
+        setErrorMessage(languageMode === "bn" ? "Microphone recording-এ সমস্যা হয়েছে। আবার চেষ্টা করুন।" : "Microphone recording failed. Please try again.");
+      };
+      recorder.onstop = async () => {
+        if (recordingTimeoutRef.current) window.clearTimeout(recordingTimeoutRef.current);
+        recordingTimeoutRef.current = null;
+        mediaRecorderRef.current = null;
+        stream.getTracks().forEach((track) => track.stop());
+        if (mediaStreamRef.current === stream) mediaStreamRef.current = null;
+
+        const blob = new Blob(mediaChunksRef.current, { type: recorder.mimeType || mimeType || "audio/webm" });
+        mediaChunksRef.current = [];
+        setVoiceState("THINKING");
+        try {
+          const transcript = await transcribeRecordedAudio(blob);
+          setInterimTranscript(transcript);
+          await handleSendMessage(transcript, true);
+        } catch {
+          setInterimTranscript("");
+          setErrorMessage(languageMode === "bn"
+            ? "আপনার কথাটি লেখা হিসেবে ধরতে পারিনি। আবার বলুন বা লিখে প্রশ্ন করুন।"
+            : "I could not transcribe that recording. Please try again or type your question.");
+          setVoiceState("ERROR");
+        }
+      };
+
+      recorder.start(250);
+      setVoiceState("LISTENING");
+      recordingTimeoutRef.current = window.setTimeout(() => {
+        if (recorder.state === "recording") recorder.stop();
+      }, 12000);
+    } catch (error: any) {
+      mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+      mediaStreamRef.current = null;
+      if (error?.name === "NotAllowedError" || error?.name === "PermissionDeniedError") {
+        setErrorMessage(languageMode === "bn"
+          ? "Microphone permission বন্ধ আছে। Browser settings থেকে microphone Allow করুন, অথবা লিখে প্রশ্ন করুন।"
+          : "Microphone permission is blocked. Allow microphone access in browser settings, or type your question.");
+        setVoiceState("ERROR");
+        return;
+      }
+      startBrowserRecognitionFallback();
+    }
+  };
+
   const stopListening = () => {
+    if (recordingTimeoutRef.current) window.clearTimeout(recordingTimeoutRef.current);
+    recordingTimeoutRef.current = null;
+    const recorder = mediaRecorderRef.current;
+    if (recorder?.state === "recording") {
+      try { recorder.stop(); } catch { /* already stopped */ }
+      return;
+    }
     const recognition = recognitionRef.current;
     recognitionRef.current = null;
     try { recognition?.stop(); } catch { /* recognition already ended */ }
