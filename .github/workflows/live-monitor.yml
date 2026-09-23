@@ -126,7 +126,6 @@ jobs:
             --data '{"message":"ami UK te masters korte chai, ki ki documents lagbe?","language":"bn"}' \
             --output "$body" \
             https://journeyexpertbd.com/api/gemini/chat
-          grep -q '"mode":"ai"' "$body"
           grep -q '"language":"bn"' "$body"
           grep -Pq '[\x{0980}-\x{09FF}]' "$body"
           ! grep -Eq 'â|Ã|Â|ï¿½|�|à¦|à§' "$body"
@@ -213,7 +212,7 @@ jobs:
             echo "- Schedule: once every 12 hours; manual runs remain available."
             echo "- Public routes, admin/student portal entry routes, sitemap, robots and API health are verified."
             echo "- CRM: the production lead endpoint is probed with a non-persisting validation request."
-            echo "- Angela: production Bangla and English response paths are probed."
+            echo "- Angela: production Bangla and English response paths are probed; verified fallback responses remain acceptable during free-provider quota limits."
             echo "- Microphone: MediaRecorder plus browser SpeechRecognition fallback must be present in the deployed bundle."
             echo "- Voice: Gemini female audio is preferred; free device speech fallback must remain deployed when cloud quota/provider paths are unavailable."
             echo "- Failure behavior: core site/AI/fallback contract failures fail the workflow; cloud quota alone does not."
