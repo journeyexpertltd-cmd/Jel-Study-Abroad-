@@ -1,0 +1,152 @@
+name: Final production customer-path verification
+
+on:
+  push:
+    branches:
+      - "verify/final-production-customer-path-20260923"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Verify deployed frontend has resilient mic and device voice fallback
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="https://journeyexpertbd.com"
+          html="$(mktemp)"
+          js="$(mktemp)"
+          trap 'rm -f "$html" "$js"' EXIT
+          curl --fail --silent --show-error --location --max-time 20 "$base/" -o "$html"
+          script="$(grep -oE 'src="[^"]+\.js' "$html" | head -n1 | sed 's/^src="//')"
+          test -n "$script"
+          case "$script" in
+            http*) asset="$script" ;;
+            /*) asset="$base$script" ;;
+            *) asset="$base/$script" ;;
+          esac
+          curl --fail --silent --show-error --location --max-time 20 "$asset" -o "$js"
+          grep -q 'MediaRecorder' "$js"
+          grep -q 'transcribe' "$js"
+          grep -q 'device voice fallback' "$js"
+          echo "Production frontend includes MediaRecorder transcription and device voice fallback"
+
+      - name: Verify live Bangla AI reply
+        shell: bash
+        run: |
+          set -euo pipefail
+          body="$(mktemp)"
+          trap 'rm -f "$body"' EXIT
+          curl --fail --silent --show-error --max-time 25 \
+            --header 'Content-Type: application/json' \
+            --header 'Origin: https://journeyexpertbd.com' \
+            --data '{"message":"আমি যুক্তরাজ্যে মাস্টার্স করতে চাই। সাধারণত কী কী ডকুমেন্ট লাগে?","language":"bn"}' \
+            --output "$body" \
+            https://journeyexpertbd.com/api/gemini/chat
+          python - "$body" <<'PY'
+          import json,re,sys
+          with open(sys.argv[1],encoding='utf-8') as f:
+              data=json.load(f)
+          reply=str(data.get('reply') or '').strip()
+          if not reply or not re.search(r'[\u0980-\u09ff]',reply):
+              raise SystemExit('Bangla reply missing: '+json.dumps(data,ensure_ascii=False))
+          if data.get('language')!='bn':
+              raise SystemExit('Bangla language contract failed: '+json.dumps(data,ensure_ascii=False))
+          print('Bangla reply passed')
+          PY
+
+      - name: Verify live English AI reply
+        shell: bash
+        run: |
+          set -euo pipefail
+          body="$(mktemp)"
+          trap 'rm -f "$body"' EXIT
+          curl --fail --silent --show-error --max-time 25 \
+            --header 'Content-Type: application/json' \
+            --header 'Origin: https://journeyexpertbd.com' \
+            --data '{"message":"What documents are generally needed for a UK masters application?","language":"en"}' \
+            --output "$body" \
+            https://journeyexpertbd.com/api/gemini/chat
+          python - "$body" <<'PY'
+          import json,re,sys
+          with open(sys.argv[1],encoding='utf-8') as f:
+              data=json.load(f)
+          reply=str(data.get('reply') or '').strip()
+          if not reply or re.search(r'[\u0980-\u09ff]',reply):
+              raise SystemExit('English reply missing/wrong language: '+json.dumps(data,ensure_ascii=False))
+          if data.get('language')!='en':
+              raise SystemExit('English language contract failed: '+json.dumps(data,ensure_ascii=False))
+          print('English reply passed')
+          PY
+
+      - name: Generate local speech fixture
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! command -v espeak-ng >/dev/null 2>&1 && ! command -v espeak >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq espeak-ng
+          fi
+          speaker="$(command -v espeak-ng || command -v espeak)"
+          "$speaker" -w /tmp/angela-input.wav "Hello Angela. I want to study in the United Kingdom."
+          test "$(wc -c < /tmp/angela-input.wav)" -gt 1000
+
+      - name: Verify production audio transcription
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import base64,json
+          with open('/tmp/angela-input.wav','rb') as f:
+              audio=base64.b64encode(f.read()).decode()
+          body={'mode':'transcribe','audio':audio,'mimeType':'audio/wav','language':'en'}
+          with open('/tmp/transcribe.json','w',encoding='utf-8') as f:
+              json.dump(body,f)
+          PY
+          curl --fail --silent --show-error --max-time 30 \
+            --header 'Content-Type: application/json' \
+            --header 'Origin: https://journeyexpertbd.com' \
+            --data-binary @/tmp/transcribe.json \
+            --output /tmp/transcribed.json \
+            https://journeyexpertbd.com/api/gemini/chat
+          python - <<'PY'
+          import json
+          with open('/tmp/transcribed.json',encoding='utf-8') as f:
+              data=json.load(f)
+          transcript=str(data.get('transcript') or '').strip()
+          if not transcript:
+              raise SystemExit('No production transcript: '+json.dumps(data))
+          if data.get('language')!='en':
+              raise SystemExit('Wrong transcript language: '+json.dumps(data))
+          print('Production audio transcription passed:', transcript)
+          PY
+
+      - name: Classify cloud voice without treating free quota as app failure
+        shell: bash
+        run: |
+          set -euo pipefail
+          status="$(curl --silent --show-error --max-time 25 \
+            --header 'Content-Type: application/json' \
+            --header 'Origin: https://journeyexpertbd.com' \
+            --data '{"text":"Hello Angela, this is a voice output test.","language":"en"}' \
+            --output /tmp/voice.out \
+            --write-out '%{http_code}' \
+            https://journeyexpertbd.com/angela/speech)"
+          case "$status" in
+            200)
+              test "$(wc -c < /tmp/voice.out)" -gt 1000
+              echo "Cloud voice available"
+              ;;
+            429|424|503)
+              echo "Cloud voice quota/provider unavailable ($status); deployed device fallback already verified"
+              ;;
+            *)
+              echo "Unexpected cloud voice status: $status"
+              cat /tmp/voice.out || true
+              exit 1
+              ;;
+          esac
