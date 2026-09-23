@@ -20,9 +20,63 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   const origin = request.headers.get('origin');
   if (origin && origin !== new URL(request.url).origin) return json({ error: 'Origin not allowed' }, 403);
   const raw = await request.text();
-  if (new TextEncoder().encode(raw).length > 32768) return json({ error: 'Message too large' }, 413);
+  const rawSize = new TextEncoder().encode(raw).length;
+  if (rawSize > 3_600_000) return json({ error: 'Request too large' }, 413);
   let body: any;
   try { body = JSON.parse(raw); } catch { return json({ error: 'Invalid JSON' }, 400); }
+  if (body?.mode !== 'transcribe' && rawSize > 32768) return json({ error: 'Message too large' }, 413);
+
+  if (body?.mode === 'transcribe') {
+    const audio = typeof body?.audio === 'string' ? body.audio.trim() : '';
+    const selectedLanguage = body?.language === 'en' ? 'en' : 'bn';
+    const mimeType = (typeof body?.mimeType === 'string' ? body.mimeType : 'audio/webm').split(';')[0].toLowerCase();
+    if (!audio) return json({ error: 'audio_required' }, 400);
+    if (!/^audio\/(webm|wav|mpeg|mp3|ogg|opus|aac|flac|m4a|mp4)$/i.test(mimeType)) return json({ error: 'audio_type_not_supported' }, 415);
+
+    const keys = Array.from(new Set([
+      env.GEMINI_API_KEY?.trim(),
+      env.GEMINI_TTS_API_KEY?.trim(),
+    ].filter((key): key is string => Boolean(key))));
+    if (!keys.length) return json({ error: 'transcription_not_configured' }, 503);
+
+    const prompt = selectedLanguage === 'bn'
+      ? 'Transcribe this customer speech accurately. The customer is using Bangla or Banglish. Return only the transcript in natural Bengali script, preserving proper names and brand names when appropriate. Do not answer or add commentary.'
+      : 'Transcribe this customer speech accurately in English. Return only the transcript. Do not answer or add commentary.';
+
+    for (const model of ['gemini-3.8-flash', 'gemini-3.5-flash', 'gemini-2.5-flash']) {
+      for (const key of keys) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 10000);
+        try {
+          const upstream = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
+            method: 'POST',
+            signal: controller.signal,
+            headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+            body: JSON.stringify({
+              contents: [{ role: 'user', parts: [{ text: prompt }, { inlineData: { mimeType, data: audio } }] }],
+              generationConfig: { temperature: 0, maxOutputTokens: 256 },
+            }),
+          });
+          if (!upstream.ok) continue;
+          const data: any = await upstream.json();
+          const transcript = data?.candidates?.[0]?.content?.parts
+            ?.filter((part: any) => !part.thought && typeof part.text === 'string')
+            .map((part: any) => part.text)
+            .join('')
+            .replace(/^[\"'\s]+|[\"'\s]+$/g, '')
+            .trim();
+          if (!transcript) continue;
+          if (selectedLanguage === 'bn' && !/[\u0980-\u09FF]/.test(transcript)) continue;
+          if (selectedLanguage === 'en' && /[\u0980-\u09FF]/.test(transcript)) continue;
+          return json({ transcript: transcript.slice(0, 1200), language: selectedLanguage, mode: 'ai', providerModel: model });
+        } catch {
+        } finally {
+          clearTimeout(timer);
+        }
+      }
+    }
+    return json({ error: 'transcription_unavailable' }, 503);
+  }
   const turns = (Array.isArray(body?.messages) ? body.messages : [{ sender: 'user', text: body?.message }])
     .filter((m: any) => m && ['user', 'assistant'].includes(m.sender) && typeof m.text === 'string' && m.text.trim())
     .slice(-6).map((m: any) => ({ role: m.sender === 'user' ? 'user' : 'model', parts: [{ text: m.text.slice(0, 2500) }] }));

@@ -542,11 +542,12 @@ export function AIChatAssistant() {
     if (!blob.size) throw new Error("empty_audio");
     if (blob.size > 2_500_000) throw new Error("audio_too_large");
     const audio = await blobToBase64(blob);
-    const response = await fetch("/angela/transcribe", {
+    const response = await fetch("/api/gemini/chat", {
       method: "POST",
       signal: AbortSignal.timeout(15000),
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        mode: "transcribe",
         audio,
         mimeType: (blob.type || "audio/webm").split(";")[0],
         language: languageMode,
