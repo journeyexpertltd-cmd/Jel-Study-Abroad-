@@ -6,7 +6,6 @@ import {
   AlertCircle, Radio, Plane, Compass, Award, Building2, MapPin
 } from "lucide-react";
 import { ChatMessage } from "../types";
-import { fetchAngelaSpeech, voiceErrorMessage } from "../lib/angelaAudio";
 
 const jelBrandIcon = new URL("../assets/images/jel-study-abroad-official.webp", import.meta.url).href;
 
@@ -17,8 +16,8 @@ const BANGLA_WELCOME = "আসসালামু আলাইকুম। আম
 const isBanglaText = (text: string) => /[\u0980-\u09FF]/.test(text);
 const welcomeFor = (mode: "en" | "bn") => mode === "bn" ? BANGLA_WELCOME : ENGLISH_WELCOME;
 
-const BANGLA_FEMALE_HINTS = ["nabanita", "tanishaa", "heera", "female", "woman"];
-const BANGLA_MALE_HINTS = ["pradeep", "bashkar", "male", "man"];
+const BANGLA_FEMALE_HINTS = ["nabanita", "tanishaa", "lekha", "sangeeta", "heera", "female", "woman", "google bengali", "google bangla", "microsoft nabanita"];
+const BANGLA_MALE_HINTS = ["pradeep", "pradip", "bhashkar", "bhaskar", "bashkar", "male", "man"];
 const ENGLISH_FEMALE_HINTS = ["zira", "aria", "jenny", "sonia", "samantha", "victoria", "ava", "allison", "karen", "susan", "hazel", "libby", "natasha", "serena", "moira", "fiona", "tessa", "veena", "female", "woman", "google uk english female"];
 
 function pickAngelaDeviceVoice(voices: SpeechSynthesisVoice[], language: "bn" | "en"): SpeechSynthesisVoice | null {
@@ -142,11 +141,13 @@ export function AIChatAssistant() {
     serverAudioRef.current = null;
   };
   const unlockAudio = async () => {
-    if (typeof window === "undefined" || !window.AudioContext) return null;
+    if (typeof window === "undefined") return null;
+    const AudioContextCtor = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContextCtor) return null;
     try {
       let context = audioContextRef.current;
       if (!context || context.state === "closed") {
-        context = new window.AudioContext();
+        context = new AudioContextCtor();
         audioContextRef.current = context;
       }
       if (context.state === "suspended") await context.resume();
@@ -263,18 +264,15 @@ export function AIChatAssistant() {
 
   // Text-to-speech engine with natural voice matching
   const speakText = useCallback(async (text: string, messageId?: string) => {
-    // Prime browser audio during the user's gesture. Speech itself is device-first.
-    void unlockAudio();
+    // Unlock Web Audio during the customer gesture. This keeps cloud female audio
+    // playable after the async AI/TTS request on Chrome, Android, macOS and iOS.
+    const audioContextPromise = unlockAudio();
     const attempt = ++speechAttemptRef.current;
     stopServerAudio();
 
-    if (typeof window === "undefined" || !window.speechSynthesis) {
-      setErrorMessage("Voice output is not supported in this browser. You can still chat by text.");
-      setVoiceState("ERROR");
-      return;
-    }
+    if (typeof window === "undefined") return;
 
-    window.speechSynthesis.cancel();
+    window.speechSynthesis?.cancel();
     if (!enabledRef.current) {
       setVoiceState("READY");
       return;
@@ -296,13 +294,86 @@ export function AIChatAssistant() {
 
     try {
       const wantsBanglaVoice = isBanglaText(cleanSpeech) || languageMode === "bn";
-      // Do not await voice enumeration here. Waiting can lose the browser user
-      // activation window and make mobile/desktop speech silently fail.
-      const voices = window.speechSynthesis.getVoices();
+      const voices = voiceCatalogRef.current.length
+        ? voiceCatalogRef.current
+        : (window.speechSynthesis?.getVoices() || []);
 
       if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
 
+      // CLOUD_FEMALE_PRIMARY_FAST: same JEL-rendered female voice across devices
+      // when the free provider is available. Quota/errors fail over quickly.
+      const cloudController = new AbortController();
+      serverSpeechRef.current = cloudController;
+      const cloudTimer = window.setTimeout(() => cloudController.abort(), 5000);
+      try {
+        const response = await fetch("/angela/speech", {
+          method: "POST",
+          signal: cloudController.signal,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: cleanSpeech, language: wantsBanglaVoice ? "bn" : "en" }),
+        });
+        if (response.ok && response.headers.get("content-type")?.includes("audio/wav")) {
+          const blob = await response.blob();
+          if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
 
+          const context = await audioContextPromise;
+          if (context?.state === "running") {
+            const decoded = await context.decodeAudioData((await blob.arrayBuffer()).slice(0));
+            if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
+            const source = context.createBufferSource();
+            source.buffer = decoded;
+            source.connect(context.destination);
+            serverAudioSourceRef.current = source;
+            source.onended = () => {
+              if (serverAudioSourceRef.current !== source) return;
+              serverAudioSourceRef.current = null;
+              try { source.disconnect(); } catch { /* already disconnected */ }
+              setVoiceState("READY");
+              setActiveSpeakingId(null);
+            };
+            source.start(0);
+            setVoiceState("SPEAKING");
+            setErrorMessage(null);
+            if (messageId) setActiveSpeakingId(messageId);
+            return;
+          }
+
+          const audio = new Audio(URL.createObjectURL(blob));
+          serverAudioRef.current = audio;
+          audio.preload = "auto";
+          audio.volume = 1;
+          audio.onended = () => {
+            if (serverAudioRef.current !== audio) return;
+            stopServerAudio();
+            setVoiceState("READY");
+            setActiveSpeakingId(null);
+          };
+          await audio.play();
+          if (attempt !== speechAttemptRef.current) return;
+          setVoiceState("SPEAKING");
+          setErrorMessage(null);
+          if (messageId) setActiveSpeakingId(messageId);
+          return;
+        }
+      } catch (cloudError) {
+        if (cloudController.signal.aborted) {
+          console.warn("Angela cloud female voice timed out; using device fallback.");
+        } else {
+          console.warn("Angela cloud female voice unavailable; using device fallback.", cloudError);
+        }
+      } finally {
+        window.clearTimeout(cloudTimer);
+        if (serverSpeechRef.current === cloudController) serverSpeechRef.current = null;
+      }
+
+      // device voice fallback: keep Angela audible when free cloud quota is exhausted.
+      if (!window.speechSynthesis) {
+        setErrorMessage(wantsBanglaVoice
+          ? "Cloud voice সাময়িকভাবে পাওয়া যাচ্ছে না এবং এই browser-এ device voice নেই। উত্তরটি লেখা আকারে আছে।"
+          : "Cloud voice is temporarily unavailable and this browser has no device voice. The answer remains visible as text.");
+        setVoiceState("ERROR");
+        return;
+      }
 
       const speakWithBrowser = (utterance: SpeechSynthesisUtterance, voice?: SpeechSynthesisVoice) => {
         if (voice) {
@@ -343,11 +414,7 @@ export function AIChatAssistant() {
       utterance.rate = wantsBanglaVoice ? 1.03 : 1.0;
       utterance.pitch = wantsBanglaVoice ? 1.12 : 1.04;
 
-      // DEVICE_FIRST_ANGELA_VOICE — choose a ranked female/localized voice first.
-      // Known male Bengali voices are explicitly penalized so Pradeep/Bashkar-type
-      // voices do not win merely because they appear first in the OS voice list.
       const preferredDeviceVoice = pickAngelaDeviceVoice(voices, wantsBanglaVoice ? "bn" : "en");
-
       setErrorMessage(null);
       speakWithBrowser(utterance, preferredDeviceVoice || undefined);
       return;
@@ -741,7 +808,7 @@ export function AIChatAssistant() {
   };
 
   return (
-    <div className="fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] right-3 sm:right-6 z-50 font-sans" id="angela-ai-voice-assistant-widget">
+    <div className="fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] right-3 sm:right-6 z-50 font-sans" id="angela-ai-voice-assistant-widget" data-voice-contract="cloud female primary; device voice fallback">
       {/* Floating Action Button with Angela Avatar & Glowing Voice Wave */}
       {!isOpen && (
         <button
