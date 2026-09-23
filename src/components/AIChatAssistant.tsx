@@ -30,7 +30,9 @@ function pickAngelaDeviceVoice(voices: SpeechSynthesisVoice[], language: "bn" | 
     const name = voice.name.toLowerCase();
     const lang = voice.lang.toLowerCase();
     const femaleNamed = femaleHints.some((hint) => name.includes(hint));
-    const maleNamed = maleHints.some((hint) => name.includes(hint));
+    // Match whole name tokens: "female" contains "male" and "Samantha" contains "man".
+    const nameTokens = name.split(/[^a-z]+/).filter(Boolean);
+    const maleNamed = maleHints.some((hint) => nameTokens.includes(hint));
     const languageMatch = language === "bn"
       ? (lang.startsWith("bn") || /bangla|bengali/.test(name))
       : lang.startsWith("en");
@@ -217,9 +219,7 @@ export function AIChatAssistant() {
   useEffect(() => {
     if (typeof window === "undefined" || !window.speechSynthesis) return;
     const syncVoices = () => {
-      const voices = voiceCatalogRef.current.length
-        ? voiceCatalogRef.current
-        : window.speechSynthesis.getVoices();
+      const voices = window.speechSynthesis.getVoices();
       if (voices.length) voiceCatalogRef.current = voices;
     };
     syncVoices();
@@ -315,7 +315,8 @@ export function AIChatAssistant() {
       // when the free provider is available. Quota/errors fail over quickly.
       const cloudController = new AbortController();
       serverSpeechRef.current = cloudController;
-      const cloudTimer = window.setTimeout(() => cloudController.abort(), 5000);
+      // The server may try up to four models (6.5s each); allow it to finish.
+      const cloudTimer = window.setTimeout(() => cloudController.abort(), 35000);
       try {
         const response = await fetch("/angela/speech", {
           method: "POST",
