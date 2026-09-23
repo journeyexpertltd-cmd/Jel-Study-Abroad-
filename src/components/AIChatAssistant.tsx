@@ -86,7 +86,7 @@ declare global {
 export function AIChatAssistant() {
   const [isOpen, setIsOpen] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
-  const [languageMode, setLanguageMode] = useState<"en" | "bn">("bn");
+  const [languageMode] = useState<"en" | "bn">("bn");
   const [voiceState, setVoiceState] = useState<AngelaVoiceState>("READY");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -250,17 +250,6 @@ export function AIChatAssistant() {
     setVoiceState((prev) => (prev === "SPEAKING" ? "READY" : prev));
   }, []);
 
-  const changeLanguage = (mode: "en" | "bn") => {
-    cancelPending();
-    stopSpeaking();
-    setLanguageMode(mode);
-    setMessages((current) => {
-      const isWelcomeOnly = current.length === 1 && current[0].sender === "assistant" && current[0].id.includes("welcome");
-      return isWelcomeOnly ? [{ ...current[0], text: welcomeFor(mode) }] : current;
-    });
-    setVoiceState("READY");
-    setErrorMessage(null);
-  };
 
   // Text-to-speech engine with natural voice matching
   const speakText = useCallback(async (text: string, messageId?: string) => {
@@ -760,31 +749,15 @@ export function AIChatAssistant() {
     ]);
   };
 
-  // Study-abroad-only quick inquiry prompts
+  // Unified Journey Expert quick inquiries; Angela speaks Bengali only.
   const quickPrompts = [
-    {
-      en: "UK university and intake options",
-      bn: "UK-তে কোন university ও intake আমার জন্য উপযুক্ত?",
-      icon: Award
-    },
-    {
-      en: "Canada study requirements and documents",
-      bn: "Canada study-এর requirements ও documents কী?",
-      icon: Building2
-    },
-    {
-      en: "Scholarship and tuition guidance",
-      bn: "Scholarship ও tuition planning কীভাবে করব?",
-      icon: Compass
-    },
-    {
-      en: "SOP, IELTS and student visa documents",
-      bn: "SOP, IELTS এবং student visa documents সম্পর্কে বলুন",
-      icon: Plane
-    }
+    { en: "Air tickets and fare support", bn: "এয়ার টিকিট, fare quotation, reissue ও refund সম্পর্কে বলুন", icon: Plane },
+    { en: "Visa assistance", bn: "ভিসা সহায়তা ও প্রয়োজনীয় documents সম্পর্কে বলুন", icon: Building2 },
+    { en: "Hajj, Umrah, tours and hotels", bn: "হজ, ওমরাহ, ট্যুর ও হোটেল সেবা সম্পর্কে বলুন", icon: Compass },
+    { en: "Study Abroad", bn: "Study Abroad, admission, scholarship ও student visa সম্পর্কে বলুন", icon: Award }
   ];
 
-  const isBanglaMode = languageMode === "bn";
+  const isBanglaMode = true;
   const stateLabel: Record<AngelaVoiceState, string> = isBanglaMode ? {
     READY: "প্রস্তুত",
     LISTENING: "শুনছি",
@@ -828,7 +801,7 @@ export function AIChatAssistant() {
           }}
           className="flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-gradient-to-tr from-[#0B5D3B] via-[#0D7A4D] to-[#D4AF37] text-white shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 relative group cursor-pointer border-2 border-white/50"
           id="btn-open-angela-assistant"
-          aria-label="Open Angela AI Voice Assistant"
+          aria-label="অ্যাঞ্জেলা বাংলা AI ভয়েস সহকারী খুলুন"
         >
           {/* Animated Glowing Ring */}
           <span className="absolute -inset-1 rounded-full bg-gradient-to-r from-emerald-500 to-amber-400 opacity-60 blur-sm group-hover:opacity-100 transition duration-300 animate-pulse"></span>
@@ -856,8 +829,8 @@ export function AIChatAssistant() {
           <div className="absolute right-20 top-2 bg-slate-950/95 text-white text-xs py-2 px-3.5 rounded-xl shadow-2xl whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none hidden md:flex items-center gap-2 border border-slate-700/80">
             <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping"></span>
             <div>
-              <p className="font-bold text-[13px] text-emerald-300">Talk with Angela 🎙️</p>
-              <p className="text-[10px] text-slate-300">JEL Official Voice & Travel Assistant</p>
+              <p className="font-bold text-[13px] text-emerald-300">অ্যাঞ্জেলার সঙ্গে কথা বলুন 🎙️</p>
+              <p className="text-[10px] text-slate-300">JEL বাংলা AI ভয়েস সহকারী</p>
             </div>
           </div>
         </button>
@@ -866,7 +839,7 @@ export function AIChatAssistant() {
       {/* Angela Conversation Interface Panel */}
       {isOpen && (
         <div 
-          lang={isBanglaMode ? "bn-BD" : "en"}
+          lang="bn-BD"
           className={`bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200/90 dark:border-slate-800 flex flex-col overflow-hidden transition-all duration-300 animate-in zoom-in-95 ${
             isMaximized 
               ? "w-[calc(100vw-24px)] sm:w-[650px] max-w-[650px] h-[88dvh] max-h-[88dvh]" 
@@ -929,22 +902,9 @@ export function AIChatAssistant() {
 
             {/* Header Action Controls */}
             <div className="flex items-center space-x-1 z-10">
-              {/* Language Switcher */}
-              <div className="flex items-center bg-white/10 rounded-lg p-0.5 text-[10px] sm:text-[11px] font-medium mr-1">
-                <button
-                  onClick={() => changeLanguage("en")}
-                  className={`px-1 sm:px-1.5 py-0.5 rounded transition-all ${languageMode === "en" ? "bg-white text-[#0B5D3B] font-bold shadow-xs" : "text-white/80 hover:text-white"}`}
-                  title="English Mode"
-                >
-                  EN
-                </button>
-                <button
-                  onClick={() => changeLanguage("bn")}
-                  className={`px-1 sm:px-1.5 py-0.5 rounded transition-all ${languageMode === "bn" ? "bg-white text-[#0B5D3B] font-bold shadow-xs" : "text-white/80 hover:text-white"}`}
-                  title="বাংলা মোড"
-                >
-                  বাংলা
-                </button>
+              {/* Bangla-only production voice mode */}
+              <div className="mr-1 rounded-lg bg-white/15 px-2 py-1 text-[10px] sm:text-[11px] font-bold text-white" data-language-contract="bangla-only">
+                বাংলা
               </div>
 
               {/* Mute / Unmute Voice */}
