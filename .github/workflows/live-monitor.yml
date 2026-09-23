@@ -132,6 +132,25 @@ jobs:
           ! grep -Eq 'â|Ã|Â|ï¿½|�|à¦|à§' "$body"
           echo "Angela production Bangla response probe passed"
 
+      - name: Check live Angela English response
+        shell: bash
+        run: |
+          set -euo pipefail
+          body="$(mktemp)"
+          trap 'rm -f "$body"' EXIT
+          curl --fail --silent --show-error \
+            --max-time 20 \
+            --header 'Content-Type: application/json' \
+            --header 'Origin: https://journeyexpertbd.com' \
+            --data '{"message":"What documents are generally needed for a UK masters application?","language":"en"}' \
+            --output "$body" \
+            https://journeyexpertbd.com/api/gemini/chat
+          grep -q '"mode":"ai"' "$body"
+          grep -q '"language":"en"' "$body"
+          ! grep -Pq '[\x{0980}-\x{09FF}]' "$body"
+          ! grep -Eq 'â|Ã|Â|ï¿½|�|à¦|à§' "$body"
+          echo "Angela production English response probe passed"
+
       - name: Check live Angela verified female audio
         if: always() && !cancelled()
         shell: bash
