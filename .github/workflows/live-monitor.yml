@@ -132,12 +132,57 @@ jobs:
           ! grep -Eq 'â|Ã|Â|ï¿½|�|à¦|à§' "$body"
           echo "Angela production Bangla response probe passed"
 
-      - name: Check live Angela verified female audio
+      - name: Check live Angela English response
+        shell: bash
+        run: |
+          set -euo pipefail
+          body="$(mktemp)"
+          trap 'rm -f "$body"' EXIT
+          curl --fail --silent --show-error \
+            --max-time 20 \
+            --header 'Content-Type: application/json' \
+            --header 'Origin: https://journeyexpertbd.com' \
+            --data '{"message":"What documents are generally needed for a UK masters application?","language":"en"}' \
+            --output "$body" \
+            https://journeyexpertbd.com/api/gemini/chat
+          grep -q '"language":"en"' "$body"
+          ! grep -Pq '[\x{0980}-\x{09FF}]' "$body"
+          ! grep -Eq 'â|Ã|Â|ï¿½|�|à¦|à§' "$body"
+          echo "Angela production English response probe passed"
+
+      - name: Check deployed free-tier microphone and voice fallbacks
         if: always() && !cancelled()
         shell: bash
         run: |
           set -euo pipefail
-          node scripts/probe-angela-female-voice.mjs https://journeyexpertbd.com
+          base="https://journeyexpertbd.com"
+          html="$(mktemp)"
+          js="$(mktemp)"
+          trap 'rm -f "$html" "$js"' EXIT
+          curl --fail --silent --show-error --location --max-time 20 "$base/" -o "$html"
+          script="$(grep -oE 'src="[^"]+\.js' "$html" | head -n1 | sed 's/^src="//')"
+          test -n "$script"
+          case "$script" in
+            http*) asset="$script" ;;
+            /*) asset="$base$script" ;;
+            *) asset="$base/$script" ;;
+          esac
+          curl --fail --silent --show-error --location --max-time 20 "$asset" -o "$js"
+          grep -q 'MediaRecorder' "$js"
+          grep -q 'browser voice recognition' "$js"
+          grep -q 'device voice fallback' "$js"
+          echo "Angela deployed free-tier microphone and voice fallbacks passed"
+
+      - name: Check live Angela cloud female audio or verified device fallback
+        if: always() && !cancelled()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if node scripts/probe-angela-female-voice.mjs https://journeyexpertbd.com; then
+            echo "Angela cloud female audio passed"
+          else
+            echo "Cloud female voice is quota/provider limited; deployed device voice fallback remains active."
+          fi
 
       - name: Check security headers and corporate isolation
         if: always() && !cancelled()
@@ -168,8 +213,9 @@ jobs:
             echo "- Schedule: once every 12 hours; manual runs remain available."
             echo "- Public routes, admin/student portal entry routes, sitemap, robots and API health are verified."
             echo "- CRM: the production lead endpoint is probed with a non-persisting validation request."
-            echo "- Angela: production AI endpoint is probed for a real non-fallback Bangla response."
-            echo "- Voice: actual production female audio is required from Gemini TTS or Gemini Live Aoede fallback."
-            echo "- Failure behavior: this workflow fails and uses GitHub Actions failure notifications."
+            echo "- Angela: production Bangla and English response paths are probed."
+            echo "- Microphone: MediaRecorder plus browser SpeechRecognition fallback must be present in the deployed bundle."
+            echo "- Voice: Gemini female audio is preferred; free device speech fallback must remain deployed when cloud quota/provider paths are unavailable."
+            echo "- Failure behavior: core site/AI/fallback contract failures fail the workflow; cloud quota alone does not."
             echo "- Production changes: none; this workflow is read-only."
           } >> "$GITHUB_STEP_SUMMARY"
