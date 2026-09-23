@@ -385,13 +385,29 @@ export function AIChatAssistant() {
           if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
           stopServerAudio();
           setActiveSpeakingId(null);
-          // Cross-device invariant: never allow the OS/browser to substitute
-          // an unknown or male voice. Cloud female TTS failure degrades to text only.
-          setVoiceState("ERROR");
-          setErrorMessage(wantsBanglaVoice
-            ? "Angela-র verified female voice সাময়িকভাবে পাওয়া যাচ্ছে না। উত্তরটি লেখা আকারে দেখানো হচ্ছে।"
-            : "Angela verified female voice is temporarily unavailable. The answer remains available as text.");
-          console.warn("Angela verified female TTS unavailable:", error instanceof Error ? error.message : "provider unavailable");
+          console.warn("Angela cloud female TTS unavailable; using free device voice fallback:", error instanceof Error ? error.message : "provider unavailable");
+
+          // Free resilience layer: Gemini TTS -> Gemini Live -> device speech.
+          // Prefer a female/localized voice when the OS exposes one; otherwise
+          // use the locale voice so Angela does not become silent when free quota ends.
+          const preferredDeviceVoice = wantsBanglaVoice
+            ? (voices.find((voice) => matchesBangla(voice) && femaleName.test(voice.name))
+              || voices.find((voice) => matchesBangla(voice)))
+            : (voices.find((voice) => /^en(?:[-_]|$)/i.test(voice.lang) && femaleName.test(voice.name))
+              || voices.find((voice) => /^en(?:[-_]|$)/i.test(voice.lang)));
+
+          try {
+            setErrorMessage(wantsBanglaVoice
+              ? "Cloud voice quota ব্যস্ত—Angela এই ডিভাইসের voice fallback ব্যবহার করছে।"
+              : "Cloud voice quota is busy—Angela is using this device voice fallback.");
+            speakWithBrowser(utterance, preferredDeviceVoice || undefined);
+            return;
+          } catch {
+            setVoiceState("ERROR");
+            setErrorMessage(wantsBanglaVoice
+              ? "Cloud ও device voice দুটোই পাওয়া যাচ্ছে না; উত্তরটি লেখা আকারে দেখানো হচ্ছে।"
+              : "Cloud and device voice are both unavailable; the answer remains available as text.");
+          }
         } finally {
           clearTimeout(timeout);
           if (serverSpeechRef.current === controller) serverSpeechRef.current = null;
