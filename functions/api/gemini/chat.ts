@@ -137,7 +137,7 @@ const JEL_SEMANTIC_KNOWLEDGE: JelKnowledgeEntry[] = [
     priority: 40,
     keywords: ['journey expert', 'jel', 'company', 'about', 'slogan', 'office', 'address', 'contact', 'phone', 'whatsapp', 'email', 'জার্নি এক্সপার্ট', 'কোম্পানি', 'স্লোগান', 'অফিস', 'ঠিকানা', 'যোগাযোগ', 'ফোন', 'হোয়াটসঅ্যাপ', 'ইমেইল'],
     facts: 'Journey Expert Limited (JEL), Bangladesh. Slogan: "Your Journey, Our Expertise." Office: 189/A (2nd Floor), Abdul Motin Complex, Hazi Moron Ali Road, Nabisco Mor, Tejgaon, Dhaka-1215, Bangladesh. WhatsApp/Hotline: +8801926400400. Telephone: +8802 9830404. Email: journeyexpertbd@gmail.com. Public portals: journeyexpertltd.com and journeyexpertbd.com.',
-    fallbackBn: 'Journey Expert Limited (JEL), Bangladesh। Slogan: “Your Journey, Our Expertise.” অফিস: 189/A (2nd Floor), Abdul Motin Complex, Hazi Moron Ali Road, Nabisco Mor, Tejgaon, Dhaka-1215। WhatsApp/Hotline: +8801926400400; Telephone: +8802 9830404; Email: journeyexpertbd@gmail.com।',
+    fallbackBn: 'Journey Expert Limited (JEL), Bangladesh। Slogan: “Your Journey, Our Expertise.” অফিস: ১৮৯/এ (২য় তলা), আব্দুল মতিন কমপ্লেক্স, হাজী মরণ আলী রোড, নাবিস্কো মোড়, তেজগাঁও, ঢাকা-১২১৫। WhatsApp/Hotline: +8801926400400; Telephone: +8802 9830404; Email: journeyexpertbd@gmail.com।',
     fallbackEn: 'Journey Expert Limited (JEL), Bangladesh. Slogan: “Your Journey, Our Expertise.” Office: 189/A (2nd Floor), Abdul Motin Complex, Hazi Moron Ali Road, Nabisco Mor, Tejgaon, Dhaka-1215. WhatsApp/Hotline: +8801926400400; Telephone: +8802 9830404; Email: journeyexpertbd@gmail.com.',
   },
 ];
