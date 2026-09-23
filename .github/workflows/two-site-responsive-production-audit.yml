@@ -33,6 +33,7 @@ jobs:
           cat > audit.cjs <<'NODE'
           const puppeteer = require('puppeteer-core');
 
+          (async () => {
           const sites = [
             {
               name: 'JEL Study Abroad',
@@ -125,6 +126,10 @@ jobs:
             process.exit(1);
           }
           console.log('RESPONSIVE_AUDIT_PASSED=' + results.length);
+          })().catch((error) => {
+            console.error(error);
+            process.exit(1);
+          });
           NODE
           node audit.cjs
 
