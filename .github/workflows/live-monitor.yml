@@ -2,7 +2,7 @@ name: Study Abroad Live Monitor
 
 on:
   push:
-    branches: [main]
+    branches: [main, "verify/final-bilingual-live-20260923"]
     paths:
       - ".github/workflows/live-monitor.yml"
       - "src/components/AIChatAssistant.tsx"
