@@ -37,16 +37,20 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
       env.GEMINI_API_KEY?.trim(),
       env.GEMINI_TTS_API_KEY?.trim(),
     ].filter((key): key is string => Boolean(key))));
-    if (!keys.length) return json({ error: 'transcription_not_configured' }, 503);
 
     const prompt = selectedLanguage === 'bn'
       ? 'Transcribe this customer speech accurately. The customer is using Bangla or Banglish. Return only the transcript in natural Bengali script, preserving proper names and brand names when appropriate. Do not answer or add commentary.'
       : 'Transcribe this customer speech accurately in English. Return only the transcript. Do not answer or add commentary.';
 
-    for (const model of ['gemini-3.8-flash', 'gemini-3.5-flash', 'gemini-2.5-flash']) {
-      for (const key of keys) {
+    // Keep local transcription bounded. Quota/auth failures should fail over
+    // quickly instead of serially waiting on every model with the same key.
+    const transcriptionDeadline = Date.now() + 4500;
+    localTranscription: for (const key of keys) {
+      for (const model of ['gemini-3.8-flash', 'gemini-3.5-flash', 'gemini-2.5-flash']) {
+        const remaining = transcriptionDeadline - Date.now();
+        if (remaining < 800) break localTranscription;
         const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 10000);
+        const timer = setTimeout(() => controller.abort(), Math.min(3000, remaining));
         try {
           const upstream = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
             method: 'POST',
@@ -57,6 +61,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
               generationConfig: { temperature: 0, maxOutputTokens: 256 },
             }),
           });
+          if (upstream.status === 429 || upstream.status === 401 || upstream.status === 403) break;
           if (!upstream.ok) continue;
           const data: any = await upstream.json();
           const transcript = data?.candidates?.[0]?.content?.parts
@@ -75,7 +80,35 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
         }
       }
     }
-    return json({ error: 'transcription_unavailable' }, 503);
+
+    // Reuse the independently deployed corporate transcription service when
+    // the Study project's free Gemini quota/key is unavailable.
+    try {
+      const response = await fetch('https://journeyexpertltd.com/angela/transcribe', {
+        method: 'POST',
+        signal: AbortSignal.timeout(5000),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ audio, mimeType, language: selectedLanguage }),
+      });
+      if (response.ok) {
+        const data: any = await response.json();
+        const transcript = typeof data.transcript === 'string' ? data.transcript.trim() : '';
+        if (transcript
+          && !(selectedLanguage === 'bn' && !/[\u0980-\u09FF]/.test(transcript))
+          && !(selectedLanguage === 'en' && /[\u0980-\u09FF]/.test(transcript))) {
+          return json({
+            transcript: transcript.slice(0, 1200),
+            language: selectedLanguage,
+            mode: 'ai',
+            providerModel: 'jel-corporate-' + (data.providerModel || 'transcribe'),
+          });
+        }
+      }
+    } catch {
+      // The browser will fall back to local SpeechRecognition when available.
+    }
+
+    return json({ error: keys.length ? 'transcription_unavailable' : 'transcription_not_configured', browserFallback: true }, 503);
   }
   const turns = (Array.isArray(body?.messages) ? body.messages : [{ sender: 'user', text: body?.message }])
     .filter((m: any) => m && ['user', 'assistant'].includes(m.sender) && typeof m.text === 'string' && m.text.trim())
