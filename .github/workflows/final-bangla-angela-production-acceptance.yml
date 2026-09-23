@@ -1,0 +1,245 @@
+name: Final Bangla Angela production acceptance
+
+on:
+  push:
+    branches: ["verify/final-bangla-speech-e2e-20260923"]
+
+permissions:
+  contents: read
+
+jobs:
+  bangla-customer-path:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - name: Set up browser harness
+        shell: bash
+        run: |
+          set -euo pipefail
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          test -n "$CHROME"
+          echo "CHROME_PATH=$CHROME" >> "$GITHUB_ENV"
+          mkdir -p /tmp/jel-final-bn
+          cd /tmp/jel-final-bn
+          npm init -y >/dev/null 2>&1
+          npm install --no-save --silent puppeteer-core@24.16.0
+
+      - name: Verify live intent-specific Bangla brain
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/jel-final-bn
+          cat > brain.cjs <<'NODE'
+          const cases = [
+            ['ticket','আমার ঢাকা থেকে দুবাই এয়ার টিকিট সম্পর্কে কী সেবা পাব?',/টিকিট|fare|reissue|refund/i],
+            ['visa','থাইল্যান্ড ভিসা সহায়তা সম্পর্কে বলুন',/ভিসা|visa|document|embassy/i],
+            ['hajj','ওমরাহ সেবা সম্পর্কে বলুন',/ওমরাহ|Umrah|হজ|Hajj/i],
+            ['study','আমি UK তে Masters করতে চাই, JEL Study Abroad কী সাহায্য করে?',/Study Abroad|প্রোফাইল|বিশ্ববিদ্যাল|admission|scholarship/i],
+            ['company','Journey Expert Limited কী ধরনের কোম্পানি এবং কী কী সেবা দেয়?',/Journey Expert|কোম্পানি|service|সেবা|ticket|visa/i],
+            ['contact','আপনাদের অফিসের ঠিকানা ও ফোন নম্বর কী?',/তেজগাঁও|Nabisco|8801926400400/i],
+            ['english-input','What visa assistance does Journey Expert provide?',/ভিসা|visa|document/i],
+          ];
+          const endpoints = [
+            ['study','https://journeyexpertbd.com/api/gemini/chat',(q)=>({message:q,language:'en',source:'text'})],
+            ['corporate','https://journeyexpertltd.com/angela/chat',(q)=>({message:q,language:'en',history:[]})],
+          ];
+          (async()=>{
+            for(const [site,url,bodyFor] of endpoints){
+              const replies=[];
+              for(const [name,q,terms] of cases){
+                const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','Origin':new URL(url).origin},body:JSON.stringify(bodyFor(q))});
+                const text=await r.text();
+                if(!r.ok) throw new Error(site+' '+name+' HTTP '+r.status+' '+text.slice(0,300));
+                const data=JSON.parse(text);
+                const reply=String(data.reply||'').trim();
+                if(data.language!=='bn') throw new Error(site+' '+name+' not Bangla mode: '+text);
+                if(!/[\u0980-\u09FF]/.test(reply)) throw new Error(site+' '+name+' no Bengali script: '+reply);
+                if(!terms.test(reply)) throw new Error(site+' '+name+' wrong intent answer: '+reply);
+                replies.push(reply.replace(/\s+/g,' ').trim());
+                console.log(site+' '+name+'=PASS mode='+(data.mode||'unknown')+' reply='+reply.slice(0,180).replace(/\s+/g,' '));
+              }
+              const unique=new Set(replies);
+              if(unique.size < 6) throw new Error(site+' repeated/generic answers: '+unique.size+' unique of '+replies.length);
+              console.log(site+' INTENT_UNIQUENESS=PASS unique='+unique.size);
+            }
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+          node brain.cjs
+
+      - name: Verify one-speech mic path, spoken reply, and responsive device profiles
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/jel-final-bn
+          cat > browser.cjs <<'NODE'
+          const puppeteer=require('puppeteer-core');
+
+          const profiles=[
+            {name:'windows-chrome',width:1440,height:900,mobile:false,ua:'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/153 Safari/537.36',voices:[
+              {name:'Microsoft Pradeep Online',lang:'bn-IN',default:false,localService:false},
+              {name:'Microsoft Nabanita Online (Natural)',lang:'bn-IN',default:false,localService:false},
+              {name:'Microsoft Aria Online',lang:'en-US',default:true,localService:false}
+            ],expected:/nabanita/i},
+            {name:'android-chrome',width:390,height:844,mobile:true,ua:'Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 Chrome/153 Mobile Safari/537.36',voices:[
+              {name:'Android Bengali Male',lang:'bn-BD',default:false,localService:true},
+              {name:'Google Bangla',lang:'bn-BD',default:true,localService:false}
+            ],expected:/google bangla/i},
+            {name:'macos-safari',width:1440,height:900,mobile:false,ua:'Mozilla/5.0 (Macintosh; Intel Mac OS X 15_6) AppleWebKit/605.1.15 Version/19.0 Safari/605.1.15',voices:[
+              {name:'Bengali Male',lang:'bn-IN',default:false,localService:true},
+              {name:'Lekha',lang:'bn-IN',default:true,localService:true}
+            ],expected:/lekha/i},
+            {name:'iphone-safari',width:390,height:844,mobile:true,ua:'Mozilla/5.0 (iPhone; CPU iPhone OS 19_0 like Mac OS X) AppleWebKit/605.1.15 Version/19.0 Mobile/15E148 Safari/604.1',voices:[
+              {name:'Bengali Male',lang:'bn-IN',default:false,localService:true},
+              {name:'Sangeeta',lang:'bn-IN',default:true,localService:true}
+            ],expected:/sangeeta/i},
+          ];
+
+          const sites=[
+            {name:'study',url:'https://journeyexpertbd.com/?final-bn=20260923',launcher:'#btn-open-angela-assistant',mic:'#btn-voice-input',transcript:'আমি ঢাকা থেকে দুবাই টিকিট সম্পর্কে জানতে চাই',replyTerms:/টিকিট|fare|reissue|refund/i},
+            {name:'corporate',url:'https://journeyexpertltd.com/?final-bn=20260923',launcher:'[aria-label="Open free Angela voice assistant"],[aria-label="Open Angela AI voice assistant"]',micText:'Start speaking',transcript:'আমি ওমরাহ সেবা সম্পর্কে জানতে চাই',replyTerms:/ওমরাহ|Umrah|হজ|Hajj/i},
+          ];
+
+          function resultEvent(transcript){
+            const item={0:{transcript},length:1,isFinal:true};
+            const results={0:item,length:1};
+            return {results};
+          }
+
+          (async()=>{
+            const browser=await puppeteer.launch({executablePath:process.env.CHROME_PATH,headless:true,args:['--no-sandbox','--disable-dev-shm-usage','--autoplay-policy=no-user-gesture-required']});
+            for(const profile of profiles){
+              for(const site of sites){
+                const page=await browser.newPage();
+                await page.setViewport({width:profile.width,height:profile.height,isMobile:profile.mobile,hasTouch:profile.mobile});
+                await page.setUserAgent(profile.ua);
+                await page.evaluateOnNewDocument((voices,transcript)=>{
+                  window.__angelaSpoken=[];
+                  window.__recognitionStarts=0;
+                  window.__mediaRecorderStarts=0;
+                  window.__testTranscript=transcript;
+
+                  class FakeRecognition {
+                    constructor(){this.continuous=false;this.interimResults=false;this.lang='';this.onstart=null;this.onresult=null;this.onerror=null;this.onend=null;}
+                    start(){
+                      window.__recognitionStarts++;
+                      setTimeout(()=>{
+                        this.onstart?.({type:'start'});
+                        this.onresult?.({results:{0:{0:{transcript:window.__testTranscript},length:1,isFinal:true},length:1}});
+                        setTimeout(()=>this.onend?.({type:'end'}),30);
+                      },20);
+                    }
+                    stop(){setTimeout(()=>this.onend?.({type:'end'}),0)}
+                    abort(){}
+                    addEventListener(){}
+                    removeEventListener(){}
+                    dispatchEvent(){return true}
+                  }
+                  window.SpeechRecognition=FakeRecognition;
+                  window.webkitSpeechRecognition=FakeRecognition;
+
+                  try{
+                    const MR=window.MediaRecorder;
+                    if(MR){
+                      const originalStart=MR.prototype.start;
+                      MR.prototype.start=function(...args){window.__mediaRecorderStarts++;return originalStart.apply(this,args)};
+                    }
+                  }catch{}
+
+                  class FakeUtterance {
+                    constructor(text){this.text=String(text);this.lang='';this.rate=1;this.pitch=1;this.voice=null;this.onstart=null;this.onend=null;this.onerror=null;}
+                  }
+                  try{Object.defineProperty(window,'SpeechSynthesisUtterance',{configurable:true,value:FakeUtterance})}catch{}
+                  const synth=window.speechSynthesis;
+                  if(synth){
+                    try{Object.defineProperty(synth,'getVoices',{configurable:true,value:()=>voices})}catch{}
+                    try{Object.defineProperty(synth,'cancel',{configurable:true,value:()=>{}})}catch{}
+                    try{Object.defineProperty(synth,'resume',{configurable:true,value:()=>{}})}catch{}
+                    try{Object.defineProperty(synth,'speak',{configurable:true,value:(u)=>{
+                      window.__angelaSpoken.push({text:String(u.text||''),lang:String(u.lang||''),voice:String(u.voice?.name||'')});
+                      setTimeout(()=>u.onstart?.({type:'start'}),0);
+                      setTimeout(()=>u.onend?.({type:'end'}),35);
+                    }})}catch{}
+                  }
+                },profile.voices,site.transcript);
+
+                await page.setRequestInterception(true);
+                page.on('request',req=>{
+                  if(req.url().includes('/angela/speech') && req.method()==='POST'){
+                    req.respond({status:429,contentType:'application/json',body:'{"error":"voice_quota_exceeded"}'}).catch(()=>{});
+                  } else req.continue().catch(()=>{});
+                });
+
+                const resp=await page.goto(site.url,{waitUntil:'networkidle2',timeout:30000});
+                if(!resp||resp.status()>=400) throw new Error(profile.name+' '+site.name+' page HTTP '+(resp?.status()||0));
+
+                const metrics=await page.evaluate(()=>({w:innerWidth,sw:Math.max(document.documentElement.scrollWidth,document.body.scrollWidth)}));
+                if(metrics.sw>metrics.w+3) throw new Error(profile.name+' '+site.name+' horizontal overflow '+JSON.stringify(metrics));
+
+                await page.waitForSelector(site.launcher,{visible:true,timeout:15000});
+                await page.click(site.launcher);
+
+                if(site.name==='corporate'){
+                  await new Promise(r=>setTimeout(r,300));
+                  const accepted=await page.evaluate(()=>{
+                    const b=[...document.querySelectorAll('button')].find(x=>(x.textContent||'').includes('Agree and continue'));
+                    if(b){b.click();return true} return false;
+                  });
+                  if(accepted) await new Promise(r=>setTimeout(r,350));
+                  // after consent, panel is already open
+                }
+
+                if(site.name==='study'){
+                  await page.waitForSelector(site.mic,{visible:true,timeout:10000});
+                  await page.click(site.mic);
+                } else {
+                  await page.waitForFunction((t)=>[...document.querySelectorAll('button')].some(b=>(b.textContent||'').includes(t)),{timeout:10000},site.micText);
+                  const clicked=await page.evaluate((t)=>{
+                    const b=[...document.querySelectorAll('button')].find(x=>(x.textContent||'').includes(t)); if(!b)return false;b.click();return true;
+                  },site.micText);
+                  if(!clicked) throw new Error(profile.name+' corporate mic not clicked');
+                }
+
+                await page.waitForFunction((termsSource)=> {
+                  const txt=document.body.innerText||'';
+                  return new RegExp(termsSource,'i').test(txt) && Array.isArray(window.__angelaSpoken) && window.__angelaSpoken.length>=2;
+                },{timeout:20000},site.replyTerms.source);
+
+                const result=await page.evaluate(()=>({
+                  recognitionStarts:window.__recognitionStarts,
+                  mediaRecorderStarts:window.__mediaRecorderStarts,
+                  spoken:window.__angelaSpoken,
+                  text:document.body.innerText,
+                  langContract:document.querySelector('[data-language-contract]')?.getAttribute('data-language-contract')||'',
+                }));
+                if(result.recognitionStarts!==1) throw new Error(profile.name+' '+site.name+' expected one recognition start, got '+result.recognitionStarts);
+                if(result.mediaRecorderStarts!==0) throw new Error(profile.name+' '+site.name+' unexpectedly used MediaRecorder first: '+result.mediaRecorderStarts);
+                if(result.langContract!=='bangla-only') throw new Error(profile.name+' '+site.name+' missing Bangla-only contract');
+                const last=result.spoken.at(-1)||{};
+                if(!/[\u0980-\u09FF]/.test(last.text||'')) throw new Error(profile.name+' '+site.name+' spoken reply not Bengali: '+JSON.stringify(last));
+                if(!profile.expected.test(last.voice||'')) throw new Error(profile.name+' '+site.name+' wrong female fallback voice: '+JSON.stringify(last));
+                if(!site.replyTerms.test(last.text||'')) throw new Error(profile.name+' '+site.name+' wrong spoken intent reply: '+JSON.stringify(last));
+                console.log(profile.name+' '+site.name+'=PASS recognition=1 recorder=0 voice='+last.voice+' lang='+last.lang+' reply='+(last.text||'').slice(0,130));
+                await page.close();
+              }
+            }
+            await browser.close();
+            console.log('FINAL_BANGLA_SPEECH_E2E=PASS');
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+          node browser.cjs
+
+      - name: Publish final acceptance summary
+        if: always()
+        run: |
+          {
+            echo "## Final Bangla Angela Production Acceptance"
+            echo ""
+            echo "- Live domains: journeyexpertbd.com + journeyexpertltd.com"
+            echo "- Output language: Bangla-only"
+            echo "- Input: one browser SpeechRecognition turn before cloud recording fallback"
+            echo "- Brain: ticket, visa, Hajj/Umrah, Study Abroad, company/contact + English-input-to-Bengali"
+            echo "- Repetition guard: at least 6 unique answers across 7 intent probes"
+            echo "- Voice: forced cloud 429, then ranked female/localized device voice"
+            echo "- Device profiles: Windows Chrome, Android Chrome, macOS Safari profile, iPhone Safari profile"
+            echo "- Responsive: horizontal overflow check in all profile/site combinations"
+          } >> "$GITHUB_STEP_SUMMARY"
