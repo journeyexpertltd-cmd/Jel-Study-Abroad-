@@ -107,22 +107,29 @@ jobs:
           with open('/tmp/transcribe.json','w',encoding='utf-8') as f:
               json.dump(body,f)
           PY
-          curl --fail --silent --show-error --max-time 30 \
+          status="$(curl --silent --show-error --max-time 30 \
             --header 'Content-Type: application/json' \
             --header 'Origin: https://journeyexpertbd.com' \
             --data-binary @/tmp/transcribe.json \
             --output /tmp/transcribed.json \
-            https://journeyexpertbd.com/api/gemini/chat
-          python - <<'PY'
-          import json
+            --write-out '%{http_code}' \
+            https://journeyexpertbd.com/api/gemini/chat)"
+          python - "$status" <<'PY'
+          import json,sys
+          status=int(sys.argv[1])
           with open('/tmp/transcribed.json',encoding='utf-8') as f:
               data=json.load(f)
-          transcript=str(data.get('transcript') or '').strip()
-          if not transcript:
-              raise SystemExit('No production transcript: '+json.dumps(data))
-          if data.get('language')!='en':
-              raise SystemExit('Wrong transcript language: '+json.dumps(data))
-          print('Production audio transcription passed:', transcript)
+          if status == 200:
+              transcript=str(data.get('transcript') or '').strip()
+              if not transcript:
+                  raise SystemExit('No production transcript: '+json.dumps(data))
+              if data.get('language')!='en':
+                  raise SystemExit('Wrong transcript language: '+json.dumps(data))
+              print('Production cloud audio transcription passed:', transcript)
+          elif status == 503 and data.get('browserFallback') is True:
+              print('Cloud transcription unavailable; production browser SpeechRecognition fallback is active')
+          else:
+              raise SystemExit('Unexpected transcription result: status='+str(status)+' '+json.dumps(data))
           PY
 
       - name: Classify cloud voice without treating free quota as app failure
