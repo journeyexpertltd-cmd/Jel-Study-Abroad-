@@ -6,7 +6,6 @@ import {
   AlertCircle, Radio, Plane, Compass, Award, Building2, MapPin
 } from "lucide-react";
 import { ChatMessage } from "../types";
-import { fetchAngelaSpeech, voiceErrorMessage } from "../lib/angelaAudio";
 
 const jelBrandIcon = new URL("../assets/images/jel-study-abroad-official.webp", import.meta.url).href;
 
