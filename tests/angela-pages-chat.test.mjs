@@ -9,14 +9,13 @@ const request = (body, options = {}) => new Request('https://journeyexpertbd.com
   method: 'POST', body: JSON.stringify(body), ...options,
 });
 
-test('Auto mode keeps English travel questions in English and recognizes Banglish', async () => {
+test('Bangla-only production returns Bengali for English, Banglish and Bangla input', async () => {
   globalThis.fetch = async () => { throw new Error('offline'); };
-  for (const message of ['What student visa documents do I need?', 'Can you help with a flight ticket?', 'Which university should I choose?']) {
-    const data = await (await onRequest({ request: request({ message, language: 'auto' }), env: {} })).json();
-    assert.equal(data.language, 'en');
+  for (const message of ['What student visa documents do I need?', 'Can you help with a flight ticket?', 'Which university should I choose?', 'ami UK te porte chai', 'আমি ভিসা সম্পর্কে জানতে চাই']) {
+    const data = await (await onRequest({ request: request({ message, language: 'en' }), env: {} })).json();
+    assert.equal(data.language, 'bn');
+    assert.match(data.reply, /[\u0980-\u09FF]/);
   }
-  const data = await (await onRequest({ request: request({ message: 'ami UK te porte chai', language: 'auto' }), env: {} })).json();
-  assert.equal(data.language, 'bn');
 });
 
 test('Complete Bengali answers retain a usable budget and exclude thought parts', async () => {
@@ -67,10 +66,10 @@ test('Gemini receives bounded history and quota failures return usable fallback'
       const body = JSON.parse(options.body);
       assert.ok(body.contents.length <= 8);
       assert.equal(body.contents.at(-1).role, 'user');
-      return Response.json({ candidates: [{ content: { parts: [{ text: 'Hello from Angela' }] } }] });
+      return Response.json({ candidates: [{ content: { parts: [{ text: 'অ্যাঞ্জেলা থেকে বাংলা উত্তর' }] } }] });
     };
     const response = await onRequest({ request: request({ messages: [{ sender: 'assistant', text: 'Hello' }, { sender: 'user', text: 'Study in UK' }] }), env: { GEMINI_API_KEY: 'test-only' } });
-    assert.equal((await response.json()).reply, 'Hello from Angela');
+    assert.equal((await response.json()).reply, 'অ্যাঞ্জেলা থেকে বাংলা উত্তর');
     globalThis.fetch = async () => new Response(null, { status: 429 });
     assert.equal((await (await onRequest({ request: request({ message: 'hello' }), env: { GEMINI_API_KEY: 'test-only' } })).json()).mode, 'fallback');
     globalThis.fetch = async () => { throw new Error('Network unavailable'); };
@@ -78,7 +77,7 @@ test('Gemini receives bounded history and quota failures return usable fallback'
   } finally { globalThis.fetch = originalFetch; }
 });
 
-test('Actual Bengali input overrides stale UI language and rejects an English-only model reply', async () => {
+test('Bangla-only mode rejects English-only model replies and answers Bengali for any input language', async () => {
   const originalFetch = globalThis.fetch;
   try {
     let answer = 'Hello, I am Angela';
@@ -100,7 +99,8 @@ test('Actual Bengali input overrides stale UI language and rejects an English-on
     const staleEnglishMode = await (await onRequest({ request: request({ language: 'en', message: 'পরিচয় দিন' }), env: {} })).json();
     assert.equal(staleEnglishMode.language, 'bn');
     const actualEnglish = await (await onRequest({ request: request({ language: 'en', message: 'Introduce yourself' }), env: {} })).json();
-    assert.equal(actualEnglish.language, 'en');
+    assert.equal(actualEnglish.language, 'bn');
+    assert.match(actualEnglish.reply, /[\u0980-\u09FF]/);
   } finally { globalThis.fetch = originalFetch; }
 });
 
@@ -146,7 +146,7 @@ test('Study Abroad production brain is Gemini 3.8 and supports opt-in search gro
   let observed;
   globalThis.fetch = async (url, options) => {
     observed = { url: String(url), body: JSON.parse(options.body) };
-    return Response.json({ candidates: [{ finishReason: 'STOP', content: { parts: [{ text: 'Study guidance response' }] } }] });
+    return Response.json({ candidates: [{ finishReason: 'STOP', content: { parts: [{ text: 'যুক্তরাজ্যে স্টাডি অপশন সম্পর্কে বাংলা গাইডেন্স' }] } }] });
   };
   await onRequest({ request: request({ message: 'Study options in the UK', language: 'en' }), env: { GEMINI_API_KEY: 'test-only', GOOGLE_SEARCH_GROUNDING: 'true' } });
   assert.match(observed.url, /gemini-3\.8-flash/);

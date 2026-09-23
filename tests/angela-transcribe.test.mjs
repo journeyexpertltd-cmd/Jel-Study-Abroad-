@@ -37,8 +37,8 @@ test('Angela transcribe fails over to corporate transcription after local quota'
     }
     assert.equal(String(url), 'https://journeyexpertltd.com/angela/transcribe');
     const payload = JSON.parse(options.body);
-    assert.equal(payload.language, 'en');
-    return Response.json({ transcript: 'Hello Angela I want to study in the United Kingdom', language: 'en', mode: 'ai', providerModel: 'gemini-3.8-flash' });
+    assert.equal(payload.language, 'bn');
+    return Response.json({ transcript: 'আমি যুক্তরাজ্যে পড়াশোনা করতে চাই', language: 'bn', mode: 'ai', providerModel: 'gemini-3.8-flash' });
   };
 
   const response = await onRequest({
@@ -48,7 +48,7 @@ test('Angela transcribe fails over to corporate transcription after local quota'
   const data = await response.json();
   assert.equal(response.status, 200);
   assert.equal(data.mode, 'ai');
-  assert.equal(data.language, 'en');
+  assert.equal(data.language, 'bn');
   assert.match(data.providerModel, /^jel-corporate-/);
 });
 
