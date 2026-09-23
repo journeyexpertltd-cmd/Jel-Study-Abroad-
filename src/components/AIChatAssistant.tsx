@@ -575,7 +575,7 @@ export function AIChatAssistant() {
     return transcript;
   };
 
-  const startBrowserRecognitionFallback = () => {
+  const startBrowserRecognitionFallback = (notice?: string) => {
     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRec) {
       setErrorMessage(languageMode === "bn"
@@ -604,7 +604,7 @@ export function AIChatAssistant() {
     recognition.onstart = () => {
       setVoiceState("LISTENING");
       setInterimTranscript("");
-      setErrorMessage(null);
+      setErrorMessage(notice || null);
     };
     recognition.onresult = (event: SpeechRecognitionEventLike) => {
       let interim = "";
@@ -692,10 +692,17 @@ export function AIChatAssistant() {
           await handleSendMessage(transcript, true);
         } catch {
           setInterimTranscript("");
-          setErrorMessage(languageMode === "bn"
-            ? "আপনার কথাটি লেখা হিসেবে ধরতে পারিনি। আবার বলুন বা লিখে প্রশ্ন করুন।"
-            : "I could not transcribe that recording. Please try again or type your question.");
-          setVoiceState("ERROR");
+          const notice = languageMode === "bn"
+            ? "Cloud transcription ব্যস্ত। Angela browser voice recognition দিয়ে আবার শুনছে—প্রশ্নটি আরেকবার বলুন।"
+            : "Cloud transcription is busy. Angela is listening again with browser voice recognition—please repeat your question.";
+          if (typeof window !== "undefined" && (window.SpeechRecognition || window.webkitSpeechRecognition)) {
+            startBrowserRecognitionFallback(notice);
+          } else {
+            setErrorMessage(languageMode === "bn"
+              ? "Cloud transcription এখন পাওয়া যাচ্ছে না। নিচে লিখে প্রশ্ন করুন।"
+              : "Cloud transcription is unavailable right now. Please type your question.");
+            setVoiceState("ERROR");
+          }
         }
       };
 
