@@ -36,7 +36,7 @@ jobs:
         run: npm run lint
 
       - name: Test Pages APIs and security contracts
-        run: node --experimental-strip-types --test tests/angela-pages-chat.test.mjs tests/angela-speech.test.mjs tests/angela-live-token.test.mjs tests/security-contract.test.mjs
+        run: node --experimental-strip-types --test tests/angela-pages-chat.test.mjs tests/angela-speech.test.mjs tests/angela-live-token.test.mjs tests/angela-transcribe.test.mjs tests/security-contract.test.mjs
 
       - name: Run SEO and domain safety checks
         run: npm run check:seo
