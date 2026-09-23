@@ -1,0 +1,105 @@
+name: Customer voice E2E verification
+
+on:
+  push:
+    branches:
+      - "verify/customer-voice-e2e-20260923"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Verify deployed frontend contains recorder transcription path
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="https://journeyexpertbd.com"
+          html="$(mktemp)"
+          js="$(mktemp)"
+          trap 'rm -f "$html" "$js"' EXIT
+          curl --fail --silent --show-error --location --max-time 20 "$base/" -o "$html"
+          script="$(grep -oE 'src="[^"]+\.js' "$html" | head -n1 | sed 's/^src="//')"
+          test -n "$script"
+          case "$script" in
+            http*) asset="$script" ;;
+            /*) asset="$base$script" ;;
+            *) asset="$base/$script" ;;
+          esac
+          curl --fail --silent --show-error --location --max-time 20 "$asset" -o "$js"
+          grep -q 'MediaRecorder' "$js"
+          grep -q 'transcribe' "$js"
+          echo "Deployed frontend contains MediaRecorder transcription flow"
+
+      - name: Generate live Angela female speech sample
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 25 \
+            --header 'Content-Type: application/json' \
+            --data '{"text":"Hello Angela, this is a voice test.","language":"en"}' \
+            --output /tmp/angela.wav \
+            "https://journeyexpertbd.com/angela/speech"
+          test "$(wc -c < /tmp/angela.wav)" -gt 1000
+          file /tmp/angela.wav || true
+
+      - name: Transcribe the live speech sample through production
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import base64, json
+          with open('/tmp/angela.wav','rb') as f:
+              audio=base64.b64encode(f.read()).decode()
+          body={"audio":audio,"mimeType":"audio/wav","language":"en"}
+          body["mode"]="transcribe"
+          with open('/tmp/transcribe.json','w',encoding='utf-8') as f:
+              json.dump(body,f)
+          PY
+          curl --fail --silent --show-error --max-time 30 \
+            --header 'Content-Type: application/json' \
+            --data-binary @/tmp/transcribe.json \
+            --output /tmp/transcribed.json \
+            "https://journeyexpertbd.com/api/gemini/chat"
+          python - <<'PY'
+          import json
+          with open('/tmp/transcribed.json',encoding='utf-8') as f:
+              data=json.load(f)
+          transcript=str(data.get('transcript') or '').strip()
+          if not transcript:
+              raise SystemExit('No production transcript returned: '+json.dumps(data))
+          if data.get('language') != 'en':
+              raise SystemExit('Wrong transcript language: '+json.dumps(data))
+          print('Production transcript:', transcript)
+          PY
+
+      - name: Verify live AI reply after transcription
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          with open('/tmp/transcribed.json',encoding='utf-8') as f:
+              t=json.load(f)['transcript']
+          body={"message":t,"language":"en"}
+          with open('/tmp/chat.json','w',encoding='utf-8') as f:
+              json.dump(body,f)
+          PY
+          chat_url="https://journeyexpertbd.com/api/gemini/chat"
+          curl --fail --silent --show-error --max-time 25 \
+            --header 'Content-Type: application/json' \
+            --data-binary @/tmp/chat.json \
+            --output /tmp/reply.json \
+            "$chat_url"
+          python - <<'PY'
+          import json
+          with open('/tmp/reply.json',encoding='utf-8') as f:
+              data=json.load(f)
+          reply=str(data.get('reply') or data.get('response') or '').strip()
+          if not reply:
+              raise SystemExit('No Angela reply: '+json.dumps(data))
+          print('Angela reply:', reply[:300])
+          PY
