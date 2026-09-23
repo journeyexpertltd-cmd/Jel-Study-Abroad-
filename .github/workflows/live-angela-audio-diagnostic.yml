@@ -1,0 +1,42 @@
+name: Live Angela audio diagnostic
+on:
+  push:
+    branches: ["verify/live-angela-audio-diagnostic-20260923"]
+permissions:
+  contents: read
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe live Angela endpoints
+        shell: bash
+        run: |
+          set -u
+          probe_speech () {
+            base="$1"
+            label="$2"
+            body="/tmp/${label}.body"
+            headers="/tmp/${label}.headers"
+            code=$(curl -sS --max-time 20 -D "$headers" -o "$body" -w "%{http_code}"               -H "Content-Type: application/json"               -H "Origin: $base"               -X POST "$base/angela/speech"               --data '{"text":"Assalamu Alaikum. I am Angela."}' || true)
+            ctype=$(grep -i '^content-type:' "$headers" | tail -1 | tr -d '\r' || true)
+            bytes=$(wc -c < "$body" | tr -d ' ')
+            echo "SPEECH $label status=$code bytes=$bytes $ctype"
+            if [ "$code" != "200" ]; then
+              echo "SPEECH_BODY $label=$(head -c 500 "$body" | tr '\n' ' ')"
+            fi
+          }
+
+          probe_chat () {
+            base="$1"
+            label="$2"
+            path="$3"
+            body="/tmp/${label}-chat.body"
+            code=$(curl -sS --max-time 20 -o "$body" -w "%{http_code}"               -H "Content-Type: application/json"               -H "Origin: $base"               -X POST "$base$path"               --data '{"message":"Reply in one short sentence: hello Angela","language":"en","messages":[]}' || true)
+            bytes=$(wc -c < "$body" | tr -d ' ')
+            echo "CHAT $label status=$code bytes=$bytes body=$(head -c 700 "$body" | tr '\n' ' ')"
+          }
+
+          probe_speech "https://journeyexpertbd.com" "study"
+          probe_speech "https://journeyexpertltd.com" "corporate"
+          probe_chat "https://journeyexpertbd.com" "study" "/api/gemini/chat"
+          probe_chat "https://journeyexpertltd.com" "corporate" "/angela/chat"
