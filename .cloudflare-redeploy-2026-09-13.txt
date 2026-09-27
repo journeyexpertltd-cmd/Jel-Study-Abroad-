@@ -1,4 +1,5 @@
 Cloudflare Pages redeploy trigger.
-Purpose: deploy the latest green Angela build to Production.
-Includes Gemini secondary-model fallback and CI build fix.
-Triggered: 2026-09-14 final pass.
+Purpose: redeploy the latest green Angela production build without changing application code.
+Production source commit before trigger: 487cacf54df767f1acd1cf84adcbf8461043f5ad.
+Target: journeyexpertbd.com.
+Triggered: 2026-09-27 authorized production redeploy retry.
