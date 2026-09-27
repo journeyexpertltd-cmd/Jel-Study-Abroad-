@@ -9,9 +9,9 @@ import { ChatMessage } from "../types";
 
 const jelBrandIcon = new URL("../assets/images/jel-study-abroad-official.webp", import.meta.url).href;
 
-const ENGLISH_WELCOME = "Assalamu Alaikum. I am Angela, Journey Expert Limited's AI assistant. How can I help you today? You can ask me about air tickets, visa assistance, tours and hotels, Hajj and Umrah, halal tourism, medical tourism, insurance, corporate travel, Meet & Greet, or Study Abroad.";
+const ENGLISH_WELCOME = "Assalamu Alaikum. I am Angela, the AI assistant for JEL Study Abroad, a brand of Journey Expert Limited. How can I help with university selection, applications, scholarships, English-language tests or student-visa preparation?";
 
-const BANGLA_WELCOME = "আসসালামু আলাইকুম। আমি অ্যাঞ্জেলা, Journey Expert Limited-এর AI সহকারী। আমি আপনাকে কীভাবে সাহায্য করতে পারি? এয়ার টিকিট, ভিসা সহায়তা, ট্যুর ও হোটেল, হজ ও ওমরাহ, হালাল ট্যুরিজম, মেডিকেল ট্যুরিজম, ইন্স্যুরেন্স, কর্পোরেট ট্রাভেল, Meet & Greet অথবা Study Abroad—যেকোনো বিষয়ে প্রশ্ন করতে পারেন।";
+const BANGLA_WELCOME = "আসসালামু আলাইকুম। আমি অ্যাঞ্জেলা, Journey Expert Limited-এর ব্র্যান্ড JEL Study Abroad-এর AI সহকারী। বিশ্ববিদ্যালয় নির্বাচন, আবেদন, স্কলারশিপ, ইংরেজি ভাষার পরীক্ষা অথবা স্টুডেন্ট ভিসার প্রস্তুতি নিয়ে কীভাবে সাহায্য করতে পারি?";
 
 const isBanglaText = (text: string) => /[\u0980-\u09FF]/.test(text);
 const welcomeFor = (mode: "en" | "bn") => mode === "bn" ? BANGLA_WELCOME : ENGLISH_WELCOME;
@@ -312,10 +312,11 @@ export function AIChatAssistant() {
       if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
 
       // CLOUD_FEMALE_PRIMARY_FAST: same JEL-rendered female voice across devices
-      // when the free provider is available. Quota/errors fail over quickly.
+      // when the free provider is available. Allow the server's sequential
+      // model attempts (up to four at 6.5s each) to finish before device fallback.
       const cloudController = new AbortController();
       serverSpeechRef.current = cloudController;
-      const cloudTimer = window.setTimeout(() => cloudController.abort(), 5000);
+      const cloudTimer = window.setTimeout(() => cloudController.abort(), 30000);
       try {
         const response = await fetch("/angela/speech", {
           method: "POST",
@@ -1310,3 +1311,4 @@ export function AIChatAssistant() {
 
 // Named alias export for authoritative integration
 export { AIChatAssistant as AngelaVoiceAssistant };
+
