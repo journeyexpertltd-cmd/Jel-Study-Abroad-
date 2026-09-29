@@ -134,6 +134,7 @@ export function AIChatAssistant() {
   const speechAttemptRef = useRef(0);
   const serverSpeechRef = useRef<AbortController | null>(null);
   const serverAudioRef = useRef<HTMLAudioElement | null>(null);
+  const reusableAudioRef = useRef<HTMLAudioElement | null>(null);
   const serverAudioSourceRef = useRef<AudioBufferSourceNode | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const voiceCatalogRef = useRef<SpeechSynthesisVoice[]>([]);
@@ -148,7 +149,14 @@ export function AIChatAssistant() {
     }
     serverAudioSourceRef.current = null;
     const audio = serverAudioRef.current;
-    if (audio) { audio.onended = null; audio.onerror = null; audio.pause(); URL.revokeObjectURL(audio.src); }
+    if (audio) {
+      audio.onended = null;
+      audio.onerror = null;
+      audio.pause();
+      if (audio.src.startsWith("blob:")) URL.revokeObjectURL(audio.src);
+      audio.removeAttribute("src");
+      try { audio.load(); } catch { /* no-op */ }
+    }
     serverAudioRef.current = null;
   };
   const unlockAudio = async () => {
@@ -308,7 +316,7 @@ export function AIChatAssistant() {
     }
 
     try {
-      const wantsBanglaVoice = isBanglaText(cleanSpeech) || languageMode === "bn";
+      const wantsBanglaVoice = isBanglaText(cleanSpeech) || languageModeRef.current === "bn";
       const voices = voiceCatalogRef.current.length
         ? voiceCatalogRef.current
         : (window.speechSynthesis?.getVoices() || []);
@@ -325,7 +333,10 @@ export function AIChatAssistant() {
         if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
 
         const context = await audioContextPromise;
-        if (context?.state === "running") {
+        if (context && context.state === "suspended") {
+          try { await context.resume(); } catch { /* HTMLAudio fallback below */ }
+        }
+        if (context && context.state !== "closed") {
           try {
             const decoded = await context.decodeAudioData((await blob.arrayBuffer()).slice(0));
             if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
@@ -350,9 +361,14 @@ export function AIChatAssistant() {
           }
         }
 
-        const audio = new Audio(URL.createObjectURL(blob));
+        const audio = reusableAudioRef.current || new Audio();
+        reusableAudioRef.current = audio;
+        if (audio.src.startsWith("blob:")) URL.revokeObjectURL(audio.src);
+        audio.src = URL.createObjectURL(blob);
         serverAudioRef.current = audio;
         audio.preload = "auto";
+        audio.autoplay = false;
+        audio.muted = false;
         audio.volume = 1;
         audio.onended = () => {
           if (serverAudioRef.current !== audio) return;
@@ -360,7 +376,15 @@ export function AIChatAssistant() {
           setVoiceState("READY");
           setActiveSpeakingId(null);
         };
-        await audio.play();
+        try {
+          await audio.play();
+        } catch (playError) {
+          const retryContext = audioContextRef.current;
+          if (retryContext?.state === "suspended") {
+            try { await retryContext.resume(); } catch { /* preserve original play error */ }
+          }
+          await audio.play();
+        }
         if (attempt !== speechAttemptRef.current) return;
         setVoiceState("SPEAKING");
         setErrorMessage(null);
