@@ -61,6 +61,7 @@ test('Angela identity is answered locally in Bangla and English', async () => {
     for (const [message, language, expected] of [
       ['What is your name?', 'en', /My name is Angela/],
       ['আপনার নাম কী?', 'bn', /আমার নাম অ্যাঞ্জেলা/],
+      ['আপনানামকী?', 'bn', /আমার নাম অ্যাঞ্জেলা/],
     ]) {
       const request = new Request('https://journeyexpertbd.com/api/gemini/chat', { method: 'POST', body: JSON.stringify({ message, language }) });
       const result = await (await onRequest({ request, env: {} })).json();
