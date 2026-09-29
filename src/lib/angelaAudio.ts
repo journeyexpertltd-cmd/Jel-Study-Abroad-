@@ -185,6 +185,7 @@ async function fetchAngelaLiveSpeech(text: string, signal: AbortSignal): Promise
 }
 
 export async function fetchAngelaSpeech(text: string, signal: AbortSignal): Promise<Blob> {
+  if (signal.aborted) throw new DOMException("Aborted", "AbortError");
   const speechText = normalizeSpeechText(text);
   if (!speechText) throw new Error('voice_provider_unavailable');
 
@@ -196,7 +197,7 @@ export async function fetchAngelaSpeech(text: string, signal: AbortSignal): Prom
   const ttsController = new AbortController();
   const abortTts = () => ttsController.abort();
   signal.addEventListener('abort', abortTts, { once: true });
-  const ttsTimer = window.setTimeout(() => ttsController.abort(), 6500);
+  const ttsTimer = window.setTimeout(() => ttsController.abort(), 10500);
   try {
     const response = await fetch('/angela/speech', {
       method: 'POST',
@@ -229,6 +230,7 @@ export async function fetchAngelaSpeech(text: string, signal: AbortSignal): Prom
   }
 
   // Short Live fallback only when the direct TTS endpoint is unavailable.
+  if (signal.aborted) throw new DOMException("Aborted", "AbortError");
   return await fetchAngelaLiveSpeech(speechText, signal);
 }
 
@@ -240,3 +242,4 @@ export function voiceErrorMessage(error: unknown): string {
   if (error instanceof Error && error.name === 'NotAllowedError') return 'শব্দ চালাতে উত্তরের Listen বোতামটি চাপুন।';
   return 'এই মুহূর্তে Angela-র বাংলা female voice চালানো যাচ্ছে না। Listen চেপে আবার চেষ্টা করুন।';
 }
+
