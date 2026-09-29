@@ -98,6 +98,12 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
                 }],
                 generationConfig: {
                   responseModalities: ['AUDIO'],
+                  responseFormat: {
+                    audio: {
+                      mimeType: 'AUDIO_L16',
+                      sampleRate: 24000,
+                    },
+                  },
                   speechConfig: {
                     voiceConfig: { voice: 'Aoede' },
                   },
