@@ -279,3 +279,37 @@ test('Study Abroad document fallbacks stay useful when AI providers degrade', as
   assert.match(generic.reply, /transcripts/i);
   assert.match(generic.reply, /passport/i);
 });
+
+
+test('JEL services overview and UK Masters stay deterministic', async () => {
+  globalThis.fetch = async () => { throw new Error('offline'); };
+
+  const servicesBn = await (await onRequest({
+    request: request({ message: 'JEL কি air ticketing, visa, Hajj Umrah service দেয়?', language: 'bn' }),
+    env: {},
+  })).json();
+  assert.equal(servicesBn.primaryIntent, 'services_overview');
+  assert.match(servicesBn.reply, /air ticketing/i);
+  assert.match(servicesBn.reply, /visa-document/i);
+  assert.match(servicesBn.reply, /Hajj.*Umrah/i);
+
+  const servicesEn = await (await onRequest({
+    request: request({ message: 'What services does Journey Expert Limited provide?', language: 'en' }),
+    env: {},
+  })).json();
+  assert.equal(servicesEn.language, 'en');
+  assert.equal(servicesEn.primaryIntent, 'services_overview');
+  assert.match(servicesEn.reply, /air ticketing/i);
+  assert.match(servicesEn.reply, /Hajj and Umrah/i);
+  assert.match(servicesEn.reply, /Study Abroad/i);
+  assert.doesNotMatch(servicesEn.reply, /9830404/);
+
+  const uk = await (await onRequest({
+    request: request({ message: 'UK-তে Masters করতে admission-এর জন্য কী কী লাগে?', language: 'bn' }),
+    env: {},
+  })).json();
+  assert.equal(uk.primaryIntent, 'study_uk_masters');
+  assert.match(uk.reply, /Bachelor degree certificate/i);
+  assert.match(uk.reply, /academic transcripts/i);
+  assert.match(uk.reply, /CAS/i);
+});
