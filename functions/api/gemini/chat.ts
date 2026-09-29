@@ -319,8 +319,8 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   const bn = hasBanglaScript || body.language === 'bn' || ((body.language === 'auto' || !body.language) && looksBanglish);
   const retrievedKnowledge = retrieveJelKnowledge(last);
   const fallback = () => semanticFallback(last, bn);
-  // Stable published contact facts do not need an external AI request.
-  if (retrievedKnowledge.primary?.id === 'contact') return fallback();
+  // Stable published identity/contact facts do not need an external AI request.
+  if (retrievedKnowledge.primary && ['identity', 'contact'].includes(retrievedKnowledge.primary.id)) return fallback();
   // Reuse the working server-side Gemini auth key when deployments expose text and TTS keys separately.
   const apiKeys = Array.from(new Set([
     env.GEMINI_API_KEY?.trim(),
