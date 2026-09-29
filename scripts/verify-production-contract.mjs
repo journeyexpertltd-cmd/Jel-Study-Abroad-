@@ -30,7 +30,10 @@ requireText(assistant, 'data-voice-contract="cloud female primary; device voice 
 requireText(assistant, "BANGLA_FEMALE_HINTS", 'Angela cross-platform female voice selection');
 requireText(assistant, "BANGLA_MALE_HINTS", 'Angela male voice exclusion');
 requireText(assistant, "pickAngelaDeviceVoice", 'Angela cross-platform voice ranking');
-requireText(assistant, "compatibleVoice", 'Angela must remain audible with an emergency device voice fallback');
+requireText(assistant, "if (!preferredDeviceVoice)", 'Angela requires an identified female device voice');
+requireText(assistant, "speakWithBrowser(utterance, preferredDeviceVoice)", 'Angela female-only device fallback');
+forbidText(assistant, "|| voices.find", 'Angela must not choose an arbitrary or male device voice');
+requireText(assistant, 'if (context?.state === "running")', 'Angela Web Audio must be running before playback');
 requireText(chat, "You serve visitors on both journeyexpertbd.com and journeyexpertltd.com", 'Angela unified JEL knowledge');
 requireText(chat, "air ticketing; fare quotation; reissue/refund support", 'Angela unified JEL services');
 requireText(chat, "https://journeyexpertltd.com/angela/transcribe", 'Angela transcription failover');
@@ -39,7 +42,7 @@ requireText(audio, "fetch('/api/gemini/live-token'", 'Angela browser audio');
 requireText(audio, "voiceName: 'Aoede'", 'Angela browser audio');
 requireText(audio, "gemini-3.8-live", 'Angela browser audio');
 requireText(audio, "fetch('/angela/speech'", 'Angela browser audio');
-requireText(audio, "window.setTimeout(() => ttsController.abort(), 6500)", 'Angela browser audio');
+requireText(audio, "window.setTimeout(() => ttsController.abort(), 10500)", 'Angela browser audio');
 requireText(audio, "return await fetchAngelaLiveSpeech(speechText, signal)", 'Angela browser audio');
 requireText(audio, "live_voice_timeout')), 3500", 'Angela browser audio');
 requireText(audio, "clientContent", 'Angela browser audio');
@@ -88,3 +91,4 @@ forbidText(redirects, '/about /about/ 301', 'Redirects');
 forbidText(redirects, '/ects-calculator /ects-calculator/ 301', 'Redirects');
 
 console.log('Production contract verified: bounded bilingual AI, cloud-to-device voice resilience, transcription failover, domain and canonical rules are locked.');
+
