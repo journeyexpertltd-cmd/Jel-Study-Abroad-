@@ -64,6 +64,8 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
 
   const models = Array.from(new Set([
     env.GEMINI_TTS_MODEL,
+    'gemini-3.8-flash-tts',
+    'gemini-3.8-flash-lite-tts',
     'gemini-3.1-flash-tts-preview',
     'gemini-2.5-flash-preview-tts',
     'gemini-2.5-pro-preview-tts',
@@ -82,22 +84,40 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
           method: 'POST',
           signal: controller.signal,
           headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
-          body: JSON.stringify({
-            contents: [{
-              role: 'user',
-              parts: [{
-                text: 'Speak the following transcript exactly in its original language, naturally, warmly, clearly, and in a professional adult female voice. Do not translate, summarize, answer, or add words:\n' + text,
-              }],
-            }],
-            generationConfig: {
-              responseModalities: ['AUDIO'],
-              speechConfig: {
-                voiceConfig: {
-                  prebuiltVoiceConfig: { voiceName: 'Aoede' },
+          body: JSON.stringify(model.startsWith('gemini-3.8')
+            ? {
+                contents: [{
+                  role: 'user',
+                  parts: [{
+                    text,
+                    speech_metadata: {
+                      style: 'Natural, warm, clear, professional adult female delivery. Preserve the transcript verbatim and do not add words.',
+                    },
+                  }],
+                }],
+                generationConfig: {
+                  responseModalities: ['AUDIO'],
+                  speechConfig: {
+                    voiceConfig: { voice: 'Aoede' },
+                  },
                 },
-              },
-            },
-          }),
+              }
+            : {
+                contents: [{
+                  role: 'user',
+                  parts: [{
+                    text: 'Speak the following transcript exactly in its original language, naturally, warmly, clearly, and in a professional adult female voice. Do not translate, summarize, answer, or add words:\n' + text,
+                  }],
+                }],
+                generationConfig: {
+                  responseModalities: ['AUDIO'],
+                  speechConfig: {
+                    voiceConfig: {
+                      prebuiltVoiceConfig: { voiceName: 'Aoede' },
+                    },
+                  },
+                },
+              }),
         },
       );
 
