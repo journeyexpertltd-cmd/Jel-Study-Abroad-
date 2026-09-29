@@ -54,7 +54,7 @@ test('Pages chat validates input and provides a Bangla fallback without credenti
   assert.equal(response.headers.get('cache-control'), 'no-store');
   assert.equal((await onRequest({ request: request({}), env: {} })).status, 400);
   assert.equal((await onRequest({ request: request({ message: 'a'.repeat(40000) }), env: {} })).status, 413);
-  assert.equal((await onRequest({ request: request({ message: 'hello' }, { headers: { origin: 'https://example.org' } }), env: {} })).status, 403);
+  assert.equal((await onRequest({ request: request({ message: 'How can I plan my study application?' }, { headers: { origin: 'https://example.org' } }), env: {} })).status, 403);
   assert.equal((await onRequest({ request: new Request('https://journeyexpertbd.com/api/gemini/chat'), env: {} })).status, 405);
 });
 
@@ -72,9 +72,9 @@ test('Gemini receives bounded history and quota failures return usable fallback'
     const response = await onRequest({ request: request({ messages: [{ sender: 'assistant', text: 'Hello' }, { sender: 'user', text: 'Study in UK' }] }), env: { GEMINI_API_KEY: 'test-only' } });
     assert.equal((await response.json()).reply, 'Hello from Angela');
     globalThis.fetch = async () => new Response(null, { status: 429 });
-    assert.equal((await (await onRequest({ request: request({ message: 'hello' }), env: { GEMINI_API_KEY: 'test-only' } })).json()).mode, 'fallback');
+    assert.equal((await (await onRequest({ request: request({ message: 'How can I plan my study application?' }), env: { GEMINI_API_KEY: 'test-only' } })).json()).mode, 'fallback');
     globalThis.fetch = async () => { throw new Error('Network unavailable'); };
-    assert.equal((await (await onRequest({ request: request({ message: 'hello' }), env: { GEMINI_API_KEY: 'test-only' } })).json()).mode, 'fallback');
+    assert.equal((await (await onRequest({ request: request({ message: 'How can I plan my study application?' }), env: { GEMINI_API_KEY: 'test-only' } })).json()).mode, 'fallback');
   } finally { globalThis.fetch = originalFetch; }
 });
 
@@ -312,4 +312,52 @@ test('JEL services overview and UK Masters stay deterministic', async () => {
   assert.match(uk.reply, /Bachelor degree certificate/i);
   assert.match(uk.reply, /academic transcripts/i);
   assert.match(uk.reply, /CAS/i);
+});
+
+
+test('Bangla conversation remains available with no AI credentials or quota', async () => {
+  let calls = 0;
+  globalThis.fetch = async () => { calls++; throw new Error('offline'); };
+  for (const message of ['তুমি কি বাংলা বলতে পারো?', 'আপনি কি বাংলা বুঝতে পারেন?', 'tumi ki bangla bolte paro?']) {
+    const data = await (await onRequest({ request: request({ message, language: 'bn' }), env: {} })).json();
+    assert.equal(data.mode, 'conversation');
+    assert.match(data.reply, /হ্যাঁ.*বাংলা/);
+    assert.doesNotMatch(data.reply, /knowledge|যাচাইকৃত.*নেই/);
+  }
+  for (const message of ['আসসালামু আলাইকুম', 'হ্যালো', 'তুমি কেমন আছো?', 'ধন্যবাদ', 'ঠিক আছে']) {
+    const data = await (await onRequest({ request: request({ message, language: 'bn' }), env: {} })).json();
+    assert.equal(data.mode, 'conversation', message);
+    assert.equal(data.language, 'bn');
+  }
+  assert.equal(calls, 0);
+});
+
+test('Explicit conversational language switches override the previous selector', async () => {
+  for (const [message, previous, next] of [['Please speak in English', 'bn', 'en'], ['বাংলায় কথা বলুন', 'en', 'bn']]) {
+    const data = await (await onRequest({ request: request({ message, language: previous }), env: {} })).json();
+    assert.equal(data.language, next);
+    assert.equal(data.mode, 'conversation');
+  }
+});
+
+test('Short follow-ups use the latest user topic and changing costs stay unquoted', async () => {
+  const send = async (text) => (await onRequest({ request: request({ language: 'bn', messages: [
+    { sender: 'user', text: 'আমি UK তে Masters করতে চাই' },
+    { sender: 'assistant', text: 'কী জানতে চান?' },
+    { sender: 'user', text },
+  ] }), env: {} })).json();
+  const docs = await send('কী কী লাগবে?');
+  assert.equal(docs.primaryIntent, 'study_uk_masters');
+  assert.match(docs.reply, /Bachelor degree certificate/);
+  const costs = await send('আর খরচ?');
+  assert.equal(costs.primaryIntent, 'cost_clarification');
+  assert.doesNotMatch(costs.reply, /\d/);
+  const changed = await send('আর Hajj Umrah visa সম্পর্কে বলুন');
+  assert.equal(changed.primaryIntent, 'hajj_umrah');
+});
+
+test('A greeting with a business question is not swallowed as small talk', async () => {
+  const data = await (await onRequest({ request: request({ message: 'হ্যালো, JEL কি air ticketing, visa, Hajj Umrah service দেয়?', language: 'bn' }), env: {} })).json();
+  assert.equal(data.primaryIntent, 'services_overview');
+  assert.match(data.reply, /Hajj.*Umrah/);
 });
