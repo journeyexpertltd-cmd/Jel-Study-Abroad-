@@ -183,7 +183,7 @@ test('Study Abroad reuses the shared corporate Angela brain only after local AI 
     }
     if (target === 'https://journeyexpertltd.com/angela/chat') {
       return Response.json({
-        reply: 'ইউকেতে মাস্টার্সের জন্য একাডেমিক ট্রান্সক্রিপ্ট, সার্টিফিকেট, ইংরেজি দক্ষতার প্রমাণ এবং বিশ্ববিদ্যালয়ভেদে প্রয়োজনীয় অতিরিক্ত কাগজপত্র প্রস্তুত করুন।',
+        reply: 'ইউকেতে scholarship option বিশ্ববিদ্যালয়, course এবং academic profile অনুযায়ী ভিন্ন হতে পারে; profile review করে verified option shortlist করতে হবে।',
         language: 'bn',
         mode: 'ai',
         providerModel: 'gemini-3.8-flash',
@@ -192,7 +192,7 @@ test('Study Abroad reuses the shared corporate Angela brain only after local AI 
     throw new Error('unexpected URL: ' + target);
   };
   const response = await onRequest({
-    request: request({ message: 'ami UK te masters korte chai, ki documents lagbe?', language: 'bn' }),
+    request: request({ message: 'ami UK te scholarship option jante chai', language: 'bn' }),
     env: { GEMINI_API_KEY: 'quota-key' },
   });
   const data = await response.json();
