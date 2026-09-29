@@ -361,3 +361,18 @@ test('A greeting with a business question is not swallowed as small talk', async
   assert.equal(data.primaryIntent, 'services_overview');
   assert.match(data.reply, /Hajj.*Umrah/);
 });
+
+test('Female voice selector rejects male/default voices and ranks Bengali female voices', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const { stripTypeScriptTypes } = await import('node:module');
+  const { runInNewContext } = await import('node:vm');
+  const source = await readFile(new URL('../src/components/AIChatAssistant.tsx', import.meta.url), 'utf8');
+  const selector = source.slice(source.indexOf('const BANGLA_FEMALE_HINTS'), source.indexOf('// Voice States'));
+  const pick = runInNewContext(stripTypeScriptTypes(selector) + '\npickAngelaDeviceVoice;');
+  const voice = (name, lang, isDefault = false) => ({ name, lang, default: isDefault, localService: true });
+  assert.equal(pick([voice('Microsoft Pradeep', 'bn-IN'), voice('Default', 'bn-BD', true)], 'bn'), null);
+  assert.equal(pick([voice('Microsoft Nabanita', 'bn-IN'), voice('Tanishaa', 'bn-BD')], 'bn').name, 'Tanishaa');
+  assert.equal(pick([voice('Microsoft David', 'en-US'), voice('Samantha', 'en-US')], 'en').name, 'Samantha');
+  assert.equal(pick([voice('Samantha', 'en-US')], 'bn'), null);
+  assert.doesNotMatch(source, /\|\| voices\.find/);
+});
