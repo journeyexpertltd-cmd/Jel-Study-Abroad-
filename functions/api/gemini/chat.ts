@@ -45,6 +45,14 @@ type JelKnowledgeEntry = {
 
 const JEL_SEMANTIC_KNOWLEDGE: JelKnowledgeEntry[] = [
   {
+    id: 'identity',
+    priority: 40,
+    keywords: ['what is your name', 'whats your name', "what's your name", 'your name', 'who are you', 'who is angela', 'angela', 'আপনার নাম', 'তোমার নাম', 'আপনি কে', 'তুমি কে', 'অ্যাঞ্জেলা', 'এঞ্জেলা'],
+    facts: 'The assistant is Angela, the AI assistant for JEL Study Abroad, a brand of Journey Expert Limited.',
+    fallbackBn: 'আমার নাম অ্যাঞ্জেলা। আমি Journey Expert Limited-এর ব্র্যান্ড JEL Study Abroad-এর AI সহকারী।',
+    fallbackEn: 'My name is Angela. I am the AI assistant for JEL Study Abroad, a brand of Journey Expert Limited.',
+  },
+  {
     id: 'contact',
     priority: 50,
     keywords: ['hotline', 'phone number', 'telephone', 'contact number', 'whatsapp', 'email address', 'office address', 'হটলাইন', 'ফোন নম্বর', 'ফোন নাম্বার', 'যোগাযোগ', 'হোয়াটসঅ্যাপ', 'হোয়াটসঅ্যাপ', 'ইমেইল', 'ঠিকানা'],
