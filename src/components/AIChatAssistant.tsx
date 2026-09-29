@@ -798,10 +798,11 @@ export function AIChatAssistant() {
     const voices = voiceCatalogRef.current.length
       ? voiceCatalogRef.current
       : window.speechSynthesis.getVoices();
-    const preferred = pickAngelaDeviceVoice(voices, "bn")
-      || voices.find((voice) => (voice.lang || "").toLowerCase().startsWith("bn"))
-      || voices.find((voice) => (voice.lang || "").toLowerCase().startsWith("en"))
-      || voices[0];
+    const preferred = pickAngelaDeviceVoice(voices, "bn");
+    if (!preferred) {
+      void speakText(BANGLA_WELCOME, "welcome-angela-jel");
+      return;
+    }
 
     const utterance = new SpeechSynthesisUtterance(BANGLA_WELCOME);
     if (preferred) {
@@ -826,7 +827,8 @@ export function AIChatAssistant() {
       setVoiceState("READY");
     };
     utterance.onerror = () => {
-      if (currentUtteranceRef.current === utterance) currentUtteranceRef.current = null;
+      if (currentUtteranceRef.current !== utterance) return;
+      currentUtteranceRef.current = null;
       setActiveSpeakingId(null);
       void speakText(BANGLA_WELCOME, "welcome-angela-jel");
     };
