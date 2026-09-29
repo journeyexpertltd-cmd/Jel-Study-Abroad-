@@ -101,6 +101,7 @@ export function AIChatAssistant() {
   const [isOpen, setIsOpen] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
   const [languageMode, setLanguageMode] = useState<"en" | "bn">("bn");
+  const languageModeRef = useRef<"en" | "bn">("bn");
   const [voiceState, setVoiceState] = useState<AngelaVoiceState>("READY");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -267,6 +268,7 @@ export function AIChatAssistant() {
   const changeLanguage = (mode: "en" | "bn") => {
     cancelPending();
     stopSpeaking();
+    languageModeRef.current = mode;
     setLanguageMode(mode);
     setMessages((current) => {
       const isWelcomeOnly = current.length === 1 && current[0].sender === "assistant" && current[0].id.includes("welcome");
@@ -492,6 +494,7 @@ export function AIChatAssistant() {
     setVoiceState("THINKING");
 
     try {
+      const selectedLanguage = languageModeRef.current;
       const historyContext = [...messages, userMsg].slice(-8);
       const response = await fetch("/api/gemini/chat", {
         signal: controller.signal,
@@ -499,7 +502,7 @@ export function AIChatAssistant() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           messages: historyContext,
-          language: languageMode,
+          language: selectedLanguage,
           source: triggeredByVoice ? "voice" : "text"
         })
       });
@@ -510,7 +513,7 @@ export function AIChatAssistant() {
 
       const data = await response.json();
       if (requestRef.current !== controller) return;
-      const wantsBangla = languageMode === "bn";
+      const wantsBangla = selectedLanguage === "bn";
       const replyText = data.reply || (wantsBangla
         ? "আপনার প্রশ্নটি প্রক্রিয়া করা যাচ্ছে না। দ্রুত সহায়তার জন্য JEL কাউন্সেলরের সঙ্গে +8801926400400 নম্বরে যোগাযোগ করুন।"
         : "I am processing your inquiry. Please reach out to our JEL Counselors at +8801926400400 for immediate assistance.");
@@ -535,7 +538,7 @@ export function AIChatAssistant() {
       if (requestRef.current !== controller) return;
       console.error("Angela Chat Error:", error);
       // Phase 12: Never display technical stack traces to customers
-      const wantsBangla = languageMode === "bn";
+      const wantsBangla = languageModeRef.current === "bn";
       const friendlyError = wantsBangla
         ? "এই মুহূর্তে উত্তর দিতে পারছি না। আবার চেষ্টা করুন অথবা JEL-এর সঙ্গে সরাসরি যোগাযোগ করুন।"
         : "I'm temporarily unable to respond. Please try again or contact JEL directly.";
