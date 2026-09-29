@@ -196,7 +196,7 @@ export async function fetchAngelaSpeech(text: string, signal: AbortSignal): Prom
   const ttsController = new AbortController();
   const abortTts = () => ttsController.abort();
   signal.addEventListener('abort', abortTts, { once: true });
-  const ttsTimer = window.setTimeout(() => ttsController.abort(), 13000);
+  const ttsTimer = window.setTimeout(() => ttsController.abort(), 6500);
   try {
     const response = await fetch('/angela/speech', {
       method: 'POST',
@@ -207,8 +207,15 @@ export async function fetchAngelaSpeech(text: string, signal: AbortSignal): Prom
 
     if (response.ok && response.headers.get('content-type')?.includes('audio/wav')) {
       const blob = await response.blob();
-      rememberSpeech(speechText, blob);
-      return blob;
+      const bytes = new Uint8Array(await blob.arrayBuffer());
+      const riff = new TextDecoder().decode(bytes.slice(0, 4));
+      const wave = new TextDecoder().decode(bytes.slice(8, 12));
+      if (bytes.byteLength >= 1000 && riff === 'RIFF' && wave === 'WAVE') {
+        const normalized = new Blob([bytes], { type: 'audio/wav' });
+        rememberSpeech(speechText, normalized);
+        return normalized;
+      }
+      console.warn('Angela TTS notice: invalid WAV payload; using Live fallback');
     }
 
     const data = await response.json().catch(() => ({}));

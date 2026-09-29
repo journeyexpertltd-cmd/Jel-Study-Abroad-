@@ -72,7 +72,7 @@ jobs:
           health=$(curl --fail --silent --show-error --max-time 20 "$SITE_URL/api/health")
           grep -q '"ok":true' <<< "$health"
           grep -q '"service":"jel-study-abroad-api"' <<< "$health"
-          grep -q '"configured":false' <<< "$health"
+          grep -q '"configured":true' <<< "$health"
 
       - name: Write summary
         if: always()

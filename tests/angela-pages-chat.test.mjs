@@ -248,3 +248,34 @@ test('unknown JEL-specific detail is not invented by fallback', async () => {
   assert.match(data.reply, /not present|verified/i);
   assert.doesNotMatch(data.reply, /chairman is/i);
 });
+
+
+test('Study Abroad document fallbacks stay useful when AI providers degrade', async () => {
+  globalThis.fetch = async () => { throw new Error('offline'); };
+
+  const canadaBn = await (await onRequest({
+    request: request({ message: 'কানাডায় স্টাডি করতে কী কী ডকুমেন্ট লাগে?', language: 'bn' }),
+    env: {},
+  })).json();
+  assert.equal(canadaBn.primaryIntent, 'study_documents_canada');
+  assert.match(canadaBn.reply, /passport|পাসপোর্ট/i);
+  assert.match(canadaBn.reply, /LOA|Letter of Acceptance/i);
+  assert.match(canadaBn.reply, /proof of funds|funds/i);
+
+  const canadaEn = await (await onRequest({
+    request: request({ message: 'What documents do I need to study in Canada?', language: 'en' }),
+    env: {},
+  })).json();
+  assert.equal(canadaEn.primaryIntent, 'study_documents_canada');
+  assert.match(canadaEn.reply, /passport/i);
+  assert.match(canadaEn.reply, /Letter of Acceptance|LOA/i);
+  assert.match(canadaEn.reply, /proof of funds/i);
+
+  const generic = await (await onRequest({
+    request: request({ message: 'What documents do I need for studying abroad?', language: 'en' }),
+    env: {},
+  })).json();
+  assert.equal(generic.primaryIntent, 'study_documents_general');
+  assert.match(generic.reply, /transcripts/i);
+  assert.match(generic.reply, /passport/i);
+});

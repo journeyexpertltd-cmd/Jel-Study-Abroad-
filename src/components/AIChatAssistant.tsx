@@ -6,6 +6,7 @@ import {
   AlertCircle, Radio, Plane, Compass, Award, Building2, MapPin
 } from "lucide-react";
 import { ChatMessage } from "../types";
+import { fetchAngelaSpeech, voiceErrorMessage } from "../lib/angelaAudio";
 
 const jelBrandIcon = new URL("../assets/images/jel-study-abroad-official.webp", import.meta.url).href;
 
@@ -105,12 +106,7 @@ export function AIChatAssistant() {
   const [voiceState, setVoiceState] = useState<AngelaVoiceState>("READY");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const [isVoiceEnabled, setIsVoiceEnabled] = useState<boolean>(() => {
-    if (typeof window !== "undefined") {
-      try { return localStorage.getItem("jel_angela_voice_muted") !== "true"; } catch { return true; }
-    }
-    return true;
-  });
+  const [isVoiceEnabled, setIsVoiceEnabled] = useState<boolean>(true);
 
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -206,6 +202,10 @@ export function AIChatAssistant() {
     }
   }, [messages, voiceState, interimTranscript]);
 
+  useEffect(() => {
+    try { localStorage.removeItem("jel_angela_voice_muted"); } catch { /* Storage may be disabled. */ }
+  }, []);
+
   // Prefer MediaRecorder + server-side Gemini transcription for consistent
   // mobile/desktop input. Browser SpeechRecognition remains a compatibility fallback.
   useEffect(() => {
@@ -238,7 +238,6 @@ export function AIChatAssistant() {
     enabledRef.current = nextState;
     if (!nextState) { speechAttemptRef.current += 1; stopServerAudio(); }
     setIsVoiceEnabled(nextState);
-    try { localStorage.setItem("jel_angela_voice_muted", nextState ? "false" : "true"); } catch { /* Storage may be disabled. */ }
     if (!nextState && typeof window !== "undefined" && window.speechSynthesis) {
       window.speechSynthesis.cancel();
       if (voiceState === "SPEAKING") {
@@ -316,25 +315,18 @@ export function AIChatAssistant() {
 
       if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
 
-      // CLOUD_FEMALE_PRIMARY_FAST: same JEL-rendered female voice across devices
-      // when the free provider is available. Allow the server's sequential
-      // model attempts (up to four at 6.5s each) to finish before device fallback.
+      // CLOUD_FEMALE_PRIMARY_FAST: same JEL-rendered voice across devices.
+      // Robust chain: direct Gemini 3.8 TTS -> Gemini Live Aoede -> device speech.
       const cloudController = new AbortController();
       serverSpeechRef.current = cloudController;
-      const cloudTimer = window.setTimeout(() => cloudController.abort(), 30000);
+      const cloudTimer = window.setTimeout(() => cloudController.abort(), 11000);
       try {
-        const response = await fetch("/angela/speech", {
-          method: "POST",
-          signal: cloudController.signal,
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: cleanSpeech, language: wantsBanglaVoice ? "bn" : "en" }),
-        });
-        if (response.ok && response.headers.get("content-type")?.includes("audio/wav")) {
-          const blob = await response.blob();
-          if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
+        const blob = await fetchAngelaSpeech(cleanSpeech, cloudController.signal);
+        if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
 
-          const context = await audioContextPromise;
-          if (context?.state === "running") {
+        const context = await audioContextPromise;
+        if (context?.state === "running") {
+          try {
             const decoded = await context.decodeAudioData((await blob.arrayBuffer()).slice(0));
             if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
             const source = context.createBufferSource();
@@ -353,31 +345,30 @@ export function AIChatAssistant() {
             setErrorMessage(null);
             if (messageId) setActiveSpeakingId(messageId);
             return;
+          } catch (decodeError) {
+            console.warn("Angela WebAudio decode failed; trying HTMLAudio.", decodeError);
           }
+        }
 
-          const audio = new Audio(URL.createObjectURL(blob));
-          serverAudioRef.current = audio;
-          audio.preload = "auto";
-          audio.volume = 1;
-          audio.onended = () => {
-            if (serverAudioRef.current !== audio) return;
-            stopServerAudio();
-            setVoiceState("READY");
-            setActiveSpeakingId(null);
-          };
-          await audio.play();
-          if (attempt !== speechAttemptRef.current) return;
-          setVoiceState("SPEAKING");
-          setErrorMessage(null);
-          if (messageId) setActiveSpeakingId(messageId);
-          return;
-        }
+        const audio = new Audio(URL.createObjectURL(blob));
+        serverAudioRef.current = audio;
+        audio.preload = "auto";
+        audio.volume = 1;
+        audio.onended = () => {
+          if (serverAudioRef.current !== audio) return;
+          stopServerAudio();
+          setVoiceState("READY");
+          setActiveSpeakingId(null);
+        };
+        await audio.play();
+        if (attempt !== speechAttemptRef.current) return;
+        setVoiceState("SPEAKING");
+        setErrorMessage(null);
+        if (messageId) setActiveSpeakingId(messageId);
+        return;
       } catch (cloudError) {
-        if (cloudController.signal.aborted) {
-          console.warn("Angela cloud female voice timed out; using device fallback.");
-        } else {
-          console.warn("Angela cloud female voice unavailable; using device fallback.", cloudError);
-        }
+        console.warn("Angela cloud voice chain unavailable; using device fallback.", cloudError);
+        if (!cloudController.signal.aborted) setErrorMessage(voiceErrorMessage(cloudError));
       } finally {
         window.clearTimeout(cloudTimer);
         if (serverSpeechRef.current === cloudController) serverSpeechRef.current = null;
@@ -432,16 +423,14 @@ export function AIChatAssistant() {
       utterance.pitch = wantsBanglaVoice ? 1.12 : 1.04;
 
       const preferredDeviceVoice = pickAngelaDeviceVoice(voices, wantsBanglaVoice ? "bn" : "en");
-      if (!preferredDeviceVoice) {
-        setVoiceState("ERROR");
-        setActiveSpeakingId(null);
-        setErrorMessage(wantsBanglaVoice
-          ? "Verified female device voice পাওয়া যায়নি। Male/default voice ব্যবহার না করে উত্তরটি text হিসেবে রাখা হয়েছে।"
-          : "A verified female device voice is unavailable. Angela will stay text-only rather than use a male/default voice.");
-        return;
-      }
-      setErrorMessage(null);
-      speakWithBrowser(utterance, preferredDeviceVoice);
+      const compatibleVoice = preferredDeviceVoice || voices.find((voice) => {
+        const lang = (voice.lang || "").toLowerCase();
+        return wantsBanglaVoice ? lang.startsWith("bn") : lang.startsWith("en");
+      }) || null;
+      setErrorMessage(preferredDeviceVoice ? null : (wantsBanglaVoice
+        ? "Cloud female voice ব্যস্ত হলে এই ডিভাইসের উপলভ্য কণ্ঠে উত্তর শোনানো হচ্ছে।"
+        : "If the cloud female voice is busy, Angela is using the best available device voice."));
+      speakWithBrowser(utterance, compatibleVoice || undefined);
       return;
     } catch (error) {
       console.warn("Text to speech exception:", error);
@@ -583,7 +572,7 @@ export function AIChatAssistant() {
         mode: "transcribe",
         audio,
         mimeType: (blob.type || "audio/webm").split(";")[0],
-        language: languageMode,
+        language: languageModeRef.current,
       }),
     });
     const data = await response.json().catch(() => ({}));
@@ -595,7 +584,7 @@ export function AIChatAssistant() {
   const startBrowserRecognitionFallback = (notice?: string) => {
     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRec) {
-      setErrorMessage(languageMode === "bn"
+      setErrorMessage(languageModeRef.current === "bn"
         ? "এই ব্রাউজারে microphone transcription চালু করা যাচ্ছে না। নিচে লিখে প্রশ্ন করুন।"
         : "Microphone transcription is unavailable in this browser. Please type your question.");
       setVoiceState("ERROR");
@@ -613,7 +602,7 @@ export function AIChatAssistant() {
     recognitionRef.current = recognition;
     recognition.continuous = false;
     recognition.interimResults = true;
-    recognition.lang = languageMode === "bn" ? "bn-BD" : "en-US";
+    recognition.lang = languageModeRef.current === "bn" ? "bn-BD" : "en-US";
 
     let finalTranscript = "";
     let latestInterim = "";
@@ -671,6 +660,7 @@ export function AIChatAssistant() {
     setInterimTranscript("");
 
     if (typeof window === "undefined") return;
+    setVoiceState("LISTENING");
     const recorderSupported = typeof MediaRecorder !== "undefined" && Boolean(navigator.mediaDevices?.getUserMedia);
     if (!recorderSupported) {
       startBrowserRecognitionFallback();
@@ -841,11 +831,7 @@ export function AIChatAssistant() {
           onClick={() => {
             void unlockAudio();
             setIsOpen(true);
-            if (isVoiceEnabled && messages.length === 1) {
-              speakText(languageMode === "bn"
-                ? BANGLA_WELCOME
-                : ENGLISH_WELCOME, "welcome");
-            }
+            window.setTimeout(() => { void startListening(); }, 0);
           }}
           className="flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-gradient-to-tr from-[#0B5D3B] via-[#0D7A4D] to-[#D4AF37] text-white shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 relative group cursor-pointer border-2 border-white/50"
           id="btn-open-angela-assistant"

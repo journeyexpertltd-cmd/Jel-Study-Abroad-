@@ -128,8 +128,10 @@ jobs:
             https://journeyexpertbd.com/api/gemini/chat
           grep -q '"language":"bn"' "$body"
           grep -Pq '[\x{0980}-\x{09FF}]' "$body"
+          grep -Eqi 'passport|পাসপোর্ট' "$body"
+          grep -Eqi 'transcript|certificate|সার্টিফিকেট|ট্রান্সক্রিপ্ট' "$body"
           ! grep -Eq 'â|Ã|Â|ï¿½|�|à¦|à§' "$body"
-          echo "Angela production Bangla response probe passed"
+          echo "Angela production Bangla response probe passed with useful document guidance"
 
       - name: Check live Angela English response
         shell: bash
@@ -145,9 +147,10 @@ jobs:
             --output "$body" \
             https://journeyexpertbd.com/api/gemini/chat
           grep -q '"language":"en"' "$body"
+          grep -Eqi 'passport|transcript|certificate|CAS|admission' "$body"
           ! grep -Pq '[\x{0980}-\x{09FF}]' "$body"
           ! grep -Eq 'â|Ã|Â|ï¿½|�|à¦|à§' "$body"
-          echo "Angela production English response probe passed"
+          echo "Angela production English response probe passed with useful document guidance"
 
       - name: Check rendered Angela microphone and voice contract
         if: always() && !cancelled()
@@ -204,7 +207,7 @@ jobs:
             echo "- Schedule: once every 12 hours; manual runs remain available."
             echo "- Public routes, admin/student portal entry routes, sitemap, robots and API health are verified."
             echo "- CRM: the production lead endpoint is probed with a non-persisting validation request."
-            echo "- Angela: production Bangla and English response paths are probed; verified fallback responses remain acceptable during free-provider quota limits."
+            echo "- Angela: production Bangla and English response paths must return useful domain guidance even when external AI quota is unavailable."
             echo "- Microphone: MediaRecorder plus browser SpeechRecognition fallback must be present in the deployed bundle."
             echo "- Voice: Gemini female audio is preferred; free device speech fallback must remain deployed when cloud quota/provider paths are unavailable."
             echo "- Failure behavior: core site/AI/fallback contract failures fail the workflow; cloud quota alone does not."

@@ -6,7 +6,7 @@ const VERIFIED_JEL = `
 Journey Expert Limited (JEL), Bangladesh.
 Slogan: "Your Journey, Our Expertise."
 Office: 189/A (2nd Floor), Abdul Motin Complex, Hazi Moron Ali Road, Nabisco Mor, Tejgaon, Dhaka-1215, Bangladesh.
-WhatsApp/Hotline: +8801926400400. Telephone: +8802 9830404. Email: journeyexpertbd@gmail.com.
+WhatsApp/Hotline: +8801926400400 (01926400400 in Bangladesh). Email: journeyexpertbd@gmail.com.
 Core services: air ticketing; fare quotation; reissue/refund support; visa-document assistance; tours and travel; hotels; Hajj and Umrah; halal tourism; medical tourism; travel insurance; corporate travel management; Meet & Greet; Study Abroad.
 Hajj & Umrah verified service scope: pilgrimage package planning; air travel coordination; Makkah/Madinah accommodation; ground transport; Ziyarat planning; pilgrim/group coordination; visa/document guidance. Exact package inclusions, prices, availability, Saudi visa/permit/health requirements, quotas and dates are time-sensitive and must be verified before being presented as current.
 JEL Study Abroad services: profile assessment; country/course/university selection; admissions guidance; scholarships; SOP guidance; English-language test guidance; student-visa document preparation; pre-departure and post-arrival guidance.
@@ -67,6 +67,22 @@ const JEL_SEMANTIC_KNOWLEDGE: JelKnowledgeEntry[] = [
     facts: 'JEL Hajj & Umrah scope: pilgrimage package planning; air-travel coordination; Makkah/Madinah accommodation; ground transport; Ziyarat planning; pilgrim/group coordination; visa/document guidance. Exact package inclusions, price, availability, Saudi visa/permit/health rules, quotas and dates are time-sensitive and must be verified from current official or supplier sources.',
     fallbackBn: 'Journey Expert Limited হজ ও ওমরাহ বিষয়ে package planning, air travel coordination, Makkah/Madinah accommodation, ground transport, Ziyarat planning, pilgrim/group coordination এবং visa/document guidance-এ সহায়তা করে। নির্দিষ্ট price, availability, Saudi visa/permit/health rules, quota ও dates বর্তমান official source বা supplier থেকে যাচাই করতে হবে।',
     fallbackEn: 'Journey Expert Limited supports Hajj and Umrah package planning, air-travel coordination, Makkah/Madinah accommodation, ground transport, Ziyarat planning, pilgrim/group coordination, and visa/document guidance. Exact prices, availability, Saudi visa/permit/health rules, quotas, and dates must be verified from current official or supplier sources.',
+  },
+  {
+    id: 'study_documents_canada',
+    priority: 99,
+    keywords: ['canada study documents', 'canada student visa documents', 'canada study permit documents', 'কানাডা স্টাডি ডকুমেন্ট', 'কানাডা স্টুডেন্ট ভিসা', 'কানাডা পড়তে ডকুমেন্ট'],
+    facts: 'Canada study guidance: for admission, universities commonly request academic transcripts/certificates, passport identity page, English-language evidence where required, and program-specific items such as SOP/personal statement, CV/resume or references. For a Canadian study permit, IRCC requires a DLI letter of acceptance, proof of identity, proof of financial support, and a PAL/TAL when applicable (Quebec uses a CAQ); medical examination, police certificates, biometrics or other documents can be required depending on the case. Requirements can change and must be checked against current IRCC and institution instructions.',
+    fallbackBn: 'কানাডায় পড়াশোনার জন্য সাধারণত দুই ধাপের কাগজপত্র প্রস্তুত করতে হয়। Admission-এর জন্য academic transcript/certificate, passport copy, English-language test evidence (যদি university চায়), এবং program অনুযায়ী SOP/personal statement, CV বা reference লাগতে পারে। Study permit-এর জন্য সাধারণভাবে DLI-এর Letter of Acceptance (LOA), valid passport/identity proof, proof of funds, এবং প্রযোজ্য হলে PAL/TAL (Quebec হলে CAQ) লাগে। Case অনুযায়ী biometrics, medical exam, police certificate বা অতিরিক্ত document চাইতে পারে। Final checklist অবশ্যই university ও IRCC-এর current instruction অনুযায়ী verify করতে হবে।',
+    fallbackEn: 'For Canada, prepare two document sets. For university admission, commonly needed items include academic transcripts/certificates, a passport copy, English-language evidence if required, and program-specific items such as an SOP/personal statement, CV/resume or references. For the study permit, the core documents generally include a DLI Letter of Acceptance (LOA), valid passport/identity proof, proof of funds, and a PAL/TAL when applicable (CAQ for Quebec). Biometrics, a medical exam, police certificates or other documents may be requested depending on your case. Always verify the final checklist with the university and current IRCC instructions.',
+  },
+  {
+    id: 'study_documents_general',
+    priority: 97,
+    keywords: ['study documents', 'student visa documents', 'admission documents', 'documents needed to study', 'document checklist', 'স্টাডি ডকুমেন্ট', 'স্টুডেন্ট ভিসা ডকুমেন্ট', 'অ্যাডমিশন ডকুমেন্ট', 'কী কী ডকুমেন্ট', 'কি কি ডকুমেন্ট', 'কাগজপত্র'],
+    facts: 'General Study Abroad document planning normally has two layers: university admission documents and immigration/student-visa documents. Admission commonly uses passport identity, academic transcripts/certificates, language-test evidence where required, SOP/personal statement, CV/resume, references and program-specific materials. Visa-stage documents vary by destination and can include an admission/eligibility document, passport, financial evidence, health/insurance or medical evidence, biometrics and other country-specific items. Exact official requirements must be verified for the destination and institution.',
+    fallbackBn: 'Study Abroad-এর documents সাধারণত দুই ভাগে হয়। University admission-এর জন্য passport copy, academic transcript/certificate, English-language test evidence (যদি লাগে), SOP/personal statement, CV/resume, reference এবং course-specific document লাগতে পারে। Visa stage-এ destination অনুযায়ী admission/eligibility document, passport, financial evidence, health/insurance বা medical evidence, biometrics এবং country-specific document লাগতে পারে। আপনি কোন দেশে ও কোন level-এ পড়তে চান বললে আমি checklist-টা আরও নির্দিষ্ট করে দিতে পারি।',
+    fallbackEn: 'Study Abroad documents usually fall into two groups. University admission commonly uses a passport copy, academic transcripts/certificates, English-language evidence if required, an SOP/personal statement, CV/resume, references and course-specific materials. The visa stage varies by destination and can require an admission/eligibility document, passport, financial evidence, health/insurance or medical evidence, biometrics and other country-specific documents. Tell me the country and study level and I can make the checklist more specific.',
   },
   {
     id: 'study_abroad',
@@ -164,6 +180,15 @@ function normalizeForKnowledge(value: string): string {
 
 function retrieveJelKnowledge(query: string) {
   const normalized = normalizeForKnowledge(query);
+  const asksForDocuments =
+    /document|checklist|paperwork|what.*need|what.*required|ডকুমেন্ট|কাগজপত্র|কি কি লাগে|কী কী লাগে|কি কি দরকার|কী কী দরকার/.test(normalized);
+  const studyContext =
+    /study|student|university|admission|permit|visa|masters|bachelor|স্টাডি|স্টুডেন্ট|পড়|পড়|বিশ্ববিদ্যাল|অ্যাডমিশন|মাস্টার্স|ব্যাচেলর/.test(normalized);
+  if (asksForDocuments && studyContext) {
+    const targetId = /canada|canadian|কানাডা/.test(normalized) ? 'study_documents_canada' : 'study_documents_general';
+    const entry = JEL_SEMANTIC_KNOWLEDGE.find((item) => item.id === targetId)!;
+    return { primary: entry, ids: [targetId], text: '[' + targetId + '] ' + entry.facts };
+  }
   const identityQuestion =
     /\b(?:what(?:'s| is)? your name|who are you|who is angela)\b/i.test(normalized) ||
     /আপন(?:া)?র?\s*না?ম|তোমা?র?\s*না?ম|আপনি\s*কে|তুমি\s*কে|কে\s*তুমি/.test(normalized);
