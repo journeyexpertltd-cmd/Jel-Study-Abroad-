@@ -2,6 +2,7 @@ const MAX_SPEECH_CHARS = 700;
 const MAX_CACHE_ENTRIES = 12;
 const LIVE_FALLBACK_MODEL = 'gemini-3.8-live';
 const speechCache = new Map<string, Blob>();
+let voiceQuotaCooldownUntil = 0;
 
 function normalizeSpeechText(text: string): string {
   return text.replace(/\s+/g, ' ').trim().slice(0, MAX_SPEECH_CHARS);
@@ -192,6 +193,13 @@ export async function fetchAngelaSpeech(text: string, signal: AbortSignal): Prom
   const cached = speechCache.get(speechText);
   if (cached) return cached;
 
+  // A provider 429 is usually account/project quota. During Retry-After, skip
+  // both direct TTS and the same-provider Live path so AIChatAssistant can
+  // immediately use a positively identified female device voice.
+  if (Date.now() < voiceQuotaCooldownUntil) {
+    throw new Error('voice_quota_exceeded');
+  }
+
   // Low-latency path: use the same-origin Gemini TTS endpoint first.
   // This avoids paying a WebSocket setup + 10s Live timeout before TTS.
   const ttsController = new AbortController();
@@ -213,6 +221,7 @@ export async function fetchAngelaSpeech(text: string, signal: AbortSignal): Prom
       const wave = new TextDecoder().decode(bytes.slice(8, 12));
       if (bytes.byteLength >= 1000 && riff === 'RIFF' && wave === 'WAVE') {
         const normalized = new Blob([bytes], { type: 'audio/wav' });
+        voiceQuotaCooldownUntil = 0;
         rememberSpeech(speechText, normalized);
         return normalized;
       }
@@ -220,9 +229,18 @@ export async function fetchAngelaSpeech(text: string, signal: AbortSignal): Prom
     }
 
     const data = await response.json().catch(() => ({}));
-    if (response.status !== 429) console.warn('Angela TTS notice:', data?.error || response.status);
+    if (response.status === 429) {
+      const retryAfterSeconds = Number(response.headers.get('retry-after'));
+      const cooldownSeconds = Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0
+        ? Math.min(300, Math.max(15, retryAfterSeconds))
+        : 60;
+      voiceQuotaCooldownUntil = Date.now() + cooldownSeconds * 1000;
+      throw new Error(data?.error || 'voice_quota_exceeded');
+    }
+    console.warn('Angela TTS notice:', data?.error || response.status);
   } catch (ttsError) {
     if (signal.aborted) throw ttsError;
+    if (ttsError instanceof Error && ttsError.message === 'voice_quota_exceeded') throw ttsError;
     console.warn('Angela TTS notice:', ttsError);
   } finally {
     window.clearTimeout(ttsTimer);
