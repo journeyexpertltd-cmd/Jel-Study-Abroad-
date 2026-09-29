@@ -26,6 +26,8 @@ test('Speech produces current Generate Content WAV and maps quota errors without
  assert.equal(options.headers['x-goog-api-key'], 'test-key');
  const body = JSON.parse(options.body);
  assert.deepEqual(body.generationConfig.responseModalities, ['AUDIO']);
+ assert.equal(body.generationConfig.responseFormat.audio.mimeType, 'AUDIO_L16');
+ assert.equal(body.generationConfig.responseFormat.audio.sampleRate, 24000);
  assert.equal(body.contents[0].parts[0].text, 'আমি অ্যাঞ্জেলা');
  assert.match(body.contents[0].parts[0].speech_metadata.style, /professional adult female/i);
  assert.equal(body.generationConfig.speechConfig.voiceConfig.voice, 'Aoede');
