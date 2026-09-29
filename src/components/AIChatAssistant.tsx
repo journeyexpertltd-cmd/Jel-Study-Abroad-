@@ -105,12 +105,7 @@ export function AIChatAssistant() {
   const [voiceState, setVoiceState] = useState<AngelaVoiceState>("READY");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const [isVoiceEnabled, setIsVoiceEnabled] = useState<boolean>(() => {
-    if (typeof window !== "undefined") {
-      try { return localStorage.getItem("jel_angela_voice_muted") !== "true"; } catch { return true; }
-    }
-    return true;
-  });
+  const [isVoiceEnabled, setIsVoiceEnabled] = useState<boolean>(true);
 
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -206,6 +201,10 @@ export function AIChatAssistant() {
     }
   }, [messages, voiceState, interimTranscript]);
 
+  useEffect(() => {
+    try { localStorage.removeItem("jel_angela_voice_muted"); } catch { /* Storage may be disabled. */ }
+  }, []);
+
   // Prefer MediaRecorder + server-side Gemini transcription for consistent
   // mobile/desktop input. Browser SpeechRecognition remains a compatibility fallback.
   useEffect(() => {
@@ -238,7 +237,6 @@ export function AIChatAssistant() {
     enabledRef.current = nextState;
     if (!nextState) { speechAttemptRef.current += 1; stopServerAudio(); }
     setIsVoiceEnabled(nextState);
-    try { localStorage.setItem("jel_angela_voice_muted", nextState ? "false" : "true"); } catch { /* Storage may be disabled. */ }
     if (!nextState && typeof window !== "undefined" && window.speechSynthesis) {
       window.speechSynthesis.cancel();
       if (voiceState === "SPEAKING") {
@@ -321,7 +319,7 @@ export function AIChatAssistant() {
       // model attempts (up to four at 6.5s each) to finish before device fallback.
       const cloudController = new AbortController();
       serverSpeechRef.current = cloudController;
-      const cloudTimer = window.setTimeout(() => cloudController.abort(), 30000);
+      const cloudTimer = window.setTimeout(() => cloudController.abort(), 8000);
       try {
         const response = await fetch("/angela/speech", {
           method: "POST",
@@ -432,16 +430,14 @@ export function AIChatAssistant() {
       utterance.pitch = wantsBanglaVoice ? 1.12 : 1.04;
 
       const preferredDeviceVoice = pickAngelaDeviceVoice(voices, wantsBanglaVoice ? "bn" : "en");
-      if (!preferredDeviceVoice) {
-        setVoiceState("ERROR");
-        setActiveSpeakingId(null);
-        setErrorMessage(wantsBanglaVoice
-          ? "Verified female device voice পাওয়া যায়নি। Male/default voice ব্যবহার না করে উত্তরটি text হিসেবে রাখা হয়েছে।"
-          : "A verified female device voice is unavailable. Angela will stay text-only rather than use a male/default voice.");
-        return;
-      }
-      setErrorMessage(null);
-      speakWithBrowser(utterance, preferredDeviceVoice);
+      const compatibleVoice = preferredDeviceVoice || voices.find((voice) => {
+        const lang = (voice.lang || "").toLowerCase();
+        return wantsBanglaVoice ? lang.startsWith("bn") : lang.startsWith("en");
+      }) || null;
+      setErrorMessage(preferredDeviceVoice ? null : (wantsBanglaVoice
+        ? "Cloud female voice ব্যস্ত হলে এই ডিভাইসের উপলভ্য কণ্ঠে উত্তর শোনানো হচ্ছে।"
+        : "If the cloud female voice is busy, Angela is using the best available device voice."));
+      speakWithBrowser(utterance, compatibleVoice || undefined);
       return;
     } catch (error) {
       console.warn("Text to speech exception:", error);
@@ -583,7 +579,7 @@ export function AIChatAssistant() {
         mode: "transcribe",
         audio,
         mimeType: (blob.type || "audio/webm").split(";")[0],
-        language: languageMode,
+        language: languageModeRef.current,
       }),
     });
     const data = await response.json().catch(() => ({}));
@@ -595,7 +591,7 @@ export function AIChatAssistant() {
   const startBrowserRecognitionFallback = (notice?: string) => {
     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRec) {
-      setErrorMessage(languageMode === "bn"
+      setErrorMessage(languageModeRef.current === "bn"
         ? "এই ব্রাউজারে microphone transcription চালু করা যাচ্ছে না। নিচে লিখে প্রশ্ন করুন।"
         : "Microphone transcription is unavailable in this browser. Please type your question.");
       setVoiceState("ERROR");
@@ -613,7 +609,7 @@ export function AIChatAssistant() {
     recognitionRef.current = recognition;
     recognition.continuous = false;
     recognition.interimResults = true;
-    recognition.lang = languageMode === "bn" ? "bn-BD" : "en-US";
+    recognition.lang = languageModeRef.current === "bn" ? "bn-BD" : "en-US";
 
     let finalTranscript = "";
     let latestInterim = "";
@@ -671,6 +667,7 @@ export function AIChatAssistant() {
     setInterimTranscript("");
 
     if (typeof window === "undefined") return;
+    setVoiceState("LISTENING");
     const recorderSupported = typeof MediaRecorder !== "undefined" && Boolean(navigator.mediaDevices?.getUserMedia);
     if (!recorderSupported) {
       startBrowserRecognitionFallback();
@@ -841,11 +838,7 @@ export function AIChatAssistant() {
           onClick={() => {
             void unlockAudio();
             setIsOpen(true);
-            if (isVoiceEnabled && messages.length === 1) {
-              speakText(languageMode === "bn"
-                ? BANGLA_WELCOME
-                : ENGLISH_WELCOME, "welcome");
-            }
+            window.setTimeout(() => { void startListening(); }, 0);
           }}
           className="flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-gradient-to-tr from-[#0B5D3B] via-[#0D7A4D] to-[#D4AF37] text-white shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 relative group cursor-pointer border-2 border-white/50"
           id="btn-open-angela-assistant"
