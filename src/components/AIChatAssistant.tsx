@@ -1133,7 +1133,7 @@ export function AIChatAssistant() {
           </div>
 
           {/* Quick Human Handoff Banner */}
-          <div className="bg-slate-50 dark:bg-slate-850 border-b border-slate-200/80 dark:border-slate-800 px-3 py-1.5 flex items-center justify-between text-xs text-slate-600 dark:text-slate-300 font-sans">
+          <div className="bg-slate-50 dark:bg-slate-850 border-b border-slate-200/80 dark:border-slate-800 px-3 py-1.5 flex flex-wrap gap-2 items-center justify-between text-xs text-slate-600 dark:text-slate-300 font-sans">
             <span className="flex items-center font-medium text-slate-700 dark:text-slate-300 text-[11px]">
               <Headphones className="h-3.5 w-3.5 mr-1 text-[#0B5D3B]" />
               {isBanglaMode ? "মানব সহায়তা:" : "Human Specialist:"}
@@ -1153,7 +1153,7 @@ export function AIChatAssistant() {
                 className="flex items-center text-slate-700 dark:text-slate-300 hover:text-slate-900 bg-white dark:bg-slate-800 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700 shadow-2xs hover:scale-102 transition-transform"
                 title="Hotline: +8801926400400"
               >
-                <Phone className="h-3 w-3 mr-1 text-[#0B5D3B]" /> Tel
+                <Phone className="h-3 w-3 mr-1 text-[#0B5D3B]" /> 01926400400
               </a>
               <a 
                 href="mailto:journeyexpertbd@gmail.com" 
@@ -1164,6 +1164,44 @@ export function AIChatAssistant() {
               </a>
             </div>
           </div>
+
+          <details className="shrink-0 border-b border-emerald-100 bg-white dark:bg-slate-900 dark:border-slate-700" id="angela-jel-directory">
+            <summary className="cursor-pointer px-4 py-2.5 text-xs font-semibold text-emerald-800 dark:text-emerald-300 focus-visible:outline-2 focus-visible:outline-emerald-600">
+              {isBanglaMode ? "JEL-এর সব সার্ভিস, ব্র্যান্ড ও যোগাযোগ" : "JEL services, brands & contact"}
+            </summary>
+            <section aria-label={isBanglaMode ? "Journey Expert Limited পরিচিতি" : "Journey Expert Limited directory"} className="max-h-[35vh] overflow-y-auto px-4 pb-4 text-xs leading-relaxed text-slate-700 dark:text-slate-200">
+              <p className="font-bold text-sm">Journey Expert Limited (JEL)</p>
+              <p className="mb-3 text-slate-500 dark:text-slate-400">Your Journey, Our Expertise.</p>
+              <h4 className="font-semibold mb-1">{isBanglaMode ? "আমাদের সার্ভিস" : "Our services"}</h4>
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 list-disc pl-4 mb-3">
+                {[
+                  ["এয়ার টিকিট, ভাড়া, রিইস্যু ও রিফান্ড সহায়তা", "Air tickets, fares, reissue & refund support"],
+                  ["ভিসা ও ডকুমেন্ট সহায়তা", "Visa & document assistance"],
+                  ["দেশি-বিদেশি ট্যুর ও ভ্রমণ", "Domestic & international tours"],
+                  ["হোটেল বুকিং সহায়তা", "Hotel booking assistance"],
+                  ["হজ ও উমরাহ", "Hajj & Umrah"],
+                  ["হালাল ট্যুরিজম", "Halal tourism"],
+                  ["মেডিকেল ট্যুরিজম", "Medical tourism"],
+                  ["ট্রাভেল ইন্স্যুরেন্স সহায়তা", "Travel insurance assistance"],
+                  ["কর্পোরেট ট্রাভেল ম্যানেজমেন্ট", "Corporate travel management"],
+                  ["এয়ারপোর্ট মিট অ্যান্ড গ্রিট", "Airport Meet & Greet"],
+                  ["স্টাডি অ্যাব্রোড ও ভর্তি সহায়তা", "Study Abroad & admissions guidance"],
+                  ["কমপ্লায়েন্স ও অ্যাডভাইজরি", "Compliance & advisory"],
+                ].map(([bn, en]) => <li key={en}>{isBanglaMode ? bn : en}</li>)}
+              </ul>
+              <h4 className="font-semibold mb-1">{isBanglaMode ? "ব্র্যান্ড, কো-ব্র্যান্ড ও সহযোগী উদ্যোগ" : "Brands, co-brands & associated ventures"}</h4>
+              <ul className="list-disc pl-4 space-y-1 mb-3">
+                <li>JEL Study Abroad</li>
+                <li>JEL Meet &amp; Greet</li>
+                <li>JEL Compliance &amp; Advisory</li>
+                <li>Craft Bangla</li>
+              </ul>
+              <p className="mb-2">{isBanglaMode ? "স্টাডি অ্যাব্রোড: কাউন্সেলিং, প্রোফাইল মূল্যায়ন, কোর্স ও বিশ্ববিদ্যালয় নির্বাচন, আবেদন, স্কলারশিপ গাইডেন্স, SOP, ভাষা পরীক্ষার গাইডেন্স, শিক্ষার্থী ভিসার ডকুমেন্ট এবং যাত্রার আগে ও পরে সহায়তা।" : "Study Abroad: counselling, profile assessment, course and university selection, applications, scholarship and SOP guidance, language-test guidance, student-visa documents, and pre-/post-arrival support."}</p>
+              <a href="tel:+8801926400400" className="block font-bold text-emerald-800 dark:text-emerald-300">{isBanglaMode ? "হটলাইন / WhatsApp: " : "Hotline / WhatsApp: "}01926400400</a>
+              <p className="mt-1">{isBanglaMode ? "১৮৯/এ (২য় তলা), আব্দুল মতিন কমপ্লেক্স, নাবিস্কো মোড়, তেজগাঁও, ঢাকা-১২১৫।" : "189/A (2nd Floor), Abdul Motin Complex, Nabisco Mor, Tejgaon, Dhaka-1215."}</p>
+              <p className="mt-2 text-[11px] text-slate-500 dark:text-slate-400">{isBanglaMode ? "মূল্য, প্রাপ্যতা ও শর্ত যাচাইসাপেক্ষ। ভিসা, ভর্তি বা স্কলারশিপের নিশ্চয়তা দেওয়া হয় না।" : "Prices, availability and terms require confirmation. Visa, admission and scholarship outcomes are not guaranteed."}</p>
+            </section>
+          </details>
 
           {/* Real-time Interim Listening Banner */}
           {voiceState === "LISTENING" && (
