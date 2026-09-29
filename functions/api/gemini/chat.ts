@@ -199,6 +199,20 @@ function normalizeForKnowledge(value: string): string {
 
 function retrieveJelKnowledge(query: string) {
   const normalized = normalizeForKnowledge(query);
+  // A company-directory request must include all requested categories, rather
+  // than allowing a higher-priority service entry to hide brands and contact.
+  const directoryRequest = /brand|ব্র্যান্ড|ব্রান্ড|কো-ব্র্যান্ড|co-brand/.test(normalized)
+    && /service|সার্ভিস|সেবা|যোগাযোগ|phone|ফোন|hotline|হটলাইন|contact/.test(normalized);
+  if (directoryRequest) {
+    const entries = ['services_overview', 'brands', 'contact'].map(id => JEL_SEMANTIC_KNOWLEDGE.find(entry => entry.id === id)!);
+    const primary: JelKnowledgeEntry = {
+      id: 'company_directory', priority: 130, keywords: [],
+      facts: entries.map(entry => entry.facts).join('\n'),
+      fallbackBn: entries.map(entry => entry.fallbackBn).join('\n\n'),
+      fallbackEn: entries.map(entry => entry.fallbackEn).join('\n\n'),
+    };
+    return { primary, ids: ['company_directory'], text: primary.facts };
+  }
 
   const explicitServicesQuestion =
     /what services|which services|services.*provide|services.*offer|jel services|journey expert.*services|কি কি সার্ভিস|কী কী সার্ভিস|কি কি সেবা|কী কী সেবা|সার্ভিস.*দে/.test(normalized);
@@ -468,7 +482,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
     return semanticFallback(contextualQuery, bn);
   };
   // Stable published JEL facts do not need an external AI request.
-  if (contextualQuery === last && retrievedKnowledge.primary && ['identity', 'contact', 'services_overview', 'study_uk_masters'].includes(retrievedKnowledge.primary.id)) return fallback();
+  if (contextualQuery === last && retrievedKnowledge.primary && ['identity', 'contact', 'services_overview', 'study_uk_masters', 'company_directory', 'brands'].includes(retrievedKnowledge.primary.id)) return fallback();
   // Reuse the working server-side Gemini auth key when deployments expose text and TTS keys separately.
   const apiKeys = Array.from(new Set([
     env.GEMINI_API_KEY?.trim(),
