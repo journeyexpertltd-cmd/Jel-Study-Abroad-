@@ -209,14 +209,18 @@ function retrieveJelKnowledge(query: string) {
     /corporate|কর্পোরেট/.test(normalized),
     /study|student|স্টাডি|স্টুডেন্ট/.test(normalized),
   ].filter(Boolean).length;
-  if (explicitServicesQuestion || serviceMentions >= 2) {
+  const asksWhetherJelProvidesServices =
+    /(jel|journey expert|জার্নি এক্সপার্ট)/.test(normalized) &&
+    /(service|services|provide|offer|দেয়|দেয়|সেবা)/.test(normalized);
+  if (explicitServicesQuestion || (asksWhetherJelProvidesServices && serviceMentions >= 2)) {
     const services = JEL_SEMANTIC_KNOWLEDGE.find((entry) => entry.id === 'services_overview')!;
     return { primary: services, ids: ['services_overview'], text: '[services_overview] ' + services.facts };
   }
 
   const ukMastersQuestion =
     /(uk|united kingdom|ইউকে|যুক্তরাজ্য)/.test(normalized) &&
-    /(masters|master's|মাস্টার্স)/.test(normalized);
+    /(masters|master's|মাস্টার্স)/.test(normalized) &&
+    /(admission|requirement|document|documents|কি লাগে|কী লাগে|কি কি|কী কী|লাগে)/.test(normalized);
   if (ukMastersQuestion) {
     const ukMasters = JEL_SEMANTIC_KNOWLEDGE.find((entry) => entry.id === 'study_uk_masters')!;
     return { primary: ukMasters, ids: ['study_uk_masters'], text: '[study_uk_masters] ' + ukMasters.facts };
