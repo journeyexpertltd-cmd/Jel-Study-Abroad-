@@ -229,9 +229,7 @@ export function AIChatAssistant() {
   useEffect(() => {
     if (typeof window === "undefined" || !window.speechSynthesis) return;
     const syncVoices = () => {
-      const voices = voiceCatalogRef.current.length
-        ? voiceCatalogRef.current
-        : window.speechSynthesis.getVoices();
+      const voices = window.speechSynthesis.getVoices();
       if (voices.length) voiceCatalogRef.current = voices;
     };
     syncVoices();
@@ -327,7 +325,7 @@ export function AIChatAssistant() {
       // Robust chain: direct Gemini 3.8 TTS -> Gemini Live Aoede -> device speech.
       const cloudController = new AbortController();
       serverSpeechRef.current = cloudController;
-      const cloudTimer = window.setTimeout(() => cloudController.abort(), 11000);
+      const cloudTimer = window.setTimeout(() => cloudController.abort(), 15500);
       try {
         const blob = await fetchAngelaSpeech(cleanSpeech, cloudController.signal);
         if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
@@ -336,7 +334,7 @@ export function AIChatAssistant() {
         if (context && context.state === "suspended") {
           try { await context.resume(); } catch { /* HTMLAudio fallback below */ }
         }
-        if (context && context.state !== "closed") {
+        if (context?.state === "running") {
           try {
             const decoded = await context.decodeAudioData((await blob.arrayBuffer()).slice(0));
             if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
@@ -398,7 +396,9 @@ export function AIChatAssistant() {
         if (serverSpeechRef.current === cloudController) serverSpeechRef.current = null;
       }
 
-      // device voice fallback: keep Angela audible when free cloud quota is exhausted.
+      if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
+
+      // Only use a positively identified female device voice.
       if (!window.speechSynthesis) {
         setErrorMessage(wantsBanglaVoice
           ? "Cloud voice সাময়িকভাবে পাওয়া যাচ্ছে না এবং এই browser-এ device voice নেই। উত্তরটি লেখা আকারে আছে।"
@@ -447,14 +447,16 @@ export function AIChatAssistant() {
       utterance.pitch = wantsBanglaVoice ? 1.12 : 1.04;
 
       const preferredDeviceVoice = pickAngelaDeviceVoice(voices, wantsBanglaVoice ? "bn" : "en");
-      const compatibleVoice = preferredDeviceVoice || voices.find((voice) => {
-        const lang = (voice.lang || "").toLowerCase();
-        return wantsBanglaVoice ? lang.startsWith("bn") : lang.startsWith("en");
-      }) || null;
-      setErrorMessage(preferredDeviceVoice ? null : (wantsBanglaVoice
-        ? "Cloud female voice ব্যস্ত হলে এই ডিভাইসের উপলভ্য কণ্ঠে উত্তর শোনানো হচ্ছে।"
-        : "If the cloud female voice is busy, Angela is using the best available device voice."));
-      speakWithBrowser(utterance, compatibleVoice || undefined);
+      if (!preferredDeviceVoice) {
+        setVoiceState("ERROR");
+        setActiveSpeakingId(null);
+        setErrorMessage(wantsBanglaVoice
+          ? "নারী কণ্ঠটি এখন পাওয়া যাচ্ছে না। উত্তরটি পড়তে পারেন অথবা শুনুন বোতামে আবার চেষ্টা করুন।"
+          : "The female voice is unavailable right now. You can read the answer or press Listen to retry.");
+        return;
+      }
+      setErrorMessage(null);
+      speakWithBrowser(utterance, preferredDeviceVoice);
       return;
     } catch (error) {
       console.warn("Text to speech exception:", error);
@@ -526,7 +528,10 @@ export function AIChatAssistant() {
 
       const data = await response.json();
       if (requestRef.current !== controller) return;
-      const wantsBangla = selectedLanguage === "bn";
+      const responseLanguage = data.language === "en" ? "en" : data.language === "bn" ? "bn" : selectedLanguage;
+      languageModeRef.current = responseLanguage;
+      setLanguageMode(responseLanguage);
+      const wantsBangla = responseLanguage === "bn";
       const replyText = data.reply || (wantsBangla
         ? "আপনার প্রশ্নটি প্রক্রিয়া করা যাচ্ছে না। দ্রুত সহায়তার জন্য JEL কাউন্সেলরের সঙ্গে +8801926400400 নম্বরে যোগাযোগ করুন।"
         : "I am processing your inquiry. Please reach out to our JEL Counselors at +8801926400400 for immediate assistance.");
@@ -1382,4 +1387,5 @@ export function AIChatAssistant() {
 
 // Named alias export for authoritative integration
 export { AIChatAssistant as AngelaVoiceAssistant };
+
 
