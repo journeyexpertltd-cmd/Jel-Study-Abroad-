@@ -30,7 +30,10 @@ function pickAngelaDeviceVoice(voices: SpeechSynthesisVoice[], language: "bn" | 
     const name = voice.name.toLowerCase();
     const lang = voice.lang.toLowerCase();
     const femaleNamed = femaleHints.some((hint) => name.includes(hint));
-    const maleNamed = maleHints.some((hint) => name.includes(hint));
+    const maleNamed = maleHints.some((hint) =>
+      hint === "male" || hint === "man"
+        ? name.split(/[^a-z]+/).includes(hint)
+        : name.includes(hint));
     const languageMatch = language === "bn"
       ? (lang.startsWith("bn") || /bangla|bengali/.test(name))
       : lang.startsWith("en");
@@ -1071,9 +1074,9 @@ export function AIChatAssistant() {
                 <MessageCircle className="h-3 w-3 mr-1 text-[#25D366]" /> WhatsApp
               </a>
               <a 
-                href="tel:+88029830404" 
+                href="tel:+8801926400400" 
                 className="flex items-center text-slate-700 dark:text-slate-300 hover:text-slate-900 bg-white dark:bg-slate-800 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700 shadow-2xs hover:scale-102 transition-transform"
-                title="Telephone: +8802 9830404 / Hotline: +8801926400400"
+                title="Hotline: +8801926400400"
               >
                 <Phone className="h-3 w-3 mr-1 text-[#0B5D3B]" /> Tel
               </a>

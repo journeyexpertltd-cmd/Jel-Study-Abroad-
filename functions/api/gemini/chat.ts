@@ -45,6 +45,14 @@ type JelKnowledgeEntry = {
 
 const JEL_SEMANTIC_KNOWLEDGE: JelKnowledgeEntry[] = [
   {
+    id: 'contact',
+    priority: 50,
+    keywords: ['hotline', 'phone number', 'telephone', 'contact number', 'whatsapp', 'email address', 'office address', 'হটলাইন', 'ফোন নম্বর', 'ফোন নাম্বার', 'যোগাযোগ', 'হোয়াটসঅ্যাপ', 'হোয়াটসঅ্যাপ', 'ইমেইল', 'ঠিকানা'],
+    facts: 'JEL hotline and WhatsApp: +8801926400400 (01926400400 in Bangladesh). Study Abroad email: journeyexpertbd@gmail.com. Office: 189/A (2nd Floor), Abdul Motin Complex, Hazi Moron Ali Road, Nabisco Mor, Tejgaon, Dhaka-1215, Bangladesh.',
+    fallbackBn: 'আমাদের hotline ও WhatsApp নম্বর 01926400400 (+8801926400400)। Study Abroad ইমেইল: journeyexpertbd@gmail.com। অফিস: ১৮৯/এ (২য় তলা), আব্দুল মতিন কমপ্লেক্স, হাজী মরণ আলী রোড, নাবিস্কো মোড়, তেজগাঁও, ঢাকা-১২১৫।',
+    fallbackEn: 'Our hotline and WhatsApp number is 01926400400 (+8801926400400). Study Abroad email: journeyexpertbd@gmail.com. Office: 189/A (2nd Floor), Abdul Motin Complex, Hazi Moron Ali Road, Nabisco Mor, Tejgaon, Dhaka-1215.',
+  },
+  {
     id: 'hajj_umrah',
     priority: 100,
     keywords: ['hajj', 'umrah', 'হজ', 'ওমরাহ', 'উমরাহ', 'makkah', 'madinah', 'মক্কা', 'মদিনা', 'nusuk', 'নুসুক', 'ziyarat', 'জিয়ারত', 'জিয়ারত', 'rawda', 'rawdah'],
@@ -172,11 +180,15 @@ function retrieveJelKnowledge(query: string) {
 
 function semanticFallback(message: string, bangla: boolean) {
   const retrieved = retrieveJelKnowledge(message);
-  const reply = retrieved.primary
+  let reply = retrieved.primary
     ? (bangla ? retrieved.primary.fallbackBn : retrieved.primary.fallbackEn)
     : (bangla
       ? 'আপনার প্রশ্নের নির্দিষ্ট তথ্যটি বর্তমান verified JEL knowledge-এ নেই। ভুল তথ্য দেওয়ার বদলে আমি এই অংশটি verify করতে বলছি। আপনি চাইলে প্রশ্নটি আরও নির্দিষ্ট করে বলতে পারেন।'
       : 'That specific detail is not present in the current verified JEL knowledge. Rather than invent an answer, I need that detail to be verified. You can make the question more specific if useful.');
+  if (retrieved.primary?.id !== 'contact' && retrieved.ids.includes('contact')) {
+    const contact = JEL_SEMANTIC_KNOWLEDGE.find((entry) => entry.id === 'contact')!;
+    reply += '\n\n' + (bangla ? contact.fallbackBn : contact.fallbackEn);
+  }
   return json({
     reply,
     mode: 'fallback',
@@ -299,6 +311,8 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   const bn = hasBanglaScript || body.language === 'bn' || ((body.language === 'auto' || !body.language) && looksBanglish);
   const retrievedKnowledge = retrieveJelKnowledge(last);
   const fallback = () => semanticFallback(last, bn);
+  // Stable published contact facts do not need an external AI request.
+  if (retrievedKnowledge.primary?.id === 'contact') return fallback();
   // Reuse the working server-side Gemini auth key when deployments expose text and TTS keys separately.
   const apiKeys = Array.from(new Set([
     env.GEMINI_API_KEY?.trim(),
