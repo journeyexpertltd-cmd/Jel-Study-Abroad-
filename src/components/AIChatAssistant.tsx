@@ -30,7 +30,10 @@ function pickAngelaDeviceVoice(voices: SpeechSynthesisVoice[], language: "bn" | 
     const name = voice.name.toLowerCase();
     const lang = voice.lang.toLowerCase();
     const femaleNamed = femaleHints.some((hint) => name.includes(hint));
-    const maleNamed = maleHints.some((hint) => name.includes(hint));
+    const maleNamed = maleHints.some((hint) =>
+      hint === "male" || hint === "man"
+        ? name.split(/[^a-z]+/).includes(hint)
+        : name.includes(hint));
     const languageMatch = language === "bn"
       ? (lang.startsWith("bn") || /bangla|bengali/.test(name))
       : lang.startsWith("en");
@@ -543,8 +546,8 @@ export function AIChatAssistant() {
         id: `m-err-${Date.now()}`,
         sender: "assistant",
         text: wantsBangla
-          ? "আপনার অনুরোধটি এই মুহূর্তে প্রক্রিয়া করা যাচ্ছে না। WhatsApp-এ +8801926400400 অথবা টেলিফোনে +8802 9830404 নম্বরে আমাদের কাউন্সেলরের সঙ্গে যোগাযোগ করুন।"
-          : "I'm temporarily unable to process your request. Your connection appears to be interrupted. Please connect with our counselors directly via WhatsApp at +8801926400400 or call +8802 9830404.",
+          ? "আপনার অনুরোধটি এই মুহূর্তে প্রক্রিয়া করা যাচ্ছে না। WhatsApp বা ফোনে 01926400400 (+8801926400400) নম্বরে আমাদের কাউন্সেলরের সঙ্গে যোগাযোগ করুন।"
+          : "I'm temporarily unable to process your request. Please contact our counselors by WhatsApp or phone at 01926400400 (+8801926400400).",
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
       };
       setMessages(prev => [...prev, errorMsg]);
@@ -1071,9 +1074,9 @@ export function AIChatAssistant() {
                 <MessageCircle className="h-3 w-3 mr-1 text-[#25D366]" /> WhatsApp
               </a>
               <a 
-                href="tel:+88029830404" 
+                href="tel:+8801926400400" 
                 className="flex items-center text-slate-700 dark:text-slate-300 hover:text-slate-900 bg-white dark:bg-slate-800 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700 shadow-2xs hover:scale-102 transition-transform"
-                title="Telephone: +8802 9830404 / Hotline: +8801926400400"
+                title="Hotline: +8801926400400"
               >
                 <Phone className="h-3 w-3 mr-1 text-[#0B5D3B]" /> Tel
               </a>
