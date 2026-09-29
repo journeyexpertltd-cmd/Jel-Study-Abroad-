@@ -10,9 +10,9 @@ import { fetchAngelaSpeech, voiceErrorMessage } from "../lib/angelaAudio";
 
 const jelBrandIcon = new URL("../assets/images/jel-study-abroad-official.webp", import.meta.url).href;
 
-const ENGLISH_WELCOME = "Assalamu Alaikum. I am Angela, the AI assistant for JEL Study Abroad, a brand of Journey Expert Limited. How can I help with university selection, applications, scholarships, English-language tests or student-visa preparation?";
+const ENGLISH_WELCOME = "Assalamu Alaikum. I am Angela, the AI assistant for JEL Study Abroad, a brand of Journey Expert Limited. You can speak to me in Bangla or English. How can I help you?";
 
-const BANGLA_WELCOME = "আসসালামু আলাইকুম। আমি অ্যাঞ্জেলা, Journey Expert Limited-এর ব্র্যান্ড JEL Study Abroad-এর AI সহকারী। বিশ্ববিদ্যালয় নির্বাচন, আবেদন, স্কলারশিপ, ইংরেজি ভাষার পরীক্ষা অথবা স্টুডেন্ট ভিসার প্রস্তুতি নিয়ে কীভাবে সাহায্য করতে পারি?";
+const BANGLA_WELCOME = "আসসালামু আলাইকুম। আমি অ্যাঞ্জেলা, Journey Expert Limited-এর ব্র্যান্ড JEL Study Abroad-এর AI সহকারী। বাংলা বা ইংরেজিতে আপনার প্রশ্ন করুন। আমি কীভাবে সাহায্য করতে পারি?";
 
 const isBanglaText = (text: string) => /[\u0980-\u09FF]/.test(text);
 const welcomeFor = (mode: "en" | "bn") => mode === "bn" ? BANGLA_WELCOME : ENGLISH_WELCOME;
@@ -746,6 +746,65 @@ export function AIChatAssistant() {
     setVoiceState("READY");
   };
 
+  const greetAngelaOnOpen = () => {
+    void unlockAudio();
+    cancelPending();
+    stopSpeaking();
+    enabledRef.current = true;
+    setIsVoiceEnabled(true);
+    languageModeRef.current = "bn";
+    setLanguageMode("bn");
+    setErrorMessage(null);
+    setIsOpen(true);
+    setMessages((current) => {
+      const isWelcomeOnly = current.length === 1 && current[0].sender === "assistant" && current[0].id.includes("welcome");
+      return isWelcomeOnly ? [{ ...current[0], text: BANGLA_WELCOME }] : current;
+    });
+
+    if (typeof window === "undefined" || !window.speechSynthesis) {
+      void speakText(BANGLA_WELCOME, "welcome-angela-jel");
+      return;
+    }
+
+    const voices = voiceCatalogRef.current.length
+      ? voiceCatalogRef.current
+      : window.speechSynthesis.getVoices();
+    const preferred = pickAngelaDeviceVoice(voices, "bn")
+      || voices.find((voice) => (voice.lang || "").toLowerCase().startsWith("bn"))
+      || voices.find((voice) => (voice.lang || "").toLowerCase().startsWith("en"))
+      || voices[0];
+
+    const utterance = new SpeechSynthesisUtterance(BANGLA_WELCOME);
+    if (preferred) {
+      utterance.voice = preferred;
+      utterance.lang = preferred.lang;
+    } else {
+      utterance.lang = "bn-BD";
+    }
+    utterance.rate = 1.0;
+    utterance.pitch = 1.06;
+    currentUtteranceRef.current = utterance;
+    utterance.onstart = () => {
+      if (currentUtteranceRef.current !== utterance) return;
+      setVoiceState("SPEAKING");
+      setActiveSpeakingId("welcome-angela-jel");
+      setErrorMessage(null);
+    };
+    utterance.onend = () => {
+      if (currentUtteranceRef.current !== utterance) return;
+      currentUtteranceRef.current = null;
+      setActiveSpeakingId(null);
+      setVoiceState("READY");
+    };
+    utterance.onerror = () => {
+      if (currentUtteranceRef.current === utterance) currentUtteranceRef.current = null;
+      setActiveSpeakingId(null);
+      void speakText(BANGLA_WELCOME, "welcome-angela-jel");
+    };
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
+  };
+
   const handleCopyMessage = (id: string, text: string) => {
     if (typeof navigator !== "undefined" && navigator.clipboard) {
       navigator.clipboard.writeText(text);
@@ -828,11 +887,7 @@ export function AIChatAssistant() {
       {/* Floating Action Button with Angela Avatar & Glowing Voice Wave */}
       {!isOpen && (
         <button
-          onClick={() => {
-            void unlockAudio();
-            setIsOpen(true);
-            window.setTimeout(() => { void startListening(); }, 0);
-          }}
+          onClick={greetAngelaOnOpen}
           className="flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-gradient-to-tr from-[#0B5D3B] via-[#0D7A4D] to-[#D4AF37] text-white shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 relative group cursor-pointer border-2 border-white/50"
           id="btn-open-angela-assistant"
           aria-label="Open Angela AI Voice Assistant"
