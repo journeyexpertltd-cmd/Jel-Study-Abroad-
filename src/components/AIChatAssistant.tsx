@@ -6,6 +6,7 @@ import {
   AlertCircle, Radio, Plane, Compass, Award, Building2, MapPin
 } from "lucide-react";
 import { ChatMessage } from "../types";
+import { fetchAngelaSpeech, voiceErrorMessage } from "../lib/angelaAudio";
 
 const jelBrandIcon = new URL("../assets/images/jel-study-abroad-official.webp", import.meta.url).href;
 
@@ -314,25 +315,18 @@ export function AIChatAssistant() {
 
       if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
 
-      // CLOUD_FEMALE_PRIMARY_FAST: same JEL-rendered female voice across devices
-      // when the free provider is available. Allow the server's sequential
-      // model attempts (up to four at 6.5s each) to finish before device fallback.
+      // CLOUD_FEMALE_PRIMARY_FAST: same JEL-rendered voice across devices.
+      // Robust chain: direct Gemini 3.8 TTS -> Gemini Live Aoede -> device speech.
       const cloudController = new AbortController();
       serverSpeechRef.current = cloudController;
-      const cloudTimer = window.setTimeout(() => cloudController.abort(), 8000);
+      const cloudTimer = window.setTimeout(() => cloudController.abort(), 11000);
       try {
-        const response = await fetch("/angela/speech", {
-          method: "POST",
-          signal: cloudController.signal,
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: cleanSpeech, language: wantsBanglaVoice ? "bn" : "en" }),
-        });
-        if (response.ok && response.headers.get("content-type")?.includes("audio/wav")) {
-          const blob = await response.blob();
-          if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
+        const blob = await fetchAngelaSpeech(cleanSpeech, cloudController.signal);
+        if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
 
-          const context = await audioContextPromise;
-          if (context?.state === "running") {
+        const context = await audioContextPromise;
+        if (context?.state === "running") {
+          try {
             const decoded = await context.decodeAudioData((await blob.arrayBuffer()).slice(0));
             if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
             const source = context.createBufferSource();
@@ -351,31 +345,30 @@ export function AIChatAssistant() {
             setErrorMessage(null);
             if (messageId) setActiveSpeakingId(messageId);
             return;
+          } catch (decodeError) {
+            console.warn("Angela WebAudio decode failed; trying HTMLAudio.", decodeError);
           }
+        }
 
-          const audio = new Audio(URL.createObjectURL(blob));
-          serverAudioRef.current = audio;
-          audio.preload = "auto";
-          audio.volume = 1;
-          audio.onended = () => {
-            if (serverAudioRef.current !== audio) return;
-            stopServerAudio();
-            setVoiceState("READY");
-            setActiveSpeakingId(null);
-          };
-          await audio.play();
-          if (attempt !== speechAttemptRef.current) return;
-          setVoiceState("SPEAKING");
-          setErrorMessage(null);
-          if (messageId) setActiveSpeakingId(messageId);
-          return;
-        }
+        const audio = new Audio(URL.createObjectURL(blob));
+        serverAudioRef.current = audio;
+        audio.preload = "auto";
+        audio.volume = 1;
+        audio.onended = () => {
+          if (serverAudioRef.current !== audio) return;
+          stopServerAudio();
+          setVoiceState("READY");
+          setActiveSpeakingId(null);
+        };
+        await audio.play();
+        if (attempt !== speechAttemptRef.current) return;
+        setVoiceState("SPEAKING");
+        setErrorMessage(null);
+        if (messageId) setActiveSpeakingId(messageId);
+        return;
       } catch (cloudError) {
-        if (cloudController.signal.aborted) {
-          console.warn("Angela cloud female voice timed out; using device fallback.");
-        } else {
-          console.warn("Angela cloud female voice unavailable; using device fallback.", cloudError);
-        }
+        console.warn("Angela cloud voice chain unavailable; using device fallback.", cloudError);
+        if (!cloudController.signal.aborted) setErrorMessage(voiceErrorMessage(cloudError));
       } finally {
         window.clearTimeout(cloudTimer);
         if (serverSpeechRef.current === cloudController) serverSpeechRef.current = null;
