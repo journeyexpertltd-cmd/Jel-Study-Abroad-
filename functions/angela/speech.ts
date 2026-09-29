@@ -64,19 +64,20 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
 
   const models = Array.from(new Set([
     env.GEMINI_TTS_MODEL,
-    'gemini-3.8-flash-tts',
     'gemini-3.8-flash-lite-tts',
+    'gemini-3.8-flash-tts',
     'gemini-3.1-flash-tts-preview',
-    'gemini-2.5-flash-preview-tts',
-    'gemini-2.5-pro-preview-tts',
   ].filter((model): model is string => Boolean(model))));
 
   let sawQuota = false;
   let lastProviderStatus = 0;
+  const voiceDeadline = Date.now() + 9000;
 
   for (const model of models) {
+    const remaining = voiceDeadline - Date.now();
+    if (remaining < 700) break;
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 6500);
+    const timer = setTimeout(() => controller.abort(), Math.min(4200, remaining));
     try {
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
