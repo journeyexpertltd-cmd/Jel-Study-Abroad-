@@ -164,6 +164,17 @@ function normalizeForKnowledge(value: string): string {
 
 function retrieveJelKnowledge(query: string) {
   const normalized = normalizeForKnowledge(query);
+  const identityQuestion =
+    /\b(?:what(?:'s| is)? your name|who are you|who is angela)\b/i.test(normalized) ||
+    /আপনা(?:র)?\s*নাম|তোমা(?:র)?\s*নাম|আপনি\s*কে|তুমি\s*কে/.test(normalized);
+  if (identityQuestion) {
+    const identity = JEL_SEMANTIC_KNOWLEDGE.find((entry) => entry.id === 'identity')!;
+    return {
+      primary: identity,
+      ids: ['identity'],
+      text: '[identity] ' + identity.facts,
+    };
+  }
   const scored = JEL_SEMANTIC_KNOWLEDGE
     .map((entry) => {
       const score = entry.keywords.reduce((total, keyword) => {
