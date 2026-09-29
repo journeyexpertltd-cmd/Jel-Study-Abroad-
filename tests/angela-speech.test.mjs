@@ -22,7 +22,7 @@ test('Speech produces current Generate Content WAV and maps quota errors without
  const pcm = new Uint8Array([0,0,0,0]);
  const encoded = Buffer.from(pcm).toString('base64');
  globalThis.fetch = async (url, options) => {
- assert.match(String(url), /\/v1beta\/models\/gemini-3\.8-flash-tts:generateContent$/);
+ assert.match(String(url), /\/v1beta\/models\/gemini-3\.8-flash-lite-tts:generateContent$/);
  assert.equal(options.headers['x-goog-api-key'], 'test-key');
  const body = JSON.parse(options.body);
  assert.deepEqual(body.generationConfig.responseModalities, ['AUDIO']);
