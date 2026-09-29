@@ -183,7 +183,7 @@ test('Study Abroad reuses the shared corporate Angela brain only after local AI 
     }
     if (target === 'https://journeyexpertltd.com/angela/chat') {
       return Response.json({
-        reply: 'ইউকেতে মাস্টার্সের জন্য একাডেমিক ট্রান্সক্রিপ্ট, সার্টিফিকেট, ইংরেজি দক্ষতার প্রমাণ এবং বিশ্ববিদ্যালয়ভেদে প্রয়োজনীয় অতিরিক্ত কাগজপত্র প্রস্তুত করুন।',
+        reply: 'ইউকেতে scholarship option বিশ্ববিদ্যালয়, course এবং academic profile অনুযায়ী ভিন্ন হতে পারে; profile review করে verified option shortlist করতে হবে।',
         language: 'bn',
         mode: 'ai',
         providerModel: 'gemini-3.8-flash',
@@ -192,7 +192,7 @@ test('Study Abroad reuses the shared corporate Angela brain only after local AI 
     throw new Error('unexpected URL: ' + target);
   };
   const response = await onRequest({
-    request: request({ message: 'ami UK te masters korte chai, ki documents lagbe?', language: 'bn' }),
+    request: request({ message: 'ami UK te scholarship option jante chai', language: 'bn' }),
     env: { GEMINI_API_KEY: 'quota-key' },
   });
   const data = await response.json();
@@ -278,4 +278,38 @@ test('Study Abroad document fallbacks stay useful when AI providers degrade', as
   assert.equal(generic.primaryIntent, 'study_documents_general');
   assert.match(generic.reply, /transcripts/i);
   assert.match(generic.reply, /passport/i);
+});
+
+
+test('JEL services overview and UK Masters stay deterministic', async () => {
+  globalThis.fetch = async () => { throw new Error('offline'); };
+
+  const servicesBn = await (await onRequest({
+    request: request({ message: 'JEL কি air ticketing, visa, Hajj Umrah service দেয়?', language: 'bn' }),
+    env: {},
+  })).json();
+  assert.equal(servicesBn.primaryIntent, 'services_overview');
+  assert.match(servicesBn.reply, /air ticketing/i);
+  assert.match(servicesBn.reply, /visa-document/i);
+  assert.match(servicesBn.reply, /Hajj.*Umrah/i);
+
+  const servicesEn = await (await onRequest({
+    request: request({ message: 'What services does Journey Expert Limited provide?', language: 'en' }),
+    env: {},
+  })).json();
+  assert.equal(servicesEn.language, 'en');
+  assert.equal(servicesEn.primaryIntent, 'services_overview');
+  assert.match(servicesEn.reply, /air ticketing/i);
+  assert.match(servicesEn.reply, /Hajj and Umrah/i);
+  assert.match(servicesEn.reply, /Study Abroad/i);
+  assert.doesNotMatch(servicesEn.reply, /9830404/);
+
+  const uk = await (await onRequest({
+    request: request({ message: 'UK-তে Masters করতে admission-এর জন্য কী কী লাগে?', language: 'bn' }),
+    env: {},
+  })).json();
+  assert.equal(uk.primaryIntent, 'study_uk_masters');
+  assert.match(uk.reply, /Bachelor degree certificate/i);
+  assert.match(uk.reply, /academic transcripts/i);
+  assert.match(uk.reply, /CAS/i);
 });

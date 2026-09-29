@@ -152,6 +152,41 @@ jobs:
           ! grep -Eq 'â|Ã|Â|ï¿½|�|à¦|à§' "$body"
           echo "Angela production English response probe passed with useful document guidance"
 
+      - name: Check live JEL services overview and Hajj routing
+        shell: bash
+        run: |
+          set -euo pipefail
+          services="$(mktemp)"
+          hajj="$(mktemp)"
+          trap 'rm -f "$services" "$hajj"' EXIT
+
+          curl --fail --silent --show-error \
+            --max-time 20 \
+            --header 'Content-Type: application/json' \
+            --header 'Origin: https://journeyexpertbd.com' \
+            --data '{"message":"What services does Journey Expert Limited provide?","language":"en"}' \
+            --output "$services" \
+            https://journeyexpertbd.com/api/gemini/chat
+          grep -q '"language":"en"' "$services"
+          grep -q '"primaryIntent":"services_overview"' "$services"
+          grep -Eqi 'air ticketing' "$services"
+          grep -Eqi 'visa-document' "$services"
+          grep -Eqi 'Hajj and Umrah' "$services"
+          grep -Eqi 'Study Abroad' "$services"
+          ! grep -Eq '9830404' "$services"
+
+          curl --fail --silent --show-error \
+            --max-time 20 \
+            --header 'Content-Type: application/json' \
+            --header 'Origin: https://journeyexpertbd.com' \
+            --data '{"message":"I need Hajj visa and Makkah hotel guidance","language":"en"}' \
+            --output "$hajj" \
+            https://journeyexpertbd.com/api/gemini/chat
+          grep -q '"primaryIntent":"hajj_umrah"' "$hajj"
+          grep -Eqi 'Hajj and Umrah' "$hajj"
+          grep -Eqi 'Makkah/Madinah' "$hajj"
+          echo "Angela services overview and Hajj routing probes passed"
+
       - name: Check rendered Angela microphone and voice contract
         if: always() && !cancelled()
         shell: bash

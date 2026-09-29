@@ -61,6 +61,22 @@ const JEL_SEMANTIC_KNOWLEDGE: JelKnowledgeEntry[] = [
     fallbackEn: 'Our hotline and WhatsApp number is 01926400400 (+8801926400400). Study Abroad email: journeyexpertbd@gmail.com. Office: 189/A (2nd Floor), Abdul Motin Complex, Hazi Moron Ali Road, Nabisco Mor, Tejgaon, Dhaka-1215.',
   },
   {
+    id: 'services_overview',
+    priority: 120,
+    keywords: ['what services', 'which services', 'services provide', 'services does', 'jel services', 'journey expert services', 'কি কি সার্ভিস', 'কী কী সার্ভিস', 'কি কি সেবা', 'কী কী সেবা', 'সার্ভিস দেয়', 'সার্ভিস দেয়'],
+    facts: 'Journey Expert Limited (JEL) verified services include air ticketing; fare quotation; reissue/refund support; visa-document assistance; tours and travel; hotels; Hajj and Umrah; halal tourism; medical tourism; travel insurance; corporate travel management; Meet & Greet; Study Abroad; and compliance/advisory support. JEL Study Abroad additionally provides profile assessment, country/course/university selection, admissions guidance, scholarship guidance, SOP guidance, English-language test guidance, student-visa document preparation, and pre-/post-arrival guidance.',
+    fallbackBn: 'Journey Expert Limited (JEL) air ticketing, fare quotation, reissue/refund support, visa-document assistance, tours & travel, hotel, Hajj & Umrah, halal tourism, medical tourism, travel insurance, corporate travel management, Meet & Greet, Study Abroad এবং compliance/advisory support দেয়। JEL Study Abroad প্রোফাইল assessment, দেশ/কোর্স/বিশ্ববিদ্যালয় নির্বাচন, admission, scholarship, SOP, English-language test, student-visa documents এবং pre-/post-arrival guidance দেয়।',
+    fallbackEn: 'Journey Expert Limited (JEL) provides air ticketing, fare quotations, reissue/refund support, visa-document assistance, tours and travel, hotels, Hajj and Umrah, halal tourism, medical tourism, travel insurance, corporate travel management, Meet & Greet, Study Abroad, and compliance/advisory support. JEL Study Abroad also provides profile assessment, country/course/university selection, admissions, scholarship and SOP guidance, English-language test guidance, student-visa document preparation, and pre-/post-arrival support.',
+  },
+  {
+    id: 'study_uk_masters',
+    priority: 110,
+    keywords: ['uk masters', 'uk master', 'united kingdom masters', 'masters admission uk', 'uk admission', 'যুক্তরাজ্য মাস্টার্স', 'ইউকে মাস্টার্স', 'uk-তে masters', 'uk masters admission'],
+    facts: 'For UK Masters admission, common university application documents include a passport copy, Bachelor degree certificate and academic transcripts, English-language evidence where required, SOP/personal statement, CV/resume, references where requested, and any course-specific portfolio or supporting documents. After meeting university conditions, the institution may issue the documents needed for the student-visa stage such as a CAS. Exact academic entry criteria, English requirements, tuition/deposit, deadlines and CAS conditions vary by university and course and must be verified with the institution.',
+    fallbackBn: 'UK-তে Masters admission-এর জন্য সাধারণত passport copy, Bachelor degree certificate ও academic transcripts, university চাইলে English-language test evidence, SOP/personal statement, CV/resume, reference এবং course-specific supporting document/portfolio লাগতে পারে। Offer-এর conditions পূরণ হলে university visa stage-এর জন্য CAS issue করতে পারে। Exact academic criteria, English requirement, tuition/deposit, deadline ও CAS condition university/course অনুযায়ী আলাদা—final checklist institution-এর current requirement দিয়ে verify করতে হবে।',
+    fallbackEn: 'For UK Masters admission, universities commonly ask for a passport copy, Bachelor degree certificate and academic transcripts, English-language evidence where required, an SOP/personal statement, CV/resume, references where requested, and course-specific supporting documents or a portfolio. After offer conditions are met, the university may issue a CAS for the visa stage. Exact academic criteria, English requirements, tuition/deposit, deadlines and CAS conditions vary by university and course and must be verified with the institution.',
+  },
+  {
     id: 'hajj_umrah',
     priority: 100,
     keywords: ['hajj', 'umrah', 'হজ', 'ওমরাহ', 'উমরাহ', 'makkah', 'madinah', 'মক্কা', 'মদিনা', 'nusuk', 'নুসুক', 'ziyarat', 'জিয়ারত', 'জিয়ারত', 'rawda', 'rawdah'],
@@ -168,9 +184,9 @@ const JEL_SEMANTIC_KNOWLEDGE: JelKnowledgeEntry[] = [
     id: 'company',
     priority: 40,
     keywords: ['journey expert', 'jel', 'company', 'about', 'slogan', 'office', 'address', 'contact', 'phone', 'whatsapp', 'email', 'জার্নি এক্সপার্ট', 'কোম্পানি', 'স্লোগান', 'অফিস', 'ঠিকানা', 'যোগাযোগ', 'ফোন', 'হোয়াটসঅ্যাপ', 'ইমেইল'],
-    facts: 'Journey Expert Limited (JEL), Bangladesh. Slogan: "Your Journey, Our Expertise." Office: 189/A (2nd Floor), Abdul Motin Complex, Hazi Moron Ali Road, Nabisco Mor, Tejgaon, Dhaka-1215, Bangladesh. WhatsApp/Hotline: +8801926400400. Telephone: +8802 9830404. Email: journeyexpertbd@gmail.com. Public portals: journeyexpertltd.com and journeyexpertbd.com.',
-    fallbackBn: 'Journey Expert Limited (JEL), Bangladesh। Slogan: “Your Journey, Our Expertise.” অফিস: ১৮৯/এ (২য় তলা), আব্দুল মতিন কমপ্লেক্স, হাজী মরণ আলী রোড, নাবিস্কো মোড়, তেজগাঁও, ঢাকা-১২১৫। WhatsApp/Hotline: +8801926400400; Telephone: +8802 9830404; Email: journeyexpertbd@gmail.com।',
-    fallbackEn: 'Journey Expert Limited (JEL), Bangladesh. Slogan: “Your Journey, Our Expertise.” Office: 189/A (2nd Floor), Abdul Motin Complex, Hazi Moron Ali Road, Nabisco Mor, Tejgaon, Dhaka-1215. WhatsApp/Hotline: +8801926400400; Telephone: +8802 9830404; Email: journeyexpertbd@gmail.com.',
+    facts: 'Journey Expert Limited (JEL), Bangladesh. Slogan: "Your Journey, Our Expertise." Office: 189/A (2nd Floor), Abdul Motin Complex, Hazi Moron Ali Road, Nabisco Mor, Tejgaon, Dhaka-1215, Bangladesh. WhatsApp/Hotline: +8801926400400 (01926400400 in Bangladesh). Email: journeyexpertbd@gmail.com. Public portals: journeyexpertltd.com and journeyexpertbd.com.',
+    fallbackBn: 'Journey Expert Limited (JEL), Bangladesh। Slogan: “Your Journey, Our Expertise.” অফিস: ১৮৯/এ (২য় তলা), আব্দুল মতিন কমপ্লেক্স, হাজী মরণ আলী রোড, নাবিস্কো মোড়, তেজগাঁও, ঢাকা-১২১৫। WhatsApp/Hotline: +8801926400400 (01926400400); Email: journeyexpertbd@gmail.com।',
+    fallbackEn: 'Journey Expert Limited (JEL), Bangladesh. Slogan: “Your Journey, Our Expertise.” Office: 189/A (2nd Floor), Abdul Motin Complex, Hazi Moron Ali Road, Nabisco Mor, Tejgaon, Dhaka-1215. WhatsApp/Hotline: +8801926400400 (01926400400); Email: journeyexpertbd@gmail.com.',
   },
 ];
 
@@ -180,6 +196,36 @@ function normalizeForKnowledge(value: string): string {
 
 function retrieveJelKnowledge(query: string) {
   const normalized = normalizeForKnowledge(query);
+
+  const explicitServicesQuestion =
+    /what services|which services|services.*provide|services.*offer|jel services|journey expert.*services|কি কি সার্ভিস|কী কী সার্ভিস|কি কি সেবা|কী কী সেবা|সার্ভিস.*দে/.test(normalized);
+  const serviceMentions = [
+    /air ticket|ticketing|flight|টিকিট|ফ্লাইট/.test(normalized),
+    /visa|ভিসা/.test(normalized),
+    /hajj|umrah|হজ|ওমরাহ|উমরাহ/.test(normalized),
+    /tour|hotel|ট্যুর|হোটেল/.test(normalized),
+    /medical|মেডিকেল/.test(normalized),
+    /insurance|ইনস্যুরেন্স/.test(normalized),
+    /corporate|কর্পোরেট/.test(normalized),
+    /study|student|স্টাডি|স্টুডেন্ট/.test(normalized),
+  ].filter(Boolean).length;
+  const asksWhetherJelProvidesServices =
+    /(jel|journey expert|জার্নি এক্সপার্ট)/.test(normalized) &&
+    /(service|services|provide|offer|দেয়|দেয়|সেবা)/.test(normalized);
+  if (explicitServicesQuestion || (asksWhetherJelProvidesServices && serviceMentions >= 2)) {
+    const services = JEL_SEMANTIC_KNOWLEDGE.find((entry) => entry.id === 'services_overview')!;
+    return { primary: services, ids: ['services_overview'], text: '[services_overview] ' + services.facts };
+  }
+
+  const ukMastersQuestion =
+    /(uk|united kingdom|ইউকে|যুক্তরাজ্য)/.test(normalized) &&
+    /(masters|master's|মাস্টার্স)/.test(normalized) &&
+    /(admission|requirement|document|documents|কি লাগে|কী লাগে|কি কি|কী কী|লাগে)/.test(normalized);
+  if (ukMastersQuestion) {
+    const ukMasters = JEL_SEMANTIC_KNOWLEDGE.find((entry) => entry.id === 'study_uk_masters')!;
+    return { primary: ukMasters, ids: ['study_uk_masters'], text: '[study_uk_masters] ' + ukMasters.facts };
+  }
+
   const asksForDocuments =
     /document|checklist|paperwork|what.*need|what.*required|ডকুমেন্ট|কাগজপত্র|কি কি লাগে|কী কী লাগে|কি কি দরকার|কী কী দরকার/.test(normalized);
   const studyContext =
@@ -355,8 +401,8 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   const bn = hasBanglaScript || body.language === 'bn' || ((body.language === 'auto' || !body.language) && looksBanglish);
   const retrievedKnowledge = retrieveJelKnowledge(last);
   const fallback = () => semanticFallback(last, bn);
-  // Stable published identity/contact facts do not need an external AI request.
-  if (retrievedKnowledge.primary && ['identity', 'contact'].includes(retrievedKnowledge.primary.id)) return fallback();
+  // Stable published JEL facts do not need an external AI request.
+  if (retrievedKnowledge.primary && ['identity', 'contact', 'services_overview', 'study_uk_masters'].includes(retrievedKnowledge.primary.id)) return fallback();
   // Reuse the working server-side Gemini auth key when deployments expose text and TTS keys separately.
   const apiKeys = Array.from(new Set([
     env.GEMINI_API_KEY?.trim(),
