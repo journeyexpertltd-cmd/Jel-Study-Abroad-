@@ -130,7 +130,13 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
 
       lastProviderStatus = response.status;
       if (!response.ok) {
-        if (response.status === 429) sawQuota = true;
+        // 429 is normally project/key quota, not a model-specific miss. Trying
+        // every TTS model with the same credential only multiplies rate-limit
+        // traffic and delays the browser's female-device fallback.
+        if (response.status === 429) {
+          sawQuota = true;
+          break;
+        }
         continue;
       }
 
@@ -158,8 +164,22 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
     }
   }
 
+  if (sawQuota) {
+    return Response.json({
+      error: 'voice_quota_exceeded',
+      providerStatus: lastProviderStatus || 429,
+    }, {
+      status: 429,
+      headers: {
+        'Cache-Control': 'no-store',
+        'X-Content-Type-Options': 'nosniff',
+        'Retry-After': '60',
+      },
+    });
+  }
+
   return json({
-    error: sawQuota ? 'voice_quota_exceeded' : 'voice_provider_unavailable',
+    error: 'voice_provider_unavailable',
     providerStatus: lastProviderStatus || undefined,
-  }, sawQuota ? 429 : 503);
+  }, 503);
 }
