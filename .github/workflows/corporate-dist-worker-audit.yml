@@ -1,0 +1,48 @@
+name: Corporate Dist Worker Audit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/corporate-dist-worker-audit.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout exact corporate commit
+        uses: actions/checkout@v4
+        with:
+          repository: ezyflyltd-wq/https-github.com-ezyflyltd-wq-Journey-Expert-Ltd
+          ref: 3f0023bc5c8157f971bddad850aff65b635cf76d
+          path: corporate
+          fetch-depth: 1
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.4.1
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Build and inspect Worker artifact
+        working-directory: corporate
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm install --frozen-lockfile
+          echo "SOURCE_WORKER_SHA=$(sha256sum public/_worker.js | awk '{print $1}')"
+          if grep -q 'function conversationReply' public/_worker.js; then echo SOURCE_CONVERSATION=true; else echo SOURCE_CONVERSATION=false; fi
+          if grep -q 'env.GEMINI_TTS_API_KEY?.trim()' public/_worker.js; then echo SOURCE_DUAL_KEY=true; else echo SOURCE_DUAL_KEY=false; fi
+          pnpm run build:pages
+          test -f dist/_worker.js
+          echo "DIST_WORKER_SHA=$(sha256sum dist/_worker.js | awk '{print $1}')"
+          if grep -q 'function conversationReply' dist/_worker.js; then echo DIST_CONVERSATION=true; else echo DIST_CONVERSATION=false; fi
+          if grep -q 'env.GEMINI_TTS_API_KEY?.trim()' dist/_worker.js; then echo DIST_DUAL_KEY=true; else echo DIST_DUAL_KEY=false; fi
+          cmp -s public/_worker.js dist/_worker.js && echo WORKER_COPY_EXACT=true || echo WORKER_COPY_EXACT=false
+          echo "DIST_FILES="
+          find dist -maxdepth 2 -type f | sort | grep -E '_worker|functions|angela' | head -n 100 || true
