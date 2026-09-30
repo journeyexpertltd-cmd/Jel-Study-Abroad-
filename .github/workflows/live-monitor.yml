@@ -226,7 +226,7 @@ jobs:
           echo "$health" | grep -q '"aiConfigured":true'
 
           chat_endpoint=""
-          for candidate in /api/gemini/chat /api/chat /api/angela/chat; do
+          for candidate in /angela/chat /api/gemini/chat /api/chat /api/angela/chat; do
             body="$(mktemp)"
             status="$(curl --silent --show-error --max-time 20               --header 'Content-Type: application/json'               --header 'Origin: https://journeyexpertltd.com'               --data '{"message":"What services does Journey Expert Limited provide?","language":"en"}'               --output "$body" --write-out '%{http_code}' "$base$candidate" || true)"
             if [ "$status" = "200" ] && grep -Eqi 'Journey Expert|ticket|visa|study|travel|Hajj|Umrah' "$body"; then
