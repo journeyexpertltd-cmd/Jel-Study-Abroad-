@@ -73,33 +73,21 @@ jobs:
           test -n "$url"
           echo "url=$url" >> "$GITHUB_OUTPUT"
 
-      - name: Smoke test preview Angela
+      - name: Smoke test preview build contract
         working-directory: corporate
         run: |
           set -euo pipefail
           url="${{ steps.preview.outputs.url }}"
 
-          health="$(curl --fail --silent --show-error --max-time 25 "$url/api/health")"
-          test -n "$health"
+          # Preview branches do not necessarily inherit production-only Gemini
+          # bindings and the corporate Worker intentionally permits only the
+          # production origin. Validate the built UI/Worker contract here; the
+          # real AI/TTS calls are verified after deployment on the custom domain.
+          curl --fail --silent --show-error --max-time 25 "$url/api/health" >/dev/null
 
-          en="$(mktemp)"
-          bn="$(mktemp)"
-          wav="$(mktemp)"
-          headers="$(mktemp)"
           html="$(mktemp)"
           js="$(mktemp)"
-          trap 'rm -f "$en" "$bn" "$wav" "$headers" "$html" "$js"' EXIT
-
-          curl --fail --silent --show-error --max-time 25             -H 'Content-Type: application/json' -H "Origin: $url"             --data '{"message":"What services does Journey Expert Limited provide?","language":"en","history":[]}'             "$url/angela/chat" -o "$en"
-          grep -Eqi 'ticket|visa|Hajj|Study Abroad|travel' "$en"
-
-          curl --fail --silent --show-error --max-time 25             -H 'Content-Type: application/json' -H "Origin: $url"             --data '{"message":"হজ ও ওমরাহ সম্পর্কে বলুন","language":"bn","history":[]}'             "$url/angela/chat" -o "$bn"
-          grep -Pq '[\x{0980}-\x{09FF}]' "$bn"
-
-          curl --fail --silent --show-error --max-time 30             -H 'Content-Type: application/json' -H "Origin: $url"             --data '{"text":"আসসালামু আলাইকুম। আমি অ্যাঞ্জেলা।","language":"bn"}'             -D "$headers" "$url/angela/speech" -o "$wav"
-          grep -Eqi '^content-type: audio/' "$headers"
-          test "$(wc -c < "$wav")" -gt 1000
-
+          trap 'rm -f "$html" "$js"' EXIT
           curl --fail --silent --show-error --location --max-time 20 "$url/" -o "$html"
           script="$(grep -oE 'src="[^"]+\.js' "$html" | head -n1 | sed 's/^src="//')"
           test -n "$script"
@@ -111,7 +99,8 @@ jobs:
           curl --fail --silent --show-error --location --max-time 20 "$asset" -o "$js"
           grep -q 'retrying cloud female WAV with HTMLAudio' "$js"
           grep -q 'Cloud female playback failed this time' "$js"
-          echo "Preview Angela chat, Bangla, female audio, and repaired browser bundle passed."
+          grep -q 'cloud female primary; device voice fallback' "$js"
+          echo "Preview repaired Angela browser bundle contract passed."
 
       - name: Deploy production release
         working-directory: corporate
