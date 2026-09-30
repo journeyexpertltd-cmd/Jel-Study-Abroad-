@@ -1,0 +1,34 @@
+name: LTD Worker Source Audit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/ltd-worker-source-audit.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: "7b0d4036973a06b9cd4622770748a101"
+    steps:
+      - name: Inspect known LTD Worker source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${CLOUDFLARE_API_TOKEN:-}"
+          body="$(mktemp)"
+          headers="$(mktemp)"
+          trap 'rm -f "$body" "$headers" /tmp/worker.txt' EXIT
+          status="$(curl --silent --show-error             -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN"             -D "$headers" -o "$body" -w '%{http_code}'             "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts/journey-expert-ltd-main")"
+          echo "Worker fetch status: $status"
+          test "$status" = "200"
+          strings "$body" > /tmp/worker.txt
+          echo "Worker bytes: $(wc -c < "$body")"
+          echo "Angela error/fallback markers:"
+          grep -Ein -C 4 'Verified female device voice|Male/default voice|device fallback|female device|angela/speech|angela/chat|speechSynthesis|AudioContext|audio\.play|voice output|সমস্যা' /tmp/worker.txt | head -n 260 || true
