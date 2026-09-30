@@ -1,0 +1,71 @@
+name: Angela deployment diagnosis
+on:
+  push:
+    branches: [fix/angela-verified-replies-20260930]
+    paths: [.github/workflows/angela-deployment-diagnosis.yml]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    steps:
+      - name: Read relevant Pages configuration and failed build logs
+        shell: python
+        run: |
+          import os, json, urllib.request, re
+          token = os.environ.get("CLOUDFLARE_API_TOKEN", "")
+          if not token:
+              raise SystemExit("Cloudflare deployment credential unavailable")
+          root = "https://api.cloudflare.com/client/v4/accounts/7b0d4036973a06b9cd4622770748a101/pages/projects/"
+          def get(path):
+              req = urllib.request.Request(root + path, headers={"Authorization": "Bearer " + token})
+              with urllib.request.urlopen(req, timeout=25) as response:
+                  result = json.load(response)
+              if not result.get("success"):
+                  raise RuntimeError("Cloudflare API rejected read")
+              return result["result"]
+          for name in ["jel-study-abroad", "journey-expert-ltd-main"]:
+              p = get(name)
+              print(json.dumps({"project":name, "production_branch":p.get("production_branch"), "build_config":p.get("build_config"), "domains":p.get("domains"), "latest_stage":(p.get("latest_deployment") or {}).get("latest_stage")}))
+              for environment, config in p.get("deployment_configs", {}).items():
+                  allowed = {"GEMINI_TTS_MODEL", "ANGELA_SERVER_VOICE", "GEMINI_MODEL", "GEMINI_FALLBACK_MODEL"}
+                  values = {k: v.get("value") for k,v in config.get("env_vars",{}).items() if k in allowed and v.get("type") == "plain_text"}
+                  print(json.dumps({"project":name,"environment":environment,"voice_configuration":values}))
+          logs = get("journey-expert-ltd-main/deployments/e942f75a-4ad1-4883-bd60-a84e2e0a4806/history/logs")
+          for entry in logs.get("data", [])[-65:]:
+              line = entry.get("line","").replace(token,"[redacted]")
+              line = re.sub(r"AIza[0-9A-Za-z_-]+", "[redacted]", line)
+              if re.search(r"secret|password|authorization|api.key|access.token", line, re.I):
+                  print("[credential-related log line omitted]")
+              else:
+                  print(line[:1500])
+
+      - name: Align LTD Pages dependency installer with validated CI
+        shell: python
+        run: |
+          import os, json, urllib.request
+          url = "https://api.cloudflare.com/client/v4/accounts/7b0d4036973a06b9cd4622770748a101/pages/projects/journey-expert-ltd-main"
+          headers = {"Authorization":"Bearer "+os.environ["CLOUDFLARE_API_TOKEN"],"Content-Type":"application/json"}
+          def call(method, data=None):
+              req=urllib.request.Request(url, headers=headers, method=method, data=None if data is None else json.dumps(data).encode())
+              with urllib.request.urlopen(req, timeout=30) as r: body=json.load(r)
+              assert body.get("success"), "Cloudflare configuration request failed"
+              return body["result"]
+          before=call("GET")
+          assert before["production_branch"] == "release", "Unexpected production branch"
+          command="pnpm install --frozen-lockfile && pnpm run build:pages"
+          assert before["build_config"]["build_command"] in ["pnpm run build:pages",command], "Unexpected build configuration"
+          changes={"build_config":{"build_command":command},"deployment_configs":{e:{"env_vars":{"SKIP_DEPENDENCY_INSTALL":{"type":"plain_text","value":"true"}}} for e in ["preview","production"]}}
+          call("PATCH", changes)
+          after=call("GET")
+          assert after["build_config"]["build_command"] == command
+          for e in ["preview","production"]:
+              old=before["deployment_configs"][e].get("env_vars",{})
+              new=after["deployment_configs"][e].get("env_vars",{})
+              assert all(k in new and v == new[k] for k,v in old.items() if k != "SKIP_DEPENDENCY_INSTALL"), "Existing environment configuration changed"
+              assert new["SKIP_DEPENDENCY_INSTALL"]["value"] == "true"
+          assert before["domains"] == after["domains"]
+          print("LTD Pages now uses the CI pnpm lockfile; existing environment configuration and domains verified unchanged.")

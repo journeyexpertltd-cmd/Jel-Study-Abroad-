@@ -2,6 +2,17 @@ import { test, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { onRequest } from '../functions/api/gemini/chat.ts';
 const nativeFetch = globalThis.fetch;
+test('Language instruction with a service question overrides the prior selection', async () => {
+  for (const [message, selected, expected] of [
+    ['Please answer in English. What services does JEL Study Abroad provide?', 'bn', 'en'],
+    ['Please respond in Bangla. What services does JEL provide?', 'en', 'bn'],
+  ]) {
+    const data = await (await onRequest({ request: request({ message, language: selected }), env: {} })).json();
+    assert.equal(data.language, expected);
+    assert.equal(/[\u0980-\u09FF]/.test(data.reply), expected === 'bn');
+    assert.match(data.reply, /JEL Study Abroad/);
+  }
+});
 beforeEach(() => { globalThis.fetch = async () => { throw new Error('Network is disabled in unit tests'); }; });
 afterEach(() => { globalThis.fetch = nativeFetch; });
 

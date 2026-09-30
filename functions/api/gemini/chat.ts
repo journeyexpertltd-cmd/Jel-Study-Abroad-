@@ -467,7 +467,12 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   // otherwise detect common Banglish only for auto/unspecified mode.
   const hasBanglaScript = /[\u0980-\u09FF]/.test(last);
   const looksBanglish = /\b(ami|amar|amake|apni|apnar|tumi|tomar|chai|jabo|jete|koto|kivabe|ki|keno|kobe|hobe|korbo|korte|lagbe|bolen|diben|pari|parbo|porte|bidesh)\b/i.test(last);
-  const bn = hasBanglaScript || body.language === 'bn' || ((body.language === 'auto' || !body.language) && looksBanglish);
+  // An explicit instruction in this turn overrides the previous UI language,
+  // including when a substantive question follows it in the same message.
+  const languageRequest = /(?:^|[.!?।]\s*)(?:please\s+)?(?:speak|reply|answer|respond|talk)(?:\s+to me)?\s+in\s+(english|bangla|bengali)\b/i.exec(last);
+  const bn = languageRequest
+    ? languageRequest[1].toLowerCase() !== 'english'
+    : hasBanglaScript || body.language === 'bn' || ((body.language === 'auto' || !body.language) && looksBanglish);
   const conversational = conversationReply(last, bn);
   if (conversational) return json(conversational);
   const contextualQuery = followUpQuery(last, turns);
