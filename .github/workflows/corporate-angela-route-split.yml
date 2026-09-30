@@ -1,5 +1,5 @@
 name: Corporate Angela Route Split Diagnostic
-# final production rerun 2026-09-30
+# final production rerun current canonical 2026-09-30
 
 on:
   push:
@@ -50,5 +50,5 @@ jobs:
           }
 
           probe CUSTOM "https://journeyexpertltd.com"
-          probe CANONICAL "https://ba7643eb.journey-expert-ltd-main.pages.dev"
+          probe CANONICAL "https://38730d7b.journey-expert-ltd-main.pages.dev"
           probe PAGES "https://journey-expert-ltd-main.pages.dev"
