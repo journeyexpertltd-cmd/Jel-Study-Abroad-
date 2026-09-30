@@ -71,7 +71,7 @@ jobs:
           set -euo pipefail
           log="$(mktemp)"
           npx --yes wrangler@4 pages deploy dist             --project-name=journey-expert-ltd-main             --branch=chatgpt-angela-female-fix             --commit-hash="$CORPORATE_SHA" 2>&1 | tee "$log"
-          url="$(grep -Eo 'https://[A-Za-z0-9._-]+\.pages\.dev' "$log" | tail -n1 || true)"
+          url="$(grep -Eo 'https://[A-Za-z0-9._-]+\.pages\.dev' "$log" | head -n1 || true)"
           test -n "$url"
           echo "url=$url" >> "$GITHUB_OUTPUT"
 
@@ -89,6 +89,8 @@ jobs:
           local_script="$(grep -oE 'src="[^"]+\.js' dist/index.html | head -n1 | sed 's/^src="//')"
           remote_script="$(grep -oE 'src="[^"]+\.js' "$live_html" | head -n1 | sed 's/^src="//')"
           test -n "$local_script"
+          echo "PREVIEW_LOCAL_SCRIPT=$local_script"
+          echo "PREVIEW_REMOTE_SCRIPT=$remote_script"
           test "$remote_script" = "$local_script"
           echo "PREVIEW_EXACT_BUILD=true script=$remote_script"
 
