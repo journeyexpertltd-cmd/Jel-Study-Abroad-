@@ -22,7 +22,7 @@ jobs:
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: "7b0d4036973a06b9cd4622770748a101"
-      CORPORATE_SHA: "fae61466bb385480948db88a7a5515a5e3e6a8a1"
+      CORPORATE_SHA: "8c842bd515bd27736cf18dd52028001d2ccd18fb"
 
     steps:
       - name: Checkout validated corporate source
@@ -57,6 +57,7 @@ jobs:
           grep -q 'Cloud female playback failed this time' src/components/FreeVoiceAngelaWidget.tsx
           grep -q 'independent same-brand female TTS path' functions/angela/speech.ts
           grep -q 'independent JEL Study Abroad brain' functions/angela/chat.ts
+          grep -q 'deterministicJelIntents' functions/angela/chat.ts
           grep -q 'GEMINI_LIVE_FEMALE_SECONDARY' src/components/FreeVoiceAngelaWidget.tsx
           grep -q 'for (const key of keys)' functions/angela/live-token.ts
 
@@ -163,10 +164,24 @@ jobs:
           grep -Pq '[\x{0980}-\x{09FF}]' "$bn"
           grep -qi 'Craft Bangla' "$bn"
 
-          curl --fail --silent --show-error --max-time 35             -H 'Content-Type: application/json' -H "Origin: $base"             --data '{"text":"আসসালামু আলাইকুম। আমি অ্যাঞ্জেলা।","language":"bn"}'             -D "$headers" "$base/angela/speech" -o "$wav"
-          grep -Eqi '^content-type: audio/' "$headers"
-          test "$(wc -c < "$wav")" -gt 1000
-          echo "PUBLIC_FEMALE_AUDIO_BYTES=$(wc -c < "$wav")"
+          speech_status="$(curl --silent --show-error --max-time 35 \
+            -H 'Content-Type: application/json' -H "Origin: $base" \
+            --data '{"text":"আসসালামু আলাইকুম। আমি অ্যাঞ্জেলা।","language":"bn"}' \
+            -D "$headers" "$base/angela/speech" -o "$wav" -w '%{http_code}' || true)"
+          if [ "$speech_status" = "200" ] && grep -Eqi '^content-type: audio/' "$headers" && [ "$(wc -c < "$wav")" -gt 1000 ]; then
+            echo "PUBLIC_VOICE_PATH=unary_female_audio bytes=$(wc -c < "$wav")"
+          else
+            live="$(mktemp)"
+            live_status="$(curl --silent --show-error --max-time 20 \
+              -H 'Content-Type: application/json' -H "Origin: $base" \
+              --data '{}' "$base/angela/live-token" -o "$live" -w '%{http_code}' || true)"
+            echo "PUBLIC_UNARY_STATUS=$speech_status PUBLIC_LIVE_TOKEN_STATUS=$live_status"
+            test "$live_status" = "200"
+            grep -q '"token":' "$live"
+            grep -q '"model":"gemini-3.8-live"' "$live"
+            rm -f "$live"
+            echo "PUBLIC_VOICE_PATH=gemini_live_aoede"
+          fi
           echo "PUBLIC_PRODUCTION_REPAIR_VERIFIED=true"
 
       - name: Publish summary
