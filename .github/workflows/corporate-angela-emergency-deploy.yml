@@ -22,7 +22,7 @@ jobs:
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: "7b0d4036973a06b9cd4622770748a101"
-      CORPORATE_SHA: "7d6221132ebb72523e922c76137e20aa19c71bfa"
+      CORPORATE_SHA: "fae61466bb385480948db88a7a5515a5e3e6a8a1"
 
     steps:
       - name: Checkout validated corporate source
@@ -57,6 +57,8 @@ jobs:
           grep -q 'Cloud female playback failed this time' src/components/FreeVoiceAngelaWidget.tsx
           grep -q 'independent same-brand female TTS path' functions/angela/speech.ts
           grep -q 'independent JEL Study Abroad brain' functions/angela/chat.ts
+          grep -q 'GEMINI_LIVE_FEMALE_SECONDARY' src/components/FreeVoiceAngelaWidget.tsx
+          grep -q 'for (const key of keys)' functions/angela/live-token.ts
 
       - name: Verify Cloudflare credential
         run: |
