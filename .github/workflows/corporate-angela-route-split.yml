@@ -1,5 +1,5 @@
 name: Corporate Angela Route Split Diagnostic
-# live-token 400 fallback final probe
+# probe active 38a3d571 production deployment
 # final production rerun current canonical 2026-09-30
 
 on:
@@ -51,5 +51,5 @@ jobs:
           }
 
           probe CUSTOM "https://journeyexpertltd.com"
-          probe CANONICAL "https://38730d7b.journey-expert-ltd-main.pages.dev"
+          probe CANONICAL "https://b9b39958.journey-expert-ltd-main.pages.dev"
           probe PAGES "https://journey-expert-ltd-main.pages.dev"
