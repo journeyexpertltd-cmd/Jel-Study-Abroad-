@@ -49,7 +49,9 @@ requireText(audio, "clientContent", 'Angela browser audio');
 requireText(audio, "turnComplete: true", 'Angela browser audio');
 forbidText(audio, "realtimeInput: {\n              text:", 'Angela browser audio');
 
-requireText(speech, "env.GEMINI_TTS_API_KEY || env.GEMINI_API_KEY", 'Angela TTS endpoint');
+requireText(speech, "env.GEMINI_TTS_API_KEY?.trim()", 'Angela TTS endpoint primary key');
+requireText(speech, "env.GEMINI_API_KEY?.trim()", 'Angela TTS endpoint secondary key');
+requireText(speech, "for (const key of keys)", 'Angela TTS key failover');
 requireText(speech, "env.ANGELA_SERVER_VOICE === 'off'", 'Angela TTS endpoint');
 requireText(speech, "const voiceDeadline = Date.now() + 9000", 'Angela TTS endpoint');
 requireText(speech, "gemini-3.8-flash-lite-tts", 'Angela TTS endpoint');
