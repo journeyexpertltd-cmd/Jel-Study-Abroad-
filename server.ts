@@ -926,7 +926,7 @@ const handleAngelaSpeech = async (req: express.Request, res: express.Response) =
 
     const controller = new AbortController();
     timer = setTimeout(() => controller.abort(), 9000);
-    const model = process.env.GEMINI_TTS_MODEL || "gemini-3.1-flash-tts-preview";
+    const model = process.env.GEMINI_TTS_MODEL || "gemini-3.8-flash-lite-tts";
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
       {
