@@ -1,0 +1,46 @@
+name: Corporate Pages Topology Audit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/corporate-pages-topology.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: "7b0d4036973a06b9cd4622770748a101"
+      PROJECT: "journey-expert-ltd-main"
+    steps:
+      - name: Inspect Pages project and recent deployments
+        shell: bash
+        run: |
+          set -euo pipefail
+          auth=(-H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" -H "Content-Type: application/json")
+          project="$(curl --fail --silent --show-error "${auth[@]}" "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$PROJECT")"
+          echo "$project" | jq -e '.success == true'
+          echo "PROJECT_NAME=$(echo "$project" | jq -r '.result.name')"
+          echo "PRODUCTION_BRANCH=$(echo "$project" | jq -r '.result.production_branch')"
+          echo "SUBDOMAIN=$(echo "$project" | jq -r '.result.subdomain')"
+          echo "DOMAINS=$(echo "$project" | jq -c '.result.domains')"
+          echo "CANONICAL_DEPLOYMENT_ID=$(echo "$project" | jq -r '.result.canonical_deployment.id // empty')"
+          echo "CANONICAL_BRANCH=$(echo "$project" | jq -r '.result.canonical_deployment.deployment_trigger.metadata.branch // empty')"
+          echo "CANONICAL_COMMIT=$(echo "$project" | jq -r '.result.canonical_deployment.deployment_trigger.metadata.commit_hash // empty')"
+
+          deployments="$(curl --fail --silent --show-error "${auth[@]}" "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$PROJECT/deployments?per_page=10")"
+          echo "$deployments" | jq -e '.success == true'
+          echo "RECENT_DEPLOYMENTS="
+          echo "$deployments" | jq -r '.result[] | [
+            .id,
+            (.environment // ""),
+            (.deployment_trigger.metadata.branch // ""),
+            (.deployment_trigger.metadata.commit_hash // ""),
+            (.url // ""),
+            (.latest_stage.status // "")
+          ] | @tsv'
