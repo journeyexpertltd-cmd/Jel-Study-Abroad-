@@ -1,0 +1,95 @@
+name: Corporate Angela Public Diagnostic
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/corporate-angela-public-diagnostic.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    name: Diagnose public corporate Angela
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Probe custom domain
+        shell: bash
+        run: |
+          set -u
+          base="https://journeyexpertltd.com"
+          nonce="$(date +%s)"
+          tmp="$(mktemp -d)"
+          trap 'rm -rf "$tmp"' EXIT
+
+          health_status="$(curl --silent --show-error --max-time 25 -o "$tmp/health" -w '%{http_code}' "$base/api/health?diag=$nonce" || true)"
+          echo "HEALTH_STATUS=$health_status"
+          echo "HEALTH_BYTES=$(wc -c < "$tmp/health")"
+
+          en_status="$(curl --silent --show-error --max-time 30             -H 'Content-Type: application/json' -H "Origin: $base"             --data '{"message":"What services does Journey Expert Limited provide?","language":"en","history":[]}'             -o "$tmp/en" -w '%{http_code}' "$base/angela/chat?diag=$nonce" || true)"
+          echo "EN_STATUS=$en_status"
+          echo "EN_BYTES=$(wc -c < "$tmp/en")"
+          python - "$tmp/en" <<'PY' || true
+          import json,sys
+          try:
+              d=json.load(open(sys.argv[1],encoding="utf-8"))
+              print("EN_LANGUAGE="+str(d.get("language")))
+              print("EN_MODE="+str(d.get("mode")))
+              print("EN_INTENT="+str(d.get("primaryIntent")))
+              r=str(d.get("reply") or d.get("response") or "")
+              print("EN_HAS_SERVICE_TERM="+str(any(x.lower() in r.lower() for x in ["ticket","visa","hajj","study abroad","travel"])))
+          except Exception as e: print("EN_PARSE_ERROR="+type(e).__name__)
+          PY
+
+          bn_status="$(curl --silent --show-error --max-time 30             -H 'Content-Type: application/json' -H "Origin: $base"             --data '{"message":"আপনি কি বাংলায় কথা বলতে পারেন? Journey Expert Limited-এর সেবা বলুন।","language":"bn","history":[]}'             -o "$tmp/bn" -w '%{http_code}' "$base/angela/chat?diag=$nonce" || true)"
+          echo "BN_STATUS=$bn_status"
+          echo "BN_BYTES=$(wc -c < "$tmp/bn")"
+          python - "$tmp/bn" <<'PY' || true
+          import json,re,sys
+          try:
+              d=json.load(open(sys.argv[1],encoding="utf-8"))
+              print("BN_LANGUAGE="+str(d.get("language")))
+              print("BN_MODE="+str(d.get("mode")))
+              print("BN_INTENT="+str(d.get("primaryIntent")))
+              r=str(d.get("reply") or d.get("response") or "")
+              print("BN_HAS_BENGALI="+str(bool(re.search(r"[\u0980-\u09ff]",r))))
+          except Exception as e: print("BN_PARSE_ERROR="+type(e).__name__)
+          PY
+
+          speech_status="$(curl --silent --show-error --max-time 35             -H 'Content-Type: application/json' -H "Origin: $base"             --data '{"text":"আসসালামু আলাইকুম। আমি অ্যাঞ্জেলা।","language":"bn"}'             -D "$tmp/speech_headers" -o "$tmp/speech" -w '%{http_code}' "$base/angela/speech?diag=$nonce" || true)"
+          echo "SPEECH_STATUS=$speech_status"
+          echo "SPEECH_BYTES=$(wc -c < "$tmp/speech")"
+          echo "SPEECH_TYPE=$(grep -i '^content-type:' "$tmp/speech_headers" | tail -1 | tr -d '\r' || true)"
+
+          html_status="$(curl --silent --show-error --location --max-time 25             -H 'Cache-Control: no-cache' -o "$tmp/html" -w '%{http_code}' "$base/?diag=$nonce" || true)"
+          echo "HTML_STATUS=$html_status"
+          script="$(grep -oE 'src="[^"]+\.js' "$tmp/html" | head -n1 | sed 's/^src="//' || true)"
+          echo "SCRIPT=$script"
+          if [ -n "$script" ]; then
+            case "$script" in
+              http*) asset="$script" ;;
+              /*) asset="$base$script" ;;
+              *) asset="$base/$script" ;;
+            esac
+            js_status="$(curl --silent --show-error --location --max-time 25               -H 'Cache-Control: no-cache' -o "$tmp/js" -w '%{http_code}' "$asset" || true)"
+            echo "JS_STATUS=$js_status"
+            echo "JS_BYTES=$(wc -c < "$tmp/js")"
+            if grep -q 'retrying cloud female WAV with HTMLAudio' "$tmp/js"; then echo "MARKER_HTMLAUDIO=true"; else echo "MARKER_HTMLAUDIO=false"; fi
+            if grep -q 'Cloud female playback failed this time' "$tmp/js"; then echo "MARKER_NONFATAL=true"; else echo "MARKER_NONFATAL=false"; fi
+            if grep -q 'cloud female primary; device voice fallback' "$tmp/js"; then echo "MARKER_VOICE_CONTRACT=true"; else echo "MARKER_VOICE_CONTRACT=false"; fi
+          fi
+
+          # Fail only after printing the full diagnostic matrix.
+          test "$health_status" = "200"
+          test "$en_status" = "200"
+          test "$bn_status" = "200"
+          test "$speech_status" = "200"
+          grep -Eqi '^content-type: audio/' "$tmp/speech_headers"
+          test "$(wc -c < "$tmp/speech")" -gt 1000
+          test "$html_status" = "200"
+          test -n "$script"
+          grep -q 'retrying cloud female WAV with HTMLAudio' "$tmp/js"
+          grep -q 'Cloud female playback failed this time' "$tmp/js"
+          echo "PUBLIC_DIAGNOSTIC_ALL_PASS=true"
