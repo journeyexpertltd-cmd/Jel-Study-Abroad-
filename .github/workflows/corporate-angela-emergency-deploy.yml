@@ -1,0 +1,171 @@
+name: Corporate Angela Guarded Emergency Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/corporate-angela-emergency-deploy.yml"
+
+permissions:
+  contents: read
+  deployments: write
+
+concurrency:
+  group: corporate-angela-guarded-emergency-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Validate and deploy corporate Angela repair
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: "7b0d4036973a06b9cd4622770748a101"
+      CORPORATE_SHA: "a05f6418d9d28e6967a47b392abb4cb297e7e6d3"
+
+    steps:
+      - name: Checkout validated corporate source
+        uses: actions/checkout@v4
+        with:
+          repository: ezyflyltd-wq/https-github.com-ezyflyltd-wq-Journey-Expert-Ltd
+          ref: ${{ env.CORPORATE_SHA }}
+          path: corporate
+          fetch-depth: 1
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.4.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: corporate/pnpm-lock.yaml
+
+      - name: Install and validate corporate source
+        working-directory: corporate
+        run: |
+          set -euo pipefail
+          pnpm install --frozen-lockfile
+          pnpm run lint
+          pnpm run build:pages
+          pnpm run test:free-voice
+          grep -q 'retrying cloud female WAV with HTMLAudio' src/components/FreeVoiceAngelaWidget.tsx
+          grep -q 'Cloud female playback failed this time' src/components/FreeVoiceAngelaWidget.tsx
+
+      - name: Verify Cloudflare credential
+        run: |
+          set -euo pipefail
+          test -n "${CLOUDFLARE_API_TOKEN:-}"
+          echo "Cloudflare Pages deployment credential is available."
+
+      - name: Deploy guarded preview
+        id: preview
+        working-directory: corporate
+        run: |
+          set -euo pipefail
+          log="$(mktemp)"
+          npx --yes wrangler@4 pages deploy dist             --project-name=journey-expert-ltd-main             --branch=chatgpt-angela-female-fix             --commit-hash="$CORPORATE_SHA" 2>&1 | tee "$log"
+          url="$(grep -Eo 'https://[A-Za-z0-9._-]+\.pages\.dev' "$log" | tail -n1 || true)"
+          test -n "$url"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      - name: Smoke test preview Angela
+        working-directory: corporate
+        run: |
+          set -euo pipefail
+          url="${{ steps.preview.outputs.url }}"
+
+          health="$(curl --fail --silent --show-error --max-time 25 "$url/api/health")"
+          test -n "$health"
+
+          en="$(mktemp)"
+          bn="$(mktemp)"
+          wav="$(mktemp)"
+          headers="$(mktemp)"
+          html="$(mktemp)"
+          js="$(mktemp)"
+          trap 'rm -f "$en" "$bn" "$wav" "$headers" "$html" "$js"' EXIT
+
+          curl --fail --silent --show-error --max-time 25             -H 'Content-Type: application/json' -H "Origin: $url"             --data '{"message":"What services does Journey Expert Limited provide?","language":"en","history":[]}'             "$url/angela/chat" -o "$en"
+          grep -Eqi 'ticket|visa|Hajj|Study Abroad|travel' "$en"
+
+          curl --fail --silent --show-error --max-time 25             -H 'Content-Type: application/json' -H "Origin: $url"             --data '{"message":"হজ ও ওমরাহ সম্পর্কে বলুন","language":"bn","history":[]}'             "$url/angela/chat" -o "$bn"
+          grep -Pq '[\x{0980}-\x{09FF}]' "$bn"
+
+          curl --fail --silent --show-error --max-time 30             -H 'Content-Type: application/json' -H "Origin: $url"             --data '{"text":"আসসালামু আলাইকুম। আমি অ্যাঞ্জেলা।","language":"bn"}'             -D "$headers" "$url/angela/speech" -o "$wav"
+          grep -Eqi '^content-type: audio/' "$headers"
+          test "$(wc -c < "$wav")" -gt 1000
+
+          curl --fail --silent --show-error --location --max-time 20 "$url/" -o "$html"
+          script="$(grep -oE 'src="[^"]+\.js' "$html" | head -n1 | sed 's/^src="//')"
+          test -n "$script"
+          case "$script" in
+            http*) asset="$script" ;;
+            /*) asset="$url$script" ;;
+            *) asset="$url/$script" ;;
+          esac
+          curl --fail --silent --show-error --location --max-time 20 "$asset" -o "$js"
+          grep -q 'retrying cloud female WAV with HTMLAudio' "$js"
+          grep -q 'Cloud female playback failed this time' "$js"
+          echo "Preview Angela chat, Bangla, female audio, and repaired browser bundle passed."
+
+      - name: Deploy production release
+        working-directory: corporate
+        run: |
+          set -euo pipefail
+          npx --yes wrangler@4 pages deploy dist             --project-name=journey-expert-ltd-main             --branch=release             --commit-hash="$CORPORATE_SHA"
+
+      - name: Verify public production repair
+        working-directory: corporate
+        run: |
+          set -euo pipefail
+          sleep 10
+          base="https://journeyexpertltd.com"
+          html="$(mktemp)"
+          js="$(mktemp)"
+          en="$(mktemp)"
+          bn="$(mktemp)"
+          wav="$(mktemp)"
+          headers="$(mktemp)"
+          trap 'rm -f "$html" "$js" "$en" "$bn" "$wav" "$headers"' EXIT
+
+          curl --fail --silent --show-error --max-time 25 "$base/api/health" >/dev/null
+
+          curl --fail --silent --show-error --max-time 25             -H 'Content-Type: application/json' -H "Origin: $base"             --data '{"message":"What services does Journey Expert Limited provide?","language":"en","history":[]}'             "$base/angela/chat" -o "$en"
+          grep -Eqi 'ticket|visa|Hajj|Study Abroad|travel' "$en"
+
+          curl --fail --silent --show-error --max-time 25             -H 'Content-Type: application/json' -H "Origin: $base"             --data '{"message":"আপনি কি বাংলায় কথা বলতে পারেন? Journey Expert Limited-এর সেবা বলুন।","language":"bn","history":[]}'             "$base/angela/chat" -o "$bn"
+          grep -Pq '[\x{0980}-\x{09FF}]' "$bn"
+
+          curl --fail --silent --show-error --max-time 30             -H 'Content-Type: application/json' -H "Origin: $base"             --data '{"text":"আসসালামু আলাইকুম। আমি অ্যাঞ্জেলা।","language":"bn"}'             -D "$headers" "$base/angela/speech" -o "$wav"
+          grep -Eqi '^content-type: audio/' "$headers"
+          test "$(wc -c < "$wav")" -gt 1000
+
+          curl --fail --silent --show-error --location --max-time 20 "$base/" -o "$html"
+          script="$(grep -oE 'src="[^"]+\.js' "$html" | head -n1 | sed 's/^src="//')"
+          test -n "$script"
+          case "$script" in
+            http*) asset="$script" ;;
+            /*) asset="$base$script" ;;
+            *) asset="$base/$script" ;;
+          esac
+          curl --fail --silent --show-error --location --max-time 20 "$asset" -o "$js"
+          grep -q 'retrying cloud female WAV with HTMLAudio' "$js"
+          grep -q 'Cloud female playback failed this time' "$js"
+          echo "PUBLIC_PRODUCTION_REPAIR_VERIFIED=true"
+
+      - name: Publish summary
+        if: always()
+        run: |
+          {
+            echo "## Corporate Angela Guarded Emergency Deploy"
+            echo "- Source repository: ezyflyltd-wq/https-github.com-ezyflyltd-wq-Journey-Expert-Ltd"
+            echo "- Source SHA: $CORPORATE_SHA"
+            echo "- Cloudflare project: journey-expert-ltd-main"
+            echo "- Production branch: release"
+            echo "- Validation includes type-check, build, Angela regressions, preview chat, Bangla, female audio and repaired browser bundle."
+          } >> "$GITHUB_STEP_SUMMARY"
