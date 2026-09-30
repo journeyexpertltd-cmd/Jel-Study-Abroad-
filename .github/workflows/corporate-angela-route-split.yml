@@ -27,48 +27,21 @@ jobs:
             safe="$(echo "$label" | tr -cd '[:alnum:]_-')"
             echo "=== $label $base ==="
 
-            chat_status="$(curl --silent --show-error --max-time 25 \
-              -H 'Content-Type: application/json' -H "Origin: $base" \
-              --data '{"message":"can u talk to bengla","language":"bn","history":[]}' \
-              -o "$tmp/$safe-chat" -w '%{http_code}' "$base/angela/chat?diag=split" || true)"
+            chat_status="$(curl --silent --show-error --max-time 25 -H 'Content-Type: application/json' -H "Origin: $base" --data '{"message":"can u talk to bengla","language":"bn","history":[]}' -o "$tmp/$safe-chat" -w '%{http_code}' "$base/angela/chat?diag=split" || true)"
             echo "${label}_CHAT_STATUS=$chat_status"
-            python - "$tmp/$safe-chat" "$label" <<'PY' || true
-import json,sys,re
-p,label=sys.argv[1],sys.argv[2]
-try:
-    d=json.load(open(p,encoding='utf-8'))
-    r=str(d.get('reply') or d.get('response') or '')
-    print(f'{label}_CHAT_MODE={d.get("mode")}')
-    print(f'{label}_CHAT_INTENT={d.get("primaryIntent")}')
-    print(f'{label}_CHAT_HAS_BN={bool(re.search(r"[\u0980-\u09ff]",r))}')
-    print(f'{label}_CHAT_CAN_SPEAK={("বাংলা" in r) or ("bangla" in r.lower()) or ("banglish" in r.lower())}')
-    print(f'{label}_CHAT_REPLY={r[:220].replace(chr(10)," ")}')
-except Exception as e:
-    print(f'{label}_CHAT_PARSE={type(e).__name__}')
-PY
+            echo "${label}_CHAT_MODE=$(jq -r '.mode // ""' "$tmp/$safe-chat" 2>/dev/null || true)"
+            echo "${label}_CHAT_INTENT=$(jq -r '.primaryIntent // ""' "$tmp/$safe-chat" 2>/dev/null || true)"
+            reply="$(jq -r '.reply // .response // ""' "$tmp/$safe-chat" 2>/dev/null || true)"
+            if printf '%s' "$reply" | grep -Pq '[\x{0980}-\x{09FF}]'; then echo "${label}_CHAT_HAS_BN=true"; else echo "${label}_CHAT_HAS_BN=false"; fi
+            if printf '%s' "$reply" | grep -Eqi 'বাংলা|bangla|banglish'; then echo "${label}_CHAT_CAN_SPEAK=true"; else echo "${label}_CHAT_CAN_SPEAK=false"; fi
 
-            live_status="$(curl --silent --show-error --max-time 20 \
-              -H 'Content-Type: application/json' -H "Origin: $base" \
-              --data '{}' -o "$tmp/$safe-live" -w '%{http_code}' \
-              "$base/angela/live-token?diag=split" || true)"
+            live_status="$(curl --silent --show-error --max-time 20 -H 'Content-Type: application/json' -H "Origin: $base" --data '{}' -o "$tmp/$safe-live" -w '%{http_code}' "$base/angela/live-token?diag=split" || true)"
             echo "${label}_LIVE_STATUS=$live_status"
-            python - "$tmp/$safe-live" "$label" <<'PY' || true
-import json,sys
-p,label=sys.argv[1],sys.argv[2]
-try:
-    d=json.load(open(p,encoding='utf-8'))
-    print(f'{label}_LIVE_ERROR={d.get("error")}')
-    print(f'{label}_LIVE_MODEL={d.get("model")}')
-    print(f'{label}_LIVE_TOKEN_PRESENT={bool(d.get("token"))}')
-except Exception as e:
-    print(f'{label}_LIVE_PARSE={type(e).__name__}')
-PY
+            echo "${label}_LIVE_ERROR=$(jq -r '.error // ""' "$tmp/$safe-live" 2>/dev/null || true)"
+            echo "${label}_LIVE_MODEL=$(jq -r '.model // ""' "$tmp/$safe-live" 2>/dev/null || true)"
+            if jq -e '.token | type == "string" and length > 0' "$tmp/$safe-live" >/dev/null 2>&1; then echo "${label}_LIVE_TOKEN_PRESENT=true"; else echo "${label}_LIVE_TOKEN_PRESENT=false"; fi
 
-            speech_status="$(curl --silent --show-error --max-time 25 \
-              -H 'Content-Type: application/json' -H "Origin: $base" \
-              --data '{"text":"আসসালামু আলাইকুম। আমি অ্যাঞ্জেলা।","language":"bn"}' \
-              -D "$tmp/$safe-headers" -o "$tmp/$safe-speech" -w '%{http_code}' \
-              "$base/angela/speech?diag=split" || true)"
+            speech_status="$(curl --silent --show-error --max-time 25 -H 'Content-Type: application/json' -H "Origin: $base" --data '{"text":"আসসালামু আলাইকুম। আমি অ্যাঞ্জেলা।","language":"bn"}' -D "$tmp/$safe-headers" -o "$tmp/$safe-speech" -w '%{http_code}' "$base/angela/speech?diag=split" || true)"
             echo "${label}_SPEECH_STATUS=$speech_status"
             echo "${label}_SPEECH_BYTES=$(wc -c < "$tmp/$safe-speech")"
             echo "${label}_SPEECH_TYPE=$(grep -i '^content-type:' "$tmp/$safe-headers" | tail -1 | tr -d '\r' || true)"
