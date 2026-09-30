@@ -59,6 +59,20 @@ jobs:
           except Exception as e: print("BN_PARSE_ERROR="+type(e).__name__)
           PY
 
+          lang_status="$(curl --silent --show-error --max-time 20             -H 'Content-Type: application/json' -H "Origin: $base"             --data '{"message":"can u talk to bengla","language":"bn","history":[]}'             -o "$tmp/lang" -w '%{http_code}' "$base/angela/chat?diag=$nonce" || true)"
+          echo "LANG_STATUS=$lang_status"
+          python - "$tmp/lang" <<'PY' || true
+          import json,re,sys
+          try:
+              d=json.load(open(sys.argv[1],encoding="utf-8"))
+              print("LANG_MODE="+str(d.get("mode")))
+              print("LANG_INTENT="+str(d.get("primaryIntent")))
+              r=str(d.get("reply") or "")
+              print("LANG_HAS_BENGALI="+str(bool(re.search(r"[\u0980-\u09ff]",r))))
+              print("LANG_CAN_SPEAK="+str(("বাংলা" in r) or ("bangla" in r.lower()) or ("banglish" in r.lower())))
+          except Exception as e: print("LANG_PARSE_ERROR="+type(e).__name__)
+          PY
+
           speech_status="$(curl --silent --show-error --max-time 35             -H 'Content-Type: application/json' -H "Origin: $base"             --data '{"text":"আসসালামু আলাইকুম। আমি অ্যাঞ্জেলা।","language":"bn"}'             -D "$tmp/speech_headers" -o "$tmp/speech" -w '%{http_code}' "$base/angela/speech?diag=$nonce" || true)"
           echo "SPEECH_STATUS=$speech_status"
           echo "SPEECH_BYTES=$(wc -c < "$tmp/speech")"
@@ -90,6 +104,8 @@ jobs:
           test "$health_status" = "200"
           test "$en_status" = "200"
           test "$bn_status" = "200"
+          test "$lang_status" = "200"
+          grep -q '"primaryIntent":"conversation"' "$tmp/lang"
           if [ "$speech_status" = "200" ]; then
             grep -Eqi '^content-type: audio/' "$tmp/speech_headers"
             test "$(wc -c < "$tmp/speech")" -gt 1000
