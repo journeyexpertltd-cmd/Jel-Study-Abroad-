@@ -928,12 +928,17 @@ const handleAngelaSpeech = async (req: express.Request, res: express.Response) =
     timer = setTimeout(() => controller.abort(), 9000);
     const model = process.env.GEMINI_TTS_MODEL || "gemini-3.8-flash-lite-tts";
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
+      model.startsWith('gemini-3.8') ? 'https://generativelanguage.googleapis.com/v1beta/interactions' : `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
       {
         method: "POST",
         signal: controller.signal,
         headers: { "Content-Type": "application/json", "x-goog-api-key": key },
-        body: JSON.stringify({
+        body: JSON.stringify(model.startsWith('gemini-3.8') ? {
+          model,
+          input: [{ type: 'user_input', content: [{ type: 'text', text, annotations: [{ type: 'speech_metadata', style: 'Warm, natural, professional adult female delivery in the original language.' }] }] }],
+          response_format: { type: 'audio' },
+          generation_config: { speech_config: [{ voice: 'Aoede' }] },
+        } : {
           contents: [{ role: "user", parts: [{
             text: "Speak the following transcript exactly in its original language, naturally, warmly, and clearly. Do not translate, summarize, answer, or add words:\n" + text,
           }] }],
@@ -957,12 +962,14 @@ const handleAngelaSpeech = async (req: express.Request, res: express.Response) =
 
     const data: any = await response.json();
     const parts = data?.candidates?.[0]?.content?.parts;
-    const audio = Array.isArray(parts)
+    const legacyAudio = Array.isArray(parts)
       ? parts.find((part: any) =>
           typeof part?.inlineData?.data === "string" &&
           /^audio\/L16(?:;|$)/i.test(part.inlineData.mimeType || "")
         )?.inlineData
       : undefined;
+    const interactionAudio = data?.steps?.flatMap((step: any) => step?.content || []).find((item: any) => item?.type === 'audio' && typeof item.data === 'string');
+    const audio = interactionAudio ? { data: interactionAudio.data, mimeType: interactionAudio.mime_type || 'audio/wav' } : legacyAudio;
     if (!audio?.data) return res.status(503).json({ error: "voice_provider_unavailable" });
     const rate = /(?:^|;)\s*rate=(\d+)/i.exec(audio.mimeType);
     if (rate && Number(rate[1]) !== 24000) {
@@ -972,7 +979,8 @@ const handleAngelaSpeech = async (req: express.Request, res: express.Response) =
     if (!raw.length || raw.length % 2 !== 0) {
       return res.status(503).json({ error: "voice_provider_unavailable" });
     }
-    const wavBuffer = pcmToWavBuffer(new Uint8Array(raw));
+    const isWav = raw.length >= 12 && raw.toString('ascii', 0, 4) === 'RIFF' && raw.toString('ascii', 8, 12) === 'WAVE';
+    const wavBuffer = isWav ? raw : pcmToWavBuffer(new Uint8Array(raw));
     res.setHeader("Content-Type", "audio/wav");
     res.setHeader("X-Content-Type-Options", "nosniff");
     res.setHeader("X-Angela-Voice", "Aoede");
@@ -2128,3 +2136,4 @@ const isNetlify = !!(process.env.NETLIFY || process.env.LAMBDA_TASK_ROOT);
 if (!isNetlify) {
   bootServer();
 }
+

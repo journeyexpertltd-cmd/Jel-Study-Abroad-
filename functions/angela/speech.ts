@@ -6,6 +6,8 @@ const json = (body: unknown, status = 200) => Response.json(body, {
 });
 
 export function pcmToWav(pcm: Uint8Array): ArrayBuffer {
+  // Preserve complete unary WAV output; only legacy PCM needs wrapping.
+  if (pcm.length >= 12 && String.fromCharCode(...pcm.slice(0, 4)) === 'RIFF' && String.fromCharCode(...pcm.slice(8, 12)) === 'WAVE') return new Uint8Array(pcm).buffer;
   const output = new ArrayBuffer(44 + pcm.length);
   const view = new DataView(output);
   const bytes = new Uint8Array(output);
@@ -24,7 +26,7 @@ function findAudio(value: any): { data: string; mimeType?: string } | null {
   if (typeof value.data === 'string' && (
     value.type === 'audio' ||
     (typeof value.mimeType === 'string' && value.mimeType.startsWith('audio/'))
-  )) return { data: value.data, mimeType: value.mimeType };
+  )) return { data: value.data, mimeType: value.mime_type || value.mimeType };
   if (value.inlineData && typeof value.inlineData.data === 'string' &&
       String(value.inlineData.mimeType || '').startsWith('audio/')) {
     return { data: value.inlineData.data, mimeType: value.inlineData.mimeType };
@@ -77,37 +79,31 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
     const remaining = voiceDeadline - Date.now();
     if (remaining < 700) break;
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), Math.min(4200, remaining));
+    const timer = setTimeout(() => controller.abort(), Math.min(8500, remaining));
     try {
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
+        model.startsWith('gemini-3.8')
+          ? 'https://generativelanguage.googleapis.com/v1beta/interactions'
+          : `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
         {
           method: 'POST',
           signal: controller.signal,
           headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
           body: JSON.stringify(model.startsWith('gemini-3.8')
             ? {
-                contents: [{
-                  role: 'user',
-                  parts: [{
-                    text,
-                    speech_metadata: {
-                      style: 'Natural, warm, clear, professional adult female delivery. Preserve the transcript verbatim and do not add words.',
-                    },
+                model,
+                input: [{
+                  type: 'user_input',
+                  content: [{
+                    type: 'text', text,
+                    annotations: [{
+                      type: 'speech_metadata',
+                      style: 'Warm, natural, professional adult female delivery in the original language.',
+                    }],
                   }],
                 }],
-                generationConfig: {
-                  responseModalities: ['AUDIO'],
-                  responseFormat: {
-                    audio: {
-                      mimeType: 'AUDIO_L16',
-                      sampleRate: 24000,
-                    },
-                  },
-                  speechConfig: {
-                    voiceConfig: { voice: 'Aoede' },
-                  },
-                },
+                response_format: { type: 'audio' },
+                generation_config: { speech_config: [{ voice: 'Aoede' }] },
               }
             : {
                 contents: [{
@@ -183,3 +179,4 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
     providerStatus: lastProviderStatus || undefined,
   }, 503);
 }
+
