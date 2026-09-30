@@ -22,7 +22,7 @@ jobs:
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: "7b0d4036973a06b9cd4622770748a101"
-      CORPORATE_SHA: "a05f6418d9d28e6967a47b392abb4cb297e7e6d3"
+      CORPORATE_SHA: "780b7c746bde7908f02c69953c0a1bef68129426"
 
     steps:
       - name: Checkout validated corporate source
@@ -126,9 +126,13 @@ jobs:
 
           curl --fail --silent --show-error --max-time 25             -H 'Content-Type: application/json' -H "Origin: $base"             --data '{"message":"What services does Journey Expert Limited provide?","language":"en","history":[]}'             "$base/angela/chat" -o "$en"
           grep -Eqi 'ticket|visa|Hajj|Study Abroad|travel' "$en"
+          grep -q '"primaryIntent":"services_overview"' "$en"
+          grep -qi 'Craft Bangla' "$en"
 
           curl --fail --silent --show-error --max-time 25             -H 'Content-Type: application/json' -H "Origin: $base"             --data '{"message":"আপনি কি বাংলায় কথা বলতে পারেন? Journey Expert Limited-এর সেবা বলুন।","language":"bn","history":[]}'             "$base/angela/chat" -o "$bn"
           grep -Pq '[\x{0980}-\x{09FF}]' "$bn"
+          grep -q '"primaryIntent":"services_overview"' "$bn"
+          grep -qi 'Craft Bangla' "$bn"
 
           curl --fail --silent --show-error --max-time 30             -H 'Content-Type: application/json' -H "Origin: $base"             --data '{"text":"আসসালামু আলাইকুম। আমি অ্যাঞ্জেলা।","language":"bn"}'             -D "$headers" "$base/angela/speech" -o "$wav"
           grep -Eqi '^content-type: audio/' "$headers"
