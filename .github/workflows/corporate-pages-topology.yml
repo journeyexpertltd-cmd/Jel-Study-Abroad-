@@ -1,5 +1,5 @@
 name: Corporate Pages Topology Audit
-# current canonical check 2026-09-30 13:45Z
+# current canonical check after Live fallback merge 2026-09-30
 
 on:
   push:
