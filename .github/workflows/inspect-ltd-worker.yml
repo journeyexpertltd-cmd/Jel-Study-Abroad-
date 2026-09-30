@@ -1,0 +1,37 @@
+name: Inspect LTD Worker Voice Fallback
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/inspect-ltd-worker.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: "7b0d4036973a06b9cd4622770748a101"
+      WORKER_NAME: "journey-expert-ltd-main"
+    steps:
+      - name: Fetch active Worker safely
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${CLOUDFLARE_API_TOKEN:-}"
+          headers="$(mktemp)"
+          body="$(mktemp)"
+          trap 'rm -f "$headers" "$body"' EXIT
+          status="$(curl --silent --show-error             -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN"             -D "$headers" -o "$body" -w '%{http_code}'             "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts/$WORKER_NAME")"
+          echo "HTTP $status"
+          test "$status" = "200"
+          echo "Worker bytes: $(wc -c < "$body")"
+          echo "Content-Type: $(grep -i '^content-type:' "$headers" | tail -1 | tr -d '\r')"
+          echo "Voice fallback markers:"
+          strings "$body" | grep -Eio 'Verified female device voice|Male/default voice|cloud female|device fallback|Stop listening|/angela/speech|/angela/chat|SpeechSynthesisUtterance|speechSynthesis|getVoices|Aoede' | sort -u || true
+          echo "Relevant source snippets:"
+          strings "$body" | grep -Ein -C 3 'Verified female device voice|Male/default voice|cloud female|device fallback|/angela/speech|SpeechSynthesisUtterance|getVoices|Aoede' | head -n 180 || true
