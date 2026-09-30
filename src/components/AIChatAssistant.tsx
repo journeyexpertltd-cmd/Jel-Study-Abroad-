@@ -17,7 +17,7 @@ const BANGLA_WELCOME = "আসসালামু আলাইকুম। আম
 const isBanglaText = (text: string) => /[\u0980-\u09FF]/.test(text);
 const welcomeFor = (mode: "en" | "bn") => mode === "bn" ? BANGLA_WELCOME : ENGLISH_WELCOME;
 
-const BANGLA_FEMALE_HINTS = ["nabanita", "tanishaa", "lekha", "sangeeta", "heera", "female", "woman", "google bengali", "google bangla", "microsoft nabanita"];
+const BANGLA_FEMALE_HINTS = ["nabanita", "nabanita online", "tanishaa", "lekha", "sangeeta", "heera", "female", "woman", "google bengali", "google bangla", "google বাংলা", "microsoft nabanita", "microsoft নবানিতা"];
 const BANGLA_MALE_HINTS = ["pradeep", "pradip", "bhashkar", "bhaskar", "bashkar", "male", "man"];
 const ENGLISH_FEMALE_HINTS = ["zira", "aria", "jenny", "sonia", "samantha", "victoria", "ava", "allison", "karen", "susan", "hazel", "libby", "natasha", "serena", "moira", "fiona", "tessa", "veena", "female", "woman", "google uk english female"];
 
@@ -315,9 +315,16 @@ export function AIChatAssistant() {
 
     try {
       const wantsBanglaVoice = isBanglaText(cleanSpeech) || languageModeRef.current === "bn";
-      const voices = voiceCatalogRef.current.length
+      let voices = voiceCatalogRef.current.length
         ? voiceCatalogRef.current
         : (window.speechSynthesis?.getVoices() || []);
+      // Chrome/Android/Edge often expose voices asynchronously. Refresh once
+      // before declaring the female-device fallback unavailable.
+      if (!voices.length && window.speechSynthesis) {
+        await new Promise((resolve) => window.setTimeout(resolve, 180));
+        voices = window.speechSynthesis.getVoices();
+        if (voices.length) voiceCatalogRef.current = voices;
+      }
 
       if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
 
@@ -403,7 +410,8 @@ export function AIChatAssistant() {
         setErrorMessage(wantsBanglaVoice
           ? "Cloud voice সাময়িকভাবে পাওয়া যাচ্ছে না এবং এই browser-এ device voice নেই। উত্তরটি লেখা আকারে আছে।"
           : "Cloud voice is temporarily unavailable and this browser has no device voice. The answer remains visible as text.");
-        setVoiceState("ERROR");
+        setVoiceState("READY");
+        setActiveSpeakingId(null);
         return;
       }
 
@@ -433,10 +441,10 @@ export function AIChatAssistant() {
             setVoiceState("READY");
             return;
           }
-          setVoiceState("ERROR");
+          setVoiceState("READY");
           setErrorMessage(wantsBanglaVoice
-            ? "বাংলা কণ্ঠটি চালানো যায়নি। Listen চেপে আবার চেষ্টা করুন।"
-            : "Voice playback failed. Please press Listen and try again.");
+            ? "বাংলা নারী কণ্ঠটি এইবার চালানো যায়নি। Chat চালু আছে—Listen চাপলে আবার চেষ্টা হবে।"
+            : "The female voice could not play this time. Chat is still active—press Listen to retry.");
         };
         window.speechSynthesis.speak(utterance);
       };
@@ -448,11 +456,11 @@ export function AIChatAssistant() {
 
       const preferredDeviceVoice = pickAngelaDeviceVoice(voices, wantsBanglaVoice ? "bn" : "en");
       if (!preferredDeviceVoice) {
-        setVoiceState("ERROR");
+        setVoiceState("READY");
         setActiveSpeakingId(null);
         setErrorMessage(wantsBanglaVoice
-          ? "নারী কণ্ঠটি এখন পাওয়া যাচ্ছে না। উত্তরটি পড়তে পারেন অথবা শুনুন বোতামে আবার চেষ্টা করুন।"
-          : "The female voice is unavailable right now. You can read the answer or press Listen to retry.");
+          ? "Cloud নারী কণ্ঠ ব্যস্ত এবং এই ডিভাইসে নিশ্চিত female Bangla voice পাওয়া যায়নি। Chat বন্ধ হয়নি—পরের প্রশ্ন করুন বা Listen চাপুন।"
+          : "Cloud female voice is busy and no verified female device voice is available. Chat remains active—ask the next question or press Listen.");
         return;
       }
       setErrorMessage(null);
@@ -460,8 +468,11 @@ export function AIChatAssistant() {
       return;
     } catch (error) {
       console.warn("Text to speech exception:", error);
-      setErrorMessage("I can still help you by text.");
-      setVoiceState("ERROR");
+      setErrorMessage(languageModeRef.current === "bn"
+        ? "Voice সাময়িকভাবে ব্যস্ত। Chat চালু আছে—পরের প্রশ্ন করুন।"
+        : "Voice is temporarily busy. Chat is still active—ask your next question.");
+      setVoiceState("READY");
+      setActiveSpeakingId(null);
     }
   }, [isVoiceEnabled, languageMode]);
 
@@ -561,7 +572,9 @@ export function AIChatAssistant() {
         ? "এই মুহূর্তে উত্তর দিতে পারছি না। আবার চেষ্টা করুন অথবা JEL-এর সঙ্গে সরাসরি যোগাযোগ করুন।"
         : "I'm temporarily unable to respond. Please try again or contact JEL directly.";
       setErrorMessage(friendlyError);
-      setVoiceState("ERROR");
+      // A single network/provider failure must never lock Angela in ERROR.
+      // Keep the conversation immediately reusable for the next turn.
+      setVoiceState("READY");
 
       const errorMsg: ChatMessage = {
         id: `m-err-${Date.now()}`,
