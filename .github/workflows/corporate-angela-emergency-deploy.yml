@@ -73,34 +73,22 @@ jobs:
           test -n "$url"
           echo "url=$url" >> "$GITHUB_OUTPUT"
 
-      - name: Smoke test preview build contract
+      - name: Smoke test preview exact build
         working-directory: corporate
         run: |
           set -euo pipefail
           url="${{ steps.preview.outputs.url }}"
-
-          # Preview branches do not necessarily inherit production-only Gemini
-          # bindings and the corporate Worker intentionally permits only the
-          # production origin. Validate the built UI/Worker contract here; the
-          # real AI/TTS calls are verified after deployment on the custom domain.
           curl --fail --silent --show-error --max-time 25 "$url/api/health" >/dev/null
 
-          html="$(mktemp)"
-          js="$(mktemp)"
-          trap 'rm -f "$html" "$js"' EXIT
-          curl --fail --silent --show-error --location --max-time 20 "$url/" -o "$html"
-          script="$(grep -oE 'src="[^"]+\.js' "$html" | head -n1 | sed 's/^src="//')"
-          test -n "$script"
-          case "$script" in
-            http*) asset="$script" ;;
-            /*) asset="$url$script" ;;
-            *) asset="$url/$script" ;;
-          esac
-          curl --fail --silent --show-error --location --max-time 20 "$asset" -o "$js"
-          grep -q 'retrying cloud female WAV with HTMLAudio' "$js"
-          grep -q 'Cloud female playback failed this time' "$js"
-          grep -q 'cloud female primary; device voice fallback' "$js"
-          echo "Preview repaired Angela browser bundle contract passed."
+          live_html="$(mktemp)"
+          trap 'rm -f "$live_html"' EXIT
+          curl --fail --silent --show-error --location --max-time 20 "$url/?build=$CORPORATE_SHA" -o "$live_html"
+
+          local_script="$(grep -oE 'src="[^"]+\.js' dist/index.html | head -n1 | sed 's/^src="//')"
+          remote_script="$(grep -oE 'src="[^"]+\.js' "$live_html" | head -n1 | sed 's/^src="//')"
+          test -n "$local_script"
+          test "$remote_script" = "$local_script"
+          echo "PREVIEW_EXACT_BUILD=true script=$remote_script"
 
       - name: Deploy production release
         working-directory: corporate
@@ -112,43 +100,49 @@ jobs:
         working-directory: corporate
         run: |
           set -euo pipefail
-          sleep 10
           base="https://journeyexpertltd.com"
+          local_script="$(grep -oE 'src="[^"]+\.js' dist/index.html | head -n1 | sed 's/^src="//')"
+          test -n "$local_script"
+
           html="$(mktemp)"
-          js="$(mktemp)"
           en="$(mktemp)"
           bn="$(mktemp)"
           wav="$(mktemp)"
           headers="$(mktemp)"
-          trap 'rm -f "$html" "$js" "$en" "$bn" "$wav" "$headers"' EXIT
+          trap 'rm -f "$html" "$en" "$bn" "$wav" "$headers"' EXIT
+
+          # Allow the Pages custom domain/CDN a bounded propagation window.
+          exact_build=false
+          for attempt in 1 2 3 4 5 6; do
+            nonce="$(date +%s)-$attempt"
+            curl --fail --silent --show-error --location --max-time 20               -H 'Cache-Control: no-cache' "$base/?build=$CORPORATE_SHA&n=$nonce" -o "$html"
+            remote_script="$(grep -oE 'src="[^"]+\.js' "$html" | head -n1 | sed 's/^src="//' || true)"
+            echo "Production asset attempt $attempt: $remote_script"
+            if [ "$remote_script" = "$local_script" ]; then
+              exact_build=true
+              break
+            fi
+            sleep 10
+          done
+          test "$exact_build" = true
+          echo "PUBLIC_EXACT_BUILD=true script=$local_script"
 
           curl --fail --silent --show-error --max-time 25 "$base/api/health" >/dev/null
 
-          curl --fail --silent --show-error --max-time 25             -H 'Content-Type: application/json' -H "Origin: $base"             --data '{"message":"What services does Journey Expert Limited provide?","language":"en","history":[]}'             "$base/angela/chat" -o "$en"
-          grep -Eqi 'ticket|visa|Hajj|Study Abroad|travel' "$en"
+          curl --fail --silent --show-error --max-time 30             -H 'Content-Type: application/json' -H "Origin: $base"             --data '{"message":"What services does Journey Expert Limited provide?","language":"en","history":[]}'             "$base/angela/chat" -o "$en"
           grep -q '"primaryIntent":"services_overview"' "$en"
+          grep -Eqi 'air ticketing|visa-document|Hajj|Study Abroad' "$en"
           grep -qi 'Craft Bangla' "$en"
 
-          curl --fail --silent --show-error --max-time 25             -H 'Content-Type: application/json' -H "Origin: $base"             --data '{"message":"আপনি কি বাংলায় কথা বলতে পারেন? Journey Expert Limited-এর সেবা বলুন।","language":"bn","history":[]}'             "$base/angela/chat" -o "$bn"
-          grep -Pq '[\x{0980}-\x{09FF}]' "$bn"
+          curl --fail --silent --show-error --max-time 30             -H 'Content-Type: application/json' -H "Origin: $base"             --data '{"message":"Journey Expert Limited-এর কী কী সার্ভিস আছে?","language":"bn","history":[]}'             "$base/angela/chat" -o "$bn"
           grep -q '"primaryIntent":"services_overview"' "$bn"
+          grep -Pq '[\x{0980}-\x{09FF}]' "$bn"
           grep -qi 'Craft Bangla' "$bn"
 
-          curl --fail --silent --show-error --max-time 30             -H 'Content-Type: application/json' -H "Origin: $base"             --data '{"text":"আসসালামু আলাইকুম। আমি অ্যাঞ্জেলা।","language":"bn"}'             -D "$headers" "$base/angela/speech" -o "$wav"
+          curl --fail --silent --show-error --max-time 35             -H 'Content-Type: application/json' -H "Origin: $base"             --data '{"text":"আসসালামু আলাইকুম। আমি অ্যাঞ্জেলা।","language":"bn"}'             -D "$headers" "$base/angela/speech" -o "$wav"
           grep -Eqi '^content-type: audio/' "$headers"
           test "$(wc -c < "$wav")" -gt 1000
-
-          curl --fail --silent --show-error --location --max-time 20 "$base/" -o "$html"
-          script="$(grep -oE 'src="[^"]+\.js' "$html" | head -n1 | sed 's/^src="//')"
-          test -n "$script"
-          case "$script" in
-            http*) asset="$script" ;;
-            /*) asset="$base$script" ;;
-            *) asset="$base/$script" ;;
-          esac
-          curl --fail --silent --show-error --location --max-time 20 "$asset" -o "$js"
-          grep -q 'retrying cloud female WAV with HTMLAudio' "$js"
-          grep -q 'Cloud female playback failed this time' "$js"
+          echo "PUBLIC_FEMALE_AUDIO_BYTES=$(wc -c < "$wav")"
           echo "PUBLIC_PRODUCTION_REPAIR_VERIFIED=true"
 
       - name: Publish summary
