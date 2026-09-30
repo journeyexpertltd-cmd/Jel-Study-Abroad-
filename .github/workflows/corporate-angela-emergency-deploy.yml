@@ -71,28 +71,46 @@ jobs:
           set -euo pipefail
           log="$(mktemp)"
           npx --yes wrangler@4 pages deploy dist             --project-name=journey-expert-ltd-main             --branch=chatgpt-angela-female-fix             --commit-hash="$CORPORATE_SHA" 2>&1 | tee "$log"
-          url="$(grep -Eo 'https://[A-Za-z0-9._-]+\.pages\.dev' "$log" | head -n1 || true)"
-          test -n "$url"
-          echo "url=$url" >> "$GITHUB_OUTPUT"
+          immutable_url="$(grep -Eo 'https://[A-Za-z0-9._-]+\.pages\.dev' "$log" | head -n1 || true)"
+          alias_url="$(grep -Eo 'https://[A-Za-z0-9._-]+\.pages\.dev' "$log" | tail -n1 || true)"
+          test -n "$immutable_url"
+          test -n "$alias_url"
+          echo "immutable_url=$immutable_url" >> "$GITHUB_OUTPUT"
+          echo "alias_url=$alias_url" >> "$GITHUB_OUTPUT"
 
       - name: Smoke test preview exact build
         working-directory: corporate
         run: |
           set -euo pipefail
-          url="${{ steps.preview.outputs.url }}"
-          curl --fail --silent --show-error --max-time 25 "$url/api/health" >/dev/null
+          url="${{ steps.preview.outputs.alias_url }}"
+          local_script="$(grep -oE 'src="[^"]+\.js' dist/index.html | head -n1 | sed 's/^src="//')"
+          test -n "$local_script"
 
           live_html="$(mktemp)"
-          trap 'rm -f "$live_html"' EXIT
-          curl --fail --silent --show-error --location --max-time 20 "$url/?build=$CORPORATE_SHA" -o "$live_html"
+          remote_js="$(mktemp)"
+          trap 'rm -f "$live_html" "$remote_js"' EXIT
 
-          local_script="$(grep -oE 'src="[^"]+\.js' dist/index.html | head -n1 | sed 's/^src="//')"
-          remote_script="$(grep -oE 'src="[^"]+\.js' "$live_html" | head -n1 | sed 's/^src="//')"
-          test -n "$local_script"
-          echo "PREVIEW_LOCAL_SCRIPT=$local_script"
-          echo "PREVIEW_REMOTE_SCRIPT=$remote_script"
-          test "$remote_script" = "$local_script"
-          echo "PREVIEW_EXACT_BUILD=true script=$remote_script"
+          exact=false
+          for attempt in 1 2 3 4 5 6; do
+            nonce="$(date +%s)-$attempt"
+            health_status="$(curl --silent --show-error --max-time 25 -o /dev/null -w '%{http_code}' "$url/api/health?build=$CORPORATE_SHA&n=$nonce" || true)"
+            html_status="$(curl --silent --show-error --location --max-time 20 -H 'Cache-Control: no-cache' -o "$live_html" -w '%{http_code}' "$url/?build=$CORPORATE_SHA&n=$nonce" || true)"
+            remote_script="$(grep -oE 'src="[^"]+\.js' "$live_html" | head -n1 | sed 's/^src="//' || true)"
+            echo "PREVIEW_ATTEMPT=$attempt HEALTH=$health_status HTML=$html_status LOCAL=$local_script REMOTE=$remote_script"
+            if [ "$health_status" = "200" ] && [ "$html_status" = "200" ] && [ "$remote_script" = "$local_script" ]; then
+              asset="$url$remote_script"
+              js_status="$(curl --silent --show-error --location --max-time 25 -H 'Cache-Control: no-cache' -o "$remote_js" -w '%{http_code}' "$asset?build=$CORPORATE_SHA&n=$nonce" || true)"
+              if [ "$js_status" = "200" ] \
+                && grep -q 'Cloud female playback failed this time' "$remote_js" \
+                && grep -q 'cloud female primary; device voice fallback' "$remote_js"; then
+                exact=true
+                break
+              fi
+            fi
+            sleep 8
+          done
+          test "$exact" = true
+          echo "PREVIEW_EXACT_BUILD=true script=$local_script"
 
       - name: Deploy production release
         working-directory: corporate
