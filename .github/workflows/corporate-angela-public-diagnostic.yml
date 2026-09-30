@@ -64,6 +64,10 @@ jobs:
           echo "SPEECH_BYTES=$(wc -c < "$tmp/speech")"
           echo "SPEECH_TYPE=$(grep -i '^content-type:' "$tmp/speech_headers" | tail -1 | tr -d '\r' || true)"
 
+          live_status="$(curl --silent --show-error --max-time 20             -H 'Content-Type: application/json' -H "Origin: $base"             -X POST -o "$tmp/live_token" -w '%{http_code}' "$base/angela/live-token?diag=$nonce" || true)"
+          echo "LIVE_TOKEN_STATUS=$live_status"
+          echo "LIVE_TOKEN_BODY=$(head -c 500 "$tmp/live_token" | tr '\n' ' ')"
+
           html_status="$(curl --silent --show-error --location --max-time 25             -H 'Cache-Control: no-cache' -o "$tmp/html" -w '%{http_code}' "$base/?diag=$nonce" || true)"
           echo "HTML_STATUS=$html_status"
           script="$(grep -oE 'src="[^"]+\.js' "$tmp/html" | head -n1 | sed 's/^src="//' || true)"
