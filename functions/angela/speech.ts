@@ -61,8 +61,11 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   const text = originalText.replace(/\s+/g, ' ').trim();
   if (!text) return json({ error: 'text_required' }, 400);
 
-  const key = (env.GEMINI_TTS_API_KEY || env.GEMINI_API_KEY || '').trim();
-  if (!key || env.ANGELA_SERVER_VOICE === 'off') return json({ error: 'voice_not_configured' }, 503);
+  const keys = Array.from(new Set([
+    env.GEMINI_TTS_API_KEY?.trim(),
+    env.GEMINI_API_KEY?.trim(),
+  ].filter((key): key is string => Boolean(key))));
+  if (!keys.length || env.ANGELA_SERVER_VOICE === 'off') return json({ error: 'voice_not_configured' }, 503);
 
   const models = Array.from(new Set([
     env.GEMINI_TTS_MODEL,
@@ -75,12 +78,13 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   let lastProviderStatus = 0;
   const voiceDeadline = Date.now() + 9000;
 
-  for (const model of models) {
-    const remaining = voiceDeadline - Date.now();
-    if (remaining < 700) break;
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), Math.min(8500, remaining));
-    try {
+  voiceKeys: for (const key of keys) {
+    for (const model of models) {
+      const remaining = voiceDeadline - Date.now();
+      if (remaining < 700) break voiceKeys;
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), Math.min(5000, remaining));
+      try {
       const response = await fetch(
         model.startsWith('gemini-3.8')
           ? 'https://generativelanguage.googleapis.com/v1beta/interactions'
@@ -131,8 +135,11 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
         // traffic and delays the browser's female-device fallback.
         if (response.status === 429) {
           sawQuota = true;
+          // Quota can be key/project specific. Try the next configured key
+          // instead of killing voice for the whole session after one 429.
           break;
         }
+        if (response.status === 401 || response.status === 403) break;
         continue;
       }
 
@@ -155,8 +162,9 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
       });
     } catch (error) {
       console.warn('Angela TTS model failed', model, controller.signal.aborted ? 'timeout' : (error instanceof Error ? error.message : 'unknown'));
-    } finally {
-      clearTimeout(timer);
+      } finally {
+        clearTimeout(timer);
+      }
     }
   }
 
