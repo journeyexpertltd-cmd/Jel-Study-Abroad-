@@ -213,6 +213,64 @@ jobs:
             echo "Cloud female voice is quota/provider limited; deployed device voice fallback remains active."
           fi
 
+      - name: Check Journey Expert Limited production gateway and Angela paths
+        if: always() && !cancelled()
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="https://journeyexpertltd.com"
+
+          health="$(curl --fail --silent --show-error --max-time 20 "$base/api/health")"
+          echo "$health" | grep -q '"status":"online"'
+          echo "$health" | grep -q '"service":"Angela API Gateway"'
+          echo "$health" | grep -q '"aiConfigured":true'
+
+          chat_endpoint=""
+          for candidate in /api/gemini/chat /api/chat /api/angela/chat; do
+            body="$(mktemp)"
+            status="$(curl --silent --show-error --max-time 20               --header 'Content-Type: application/json'               --header 'Origin: https://journeyexpertltd.com'               --data '{"message":"What services does Journey Expert Limited provide?","language":"en"}'               --output "$body" --write-out '%{http_code}' "$base$candidate" || true)"
+            if [ "$status" = "200" ] && grep -Eqi 'Journey Expert|ticket|visa|study|travel|Hajj|Umrah' "$body"; then
+              chat_endpoint="$candidate"
+              cp "$body" /tmp/jel-ltd-chat-en.json
+              rm -f "$body"
+              break
+            fi
+            rm -f "$body"
+          done
+          test -n "$chat_endpoint"
+          echo "LTD Angela chat endpoint: $chat_endpoint"
+
+          bn="$(mktemp)"
+          trap 'rm -f "$bn"' EXIT
+          curl --fail --silent --show-error --max-time 20             --header 'Content-Type: application/json'             --header 'Origin: https://journeyexpertltd.com'             --data '{"message":"আপনি কি বাংলায় কথা বলতে পারেন এবং Journey Expert Limited-এর সেবাগুলো বলতে পারেন?","language":"bn"}'             --output "$bn" "$base$chat_endpoint"
+          grep -Pq '[\x{0980}-\x{09FF}]' "$bn"
+          grep -Eqi 'জার্নি|Journey Expert|ভিসা|টিকিট|স্টাডি|হজ|ওমরাহ' "$bn"
+          ! grep -Eq 'â|Ã|Â|ï¿½|�|à¦|à§' "$bn"
+          echo "LTD Angela Bangla and English response probes passed"
+
+          chrome="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || true)"
+          test -n "$chrome"
+          dom="$(mktemp)"
+          "$chrome" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage             --virtual-time-budget=6000 --dump-dom "$base/?monitor=angela-contract" > "$dom"
+          grep -Eqi 'Angela|AI Voice|voice assistant|microphone|mic' "$dom"
+          rm -f "$dom"
+          echo "LTD rendered Angela/voice UI contract passed"
+
+          speech_endpoint=""
+          for candidate in /angela/speech /api/angela/speech /api/speech; do
+            headers="$(mktemp)"
+            audio="$(mktemp)"
+            status="$(curl --silent --show-error --max-time 25               --header 'Content-Type: application/json'               --header 'Origin: https://journeyexpertltd.com'               --data '{"text":"আসসালামু আলাইকুম। আমি অ্যাঞ্জেলা।"}'               --dump-header "$headers" --output "$audio" --write-out '%{http_code}' "$base$candidate" || true)"
+            if [ "$status" = "200" ] && grep -Eqi '^content-type: audio/' "$headers" && [ "$(wc -c < "$audio")" -gt 1000 ]; then
+              speech_endpoint="$candidate"
+              echo "LTD female audio endpoint passed: $candidate ($(wc -c < "$audio") bytes)"
+              rm -f "$headers" "$audio"
+              break
+            fi
+            rm -f "$headers" "$audio"
+          done
+          test -n "$speech_endpoint"
+
       - name: Check security headers and corporate isolation
         if: always() && !cancelled()
         shell: bash
