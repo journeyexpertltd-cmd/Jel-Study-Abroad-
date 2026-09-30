@@ -1,4 +1,5 @@
 name: Corporate Angela Route Split Diagnostic
+# final production rerun 2026-09-30
 
 on:
   push:
@@ -38,6 +39,7 @@ jobs:
             live_status="$(curl --silent --show-error --max-time 20 -H 'Content-Type: application/json' -H "Origin: $base" --data '{}' -o "$tmp/$safe-live" -w '%{http_code}' "$base/angela/live-token?diag=split" || true)"
             echo "${label}_LIVE_STATUS=$live_status"
             echo "${label}_LIVE_ERROR=$(jq -r '.error // ""' "$tmp/$safe-live" 2>/dev/null || true)"
+            echo "${label}_LIVE_PROVIDER_STATUSES=$(jq -c '.providerStatuses // []' "$tmp/$safe-live" 2>/dev/null || true)"
             echo "${label}_LIVE_MODEL=$(jq -r '.model // ""' "$tmp/$safe-live" 2>/dev/null || true)"
             if jq -e '.token | type == "string" and length > 0' "$tmp/$safe-live" >/dev/null 2>&1; then echo "${label}_LIVE_TOKEN_PRESENT=true"; else echo "${label}_LIVE_TOKEN_PRESENT=false"; fi
 
