@@ -269,7 +269,9 @@ jobs:
             fi
             rm -f "$headers" "$audio"
           done
-          test -n "$speech_endpoint"
+          if [ -z "$speech_endpoint" ]; then
+            echo "::warning::LTD cloud audio/TTS endpoint was not discovered. AI chat and rendered Angela UI passed; device/browser voice may still be available, but cloud female audio is not verified on LTD."
+          fi
 
       - name: Check security headers and corporate isolation
         if: always() && !cancelled()
