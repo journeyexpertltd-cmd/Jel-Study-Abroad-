@@ -463,6 +463,27 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   if (!turns.length || turns[turns.length - 1].role !== 'user') return json({ error: 'User message required' }, 400);
   const last = turns[turns.length - 1].parts[0].text;
   const fromVoice = body.source === 'voice';
+
+  // OUTCOME_GUARANTEE_CONTRACT_LOCK: Any explicit admission/scholarship/visa
+  // guarantee question must receive an explicit no-guarantee statement,
+  // even when the same turn also asks for Study Abroad services/destinations.
+  const normalizedLast = normalizeForKnowledge(last);
+  const asksOutcomeGuarantee =
+    /guarantee|guaranteed|assure|assured|100%|certainty|confirm.*approval|visa approval|admission approval|গ্যারান্টি|নিশ্চিত|শতভাগ/.test(normalizedLast);
+  const hasStudyOutcomeContext =
+    /study|student|university|admission|scholarship|visa|permit|course|destination|স্টাডি|স্টুডেন্ট|বিশ্ববিদ্যাল|অ্যাডমিশন|স্কলারশিপ|ভিসা/.test(normalizedLast);
+  if (asksOutcomeGuarantee && hasStudyOutcomeContext) {
+    const reply = body.language === 'bn' || /[\u0980-\u09FF]/.test(last)
+      ? 'JEL Study Abroad প্রোফাইল assessment, দেশ/কোর্স/বিশ্ববিদ্যালয় নির্বাচন, admission ও scholarship guidance, SOP, English-language test guidance, student-visa documents এবং pre-/post-arrival guidance দেয়। Admission, scholarship বা visa approval কোনোভাবেই guaranteed নয়—final decision সংশ্লিষ্ট university, embassy বা immigration authority-এর।'
+      : 'JEL Study Abroad supports profile assessment, country/course/university selection, admissions and scholarship guidance, SOP, English-language tests, student-visa documents, and pre-/post-arrival guidance. Admission, scholarship, and visa approval are not guaranteed; final decisions belong to the relevant university, embassy, or immigration authority.';
+    return json({
+      reply,
+      mode: 'verified',
+      language: body.language === 'bn' || /[\u0980-\u09FF]/.test(last) ? 'bn' : 'en',
+      primaryIntent: 'study_outcome_guarantee',
+      groundingIds: ['study_abroad'],
+    });
+  }
   // Prefer actual Bengali script when present, preserve an explicit Bangla choice,
   // otherwise detect common Banglish only for auto/unspecified mode.
   const hasBanglaScript = /[\u0980-\u09FF]/.test(last);
