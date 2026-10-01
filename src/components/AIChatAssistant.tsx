@@ -62,6 +62,34 @@ function pickAngelaDeviceVoice(voices: SpeechSynthesisVoice[], language: "bn" | 
     .sort((a, b) => b.score - a.score)[0]?.voice || null;
 }
 
+function pickOpeningGreetingVoice(voices: SpeechSynthesisVoice[], language: "bn" | "en"): SpeechSynthesisVoice | null {
+  const strictFemale = pickAngelaDeviceVoice(voices, language);
+  if (strictFemale) return strictFemale;
+
+  const maleHints = language === "bn"
+    ? BANGLA_MALE_HINTS
+    : ["david", "mark", "george", "daniel", "guy", "male", "man"];
+  const candidates = voices.filter((voice) => {
+    const name = voice.name.toLowerCase();
+    const lang = voice.lang.toLowerCase();
+    const nameTokens = name.split(/[^a-z]+/).filter(Boolean);
+    const explicitlyMale = maleHints.some((hint) =>
+      hint === "male" || hint === "man" ? nameTokens.includes(hint) : name.includes(hint));
+    const languageMatch = language === "bn"
+      ? (lang.startsWith("bn") || /bangla|bengali/.test(name))
+      : lang.startsWith("en");
+    return languageMatch && !explicitlyMale;
+  });
+  return candidates
+    .map((voice) => ({
+      voice,
+      score: (voice.localService ? 20 : 0)
+        + (voice.default ? 5 : 0)
+        + (language === "bn" && voice.lang.toLowerCase().startsWith("bn-bd") ? 30 : 0),
+    }))
+    .sort((a, b) => b.score - a.score)[0]?.voice || null;
+}
+
 // Voice States according to Phase 6 specifications
 export type AngelaVoiceState = "READY" | "LISTENING" | "THINKING" | "SPEAKING" | "ERROR";
 
@@ -811,8 +839,10 @@ export function AIChatAssistant() {
     const voices = voiceCatalogRef.current.length
       ? voiceCatalogRef.current
       : window.speechSynthesis.getVoices();
-    const preferred = pickAngelaDeviceVoice(voices, "bn");
+    const preferred = pickOpeningGreetingVoice(voices, "bn");
     if (!preferred) {
+      // No safe local Bangla voice was found. Keep the cloud female route as
+      // the last resort, but do not leave the opening click without a speech attempt.
       void speakText(BANGLA_WELCOME, "welcome-angela-jel");
       return;
     }
