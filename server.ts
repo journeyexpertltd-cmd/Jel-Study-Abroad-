@@ -994,6 +994,71 @@ const handleAngelaSpeech = async (req: express.Request, res: express.Response) =
   }
 };
 
+
+const handleAngelaTranscribe = async (req: express.Request, res: express.Response) => {
+  res.setHeader("Cache-Control", "no-store");
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const audio = typeof req.body?.audio === "string" ? req.body.audio.trim() : "";
+    const language: "bn" | "en" = req.body?.language === "en" ? "en" : "bn";
+    const mimeType = (typeof req.body?.mimeType === "string" ? req.body.mimeType : "audio/webm").split(";")[0].toLowerCase();
+    if (!audio) return res.status(400).json({ error: "audio_required" });
+    if (audio.length > 3_500_000) return res.status(413).json({ error: "audio_too_large" });
+    if (!/^audio\/(webm|wav|mpeg|mp3|ogg|opus|aac|flac|m4a|mp4)$/i.test(mimeType)) {
+      return res.status(415).json({ error: "audio_type_not_supported" });
+    }
+
+    const key = (process.env.GEMINI_API_KEY || process.env.GEMINI_TTS_API_KEY)?.trim();
+    if (!key) return res.status(503).json({ error: "transcription_not_configured" });
+
+    const prompt = language === "bn"
+      ? "Transcribe this customer speech accurately. The customer may use Bangla or Banglish. Return only the transcript in natural Bengali script, preserving names and brands. Do not answer or add commentary."
+      : "Transcribe this customer speech accurately in English. Return only the transcript. Do not answer or add commentary.";
+
+    const models = ["gemini-3.8-flash", "gemini-3.5-flash", "gemini-2.5-flash"];
+    for (const model of models) {
+      const controller = new AbortController();
+      timer = setTimeout(() => controller.abort(), 9000);
+      try {
+        const upstream = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
+          {
+            method: "POST",
+            signal: controller.signal,
+            headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+            body: JSON.stringify({
+              contents: [{ role: "user", parts: [{ text: prompt }, { inlineData: { mimeType, data: audio } }] }],
+              generationConfig: { temperature: 0, maxOutputTokens: 256 },
+            }),
+          },
+        );
+        if (!upstream.ok) continue;
+        const data: any = await upstream.json();
+        const transcript = data?.candidates?.[0]?.content?.parts
+          ?.filter((part: any) => !part.thought && typeof part.text === "string")
+          .map((part: any) => part.text)
+          .join("")
+          .replace(/^[\"'\s]+|[\"'\s]+$/g, "")
+          .trim();
+        if (!transcript) continue;
+        if (language === "bn" && !/[\u0980-\u09FF]/.test(transcript)) continue;
+        if (language === "en" && /[\u0980-\u09FF]/.test(transcript)) continue;
+        return res.json({ transcript: transcript.slice(0, 1200), language, mode: "ai", providerModel: model });
+      } catch (err: any) {
+        if (err?.name !== "AbortError") console.warn("Angela transcription provider error", model);
+      } finally {
+        if (timer !== undefined) clearTimeout(timer);
+        timer = undefined;
+      }
+    }
+    return res.status(503).json({ error: "transcription_unavailable" });
+  } catch {
+    return res.status(503).json({ error: "transcription_unavailable" });
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
+  }
+};
+
 const handleAngelaLiveToken = async (req: express.Request, res: express.Response) => {
   const key = process.env.GEMINI_API_KEY?.trim();
   if (!key) return res.status(503).json({ error: "live_voice_not_configured" });
@@ -1069,7 +1134,7 @@ app.get("/api/angela/health", (req, res) => {
   });
 });
 
-app.post("/angela/speech", handleAngelaSpeech);
+app.post("/angela/transcribe", handleAngelaTranscribe);\napp.post("/api/angela/transcribe", handleAngelaTranscribe);\napp.post("/angela/speech", handleAngelaSpeech);
 app.post("/api/angela/speech", handleAngelaSpeech);
 app.post("/api/gemini/chat", handleAngelaChat);
 app.post("/api/gemini/live-token", handleAngelaLiveToken);
