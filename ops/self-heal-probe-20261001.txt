@@ -1,0 +1,1 @@
+Harmless direct-push probe for the main self-healing guard. This file is expected to be automatically reverted.
