@@ -63,31 +63,11 @@ function pickAngelaDeviceVoice(voices: SpeechSynthesisVoice[], language: "bn" | 
 }
 
 function pickOpeningGreetingVoice(voices: SpeechSynthesisVoice[], language: "bn" | "en"): SpeechSynthesisVoice | null {
-  const strictFemale = pickAngelaDeviceVoice(voices, language);
-  if (strictFemale) return strictFemale;
-
-  const maleHints = language === "bn"
-    ? BANGLA_MALE_HINTS
-    : ["david", "mark", "george", "daniel", "guy", "male", "man"];
-  const candidates = voices.filter((voice) => {
-    const name = voice.name.toLowerCase();
-    const lang = voice.lang.toLowerCase();
-    const nameTokens = name.split(/[^a-z]+/).filter(Boolean);
-    const explicitlyMale = maleHints.some((hint) =>
-      hint === "male" || hint === "man" ? nameTokens.includes(hint) : name.includes(hint));
-    const languageMatch = language === "bn"
-      ? (lang.startsWith("bn") || /bangla|bengali/.test(name))
-      : lang.startsWith("en");
-    return languageMatch && !explicitlyMale;
-  });
-  return candidates
-    .map((voice) => ({
-      voice,
-      score: (voice.localService ? 20 : 0)
-        + (voice.default ? 5 : 0)
-        + (language === "bn" && voice.lang.toLowerCase().startsWith("bn-bd") ? 30 : 0),
-    }))
-    .sort((a, b) => b.score - a.score)[0]?.voice || null;
+  // Opening greeting must follow the exact same female-only contract as every
+  // other Angela utterance. Never relax to a language-only/default voice,
+  // because those catalog entries can resolve to male voices on Windows,
+  // Android, iOS, or vendor-specific speech engines.
+  return pickAngelaDeviceVoice(voices, language);
 }
 
 // Voice States according to Phase 6 specifications
