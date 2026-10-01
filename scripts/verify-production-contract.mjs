@@ -23,7 +23,7 @@ requireText(assistant, "startBrowserRecognitionFallback(notice)", 'Angela custom
 requireText(assistant, "CLOUD_FEMALE_PRIMARY_FAST", 'Angela cloud female primary voice');
 requireText(assistant, "fetchAngelaSpeech", 'Angela robust cloud voice chain');
 requireText(assistant, "greetAngelaOnOpen", 'Angela immediate opening greeting');
-requireText(assistant, "SpeechSynthesisUtterance(BANGLA_WELCOME)", 'Angela synchronous opening speech');
+requireText(assistant, 'void speakText(BANGLA_WELCOME, "welcome-angela-jel")', 'Angela cloud-first opening speech');
 requireText(assistant, "onClick={greetAngelaOnOpen}", 'Angela opening button voice contract');
 requireText(assistant, "device voice fallback", 'Angela resilient device fallback');
 requireText(assistant, 'data-voice-contract="cloud female primary; device voice fallback"', 'Angela deployed voice contract');

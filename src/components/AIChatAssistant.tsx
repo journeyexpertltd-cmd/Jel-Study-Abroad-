@@ -831,52 +831,10 @@ export function AIChatAssistant() {
       return isWelcomeOnly ? [{ ...current[0], text: BANGLA_WELCOME }] : current;
     });
 
-    if (typeof window === "undefined" || !window.speechSynthesis) {
-      void speakText(BANGLA_WELCOME, "welcome-angela-jel");
-      return;
-    }
-
-    const voices = voiceCatalogRef.current.length
-      ? voiceCatalogRef.current
-      : window.speechSynthesis.getVoices();
-    const preferred = pickOpeningGreetingVoice(voices, "bn");
-    if (!preferred) {
-      // No safe local Bangla voice was found. Keep the cloud female route as
-      // the last resort, but do not leave the opening click without a speech attempt.
-      void speakText(BANGLA_WELCOME, "welcome-angela-jel");
-      return;
-    }
-
-    const utterance = new SpeechSynthesisUtterance(BANGLA_WELCOME);
-    if (preferred) {
-      utterance.voice = preferred;
-      utterance.lang = preferred.lang;
-    } else {
-      utterance.lang = "bn-BD";
-    }
-    utterance.rate = 1.0;
-    utterance.pitch = 1.06;
-    currentUtteranceRef.current = utterance;
-    utterance.onstart = () => {
-      if (currentUtteranceRef.current !== utterance) return;
-      setVoiceState("SPEAKING");
-      setActiveSpeakingId("welcome-angela-jel");
-      setErrorMessage(null);
-    };
-    utterance.onend = () => {
-      if (currentUtteranceRef.current !== utterance) return;
-      currentUtteranceRef.current = null;
-      setActiveSpeakingId(null);
-      setVoiceState("READY");
-    };
-    utterance.onerror = () => {
-      if (currentUtteranceRef.current !== utterance) return;
-      currentUtteranceRef.current = null;
-      setActiveSpeakingId(null);
-      void speakText(BANGLA_WELCOME, "welcome-angela-jel");
-    };
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(utterance);
+    // Always use Angela's cloud-female TTS chain first for the opening greeting.
+    // This avoids browser speechSynthesis implementations that accept speak()
+    // but remain silent on some Windows/Android/iOS voice configurations.
+    void speakText(BANGLA_WELCOME, "welcome-angela-jel");
   };
 
   const handleCopyMessage = (id: string, text: string) => {
