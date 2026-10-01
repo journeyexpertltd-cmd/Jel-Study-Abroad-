@@ -482,13 +482,13 @@ export function AIChatAssistant() {
       utterance.rate = wantsBanglaVoice ? 1.03 : 1.0;
       utterance.pitch = wantsBanglaVoice ? 1.12 : 1.04;
 
-      const preferredDeviceVoice = pickAngelaDeviceVoice(voices, wantsBanglaVoice ? "bn" : "en");
+      const preferredDeviceVoice = pickOpeningGreetingVoice(voices, wantsBanglaVoice ? "bn" : "en");
       if (!preferredDeviceVoice) {
         setVoiceState("READY");
         setActiveSpeakingId(null);
         setErrorMessage(wantsBanglaVoice
-          ? "Cloud নারী কণ্ঠ ব্যস্ত এবং এই ডিভাইসে নিশ্চিত female Bangla voice পাওয়া যায়নি। Chat বন্ধ হয়নি—পরের প্রশ্ন করুন বা Listen চাপুন।"
-          : "Cloud female voice is busy and no verified female device voice is available. Chat remains active—ask the next question or press Listen.");
+          ? "Cloud voice ব্যস্ত এবং এই ডিভাইসে উপযুক্ত বাংলা female-preferred local voice পাওয়া যায়নি। Chat বন্ধ হয়নি।"
+          : "Cloud voice is busy and no suitable localized female-preferred device voice is available. Chat remains active.");
         return;
       }
       setErrorMessage(null);
