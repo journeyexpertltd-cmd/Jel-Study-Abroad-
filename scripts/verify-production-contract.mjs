@@ -44,7 +44,7 @@ requireText(audio, "gemini-3.8-live", 'Angela browser audio');
 requireText(audio, "fetch('/angela/speech'", 'Angela browser audio');
 requireText(audio, "window.setTimeout(() => ttsController.abort(), 10500)", 'Angela browser audio');
 requireText(audio, "return await fetchAngelaLiveSpeech(speechText, signal)", 'Angela browser audio');
-requireText(audio, "live_voice_timeout')), 3500", 'Angela browser audio');
+requireText(audio, "live_voice_timeout')), 1800", 'Angela browser audio');
 requireText(audio, "clientContent", 'Angela browser audio');
 requireText(audio, "turnComplete: true", 'Angela browser audio');
 forbidText(audio, "realtimeInput: {\n              text:", 'Angela browser audio');
