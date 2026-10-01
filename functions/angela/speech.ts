@@ -108,7 +108,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
               generationConfig: {
                 responseModalities: ['AUDIO'],
                 speechConfig: {
-                  voiceConfig: { voice: 'Aoede' },
+                  voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Aoede' } },
                 },
               },
             }),
