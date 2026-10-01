@@ -76,11 +76,11 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
 
   let sawQuota = false;
   let lastProviderStatus = 0;
-  const deadline = Date.now() + 12000;
+  const voiceDeadline = Date.now() + 9000;
 
   outer: for (const key of keys) {
     for (const model of models) {
-      const remaining = deadline - Date.now();
+      const remaining = voiceDeadline - Date.now();
       if (remaining < 800) break outer;
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), Math.min(7000, remaining));
