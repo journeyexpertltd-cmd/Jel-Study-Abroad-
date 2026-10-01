@@ -45,6 +45,11 @@
 
 # Angela speech route must reach the Express/Netlify backend just like /api/*.
 [[redirects]]
+  from = "/angela/transcribe"
+  to = "/.netlify/functions/api/angela/transcribe"
+  status = 200
+
+[[redirects]]
   from = "/angela/speech"
   to = "/.netlify/functions/api/angela/speech"
   status = 200
