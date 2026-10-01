@@ -1,0 +1,72 @@
+name: Main branch self-healing guard
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: read
+
+concurrency:
+  group: study-main-self-heal
+  cancel-in-progress: false
+
+jobs:
+  guard:
+    if: "!startsWith(github.event.head_commit.message, '[guard-revert]')"
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Detect whether the pushed head came from a merged PR
+        id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          api="https://api.github.com/repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/pulls"
+          curl --fail --silent --show-error             -H "Accept: application/vnd.github+json"             -H "Authorization: Bearer $GH_TOKEN"             -H "X-GitHub-Api-Version: 2022-11-28"             "$api" > /tmp/associated-prs.json
+          count="$(jq '[.[] | select(.merged_at != null and .base.ref == "main")] | length' /tmp/associated-prs.json)"
+          echo "merged_pr_count=$count" >> "$GITHUB_OUTPUT"
+          if [ "$count" -gt 0 ]; then
+            echo "Push is associated with a merged PR; allowed."
+          else
+            echo "::warning::Direct push to main detected; self-healing rollback will restore the previous tree."
+          fi
+
+      - name: Restore previous tree after an unreviewed direct push
+        if: steps.source.outputs.merged_pr_count == '0'
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "$BEFORE_SHA" ] || echo "$BEFORE_SHA" | grep -Eq '^0+$'; then
+            echo "::error::Cannot determine the previous main SHA; refusing an unsafe rollback."
+            exit 1
+          fi
+
+          git fetch origin main --force
+          git checkout main
+          git reset --hard "$PUSH_SHA"
+
+          git diff --binary "$PUSH_SHA" "$BEFORE_SHA" > /tmp/reverse.patch
+          if [ ! -s /tmp/reverse.patch ]; then
+            echo "No tree change to restore."
+            exit 0
+          fi
+
+          git apply --index --binary /tmp/reverse.patch
+          git config user.name "JEL Main Guard"
+          git config user.email "actions@users.noreply.github.com"
+          git commit -m "[guard-revert] Restore main after direct push $PUSH_SHA"
+          git push origin HEAD:main
+          echo "STUDY_MAIN_SELF_HEAL=PASS"
