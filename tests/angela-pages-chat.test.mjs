@@ -376,3 +376,32 @@ test('Female voice selector rejects male/default voices and ranks Bengali female
   assert.equal(pick([voice('Samantha', 'en-US')], 'bn'), null);
   assert.doesNotMatch(source, /\|\| voices\.find/);
 });
+
+
+test('Explicit Study Abroad guarantee questions always receive a no-guarantee guardrail', async () => {
+  globalThis.fetch = async () => { throw new Error('offline'); };
+
+  const en = await (await onRequest({
+    request: request({
+      message: 'Which study services can JEL Study Abroad help with? Do you guarantee admission or visa approval?',
+      language: 'en',
+    }),
+    env: {},
+  })).json();
+  assert.equal(en.language, 'en');
+  assert.equal(en.primaryIntent, 'study_outcome_guarantee');
+  assert.match(en.reply, /not guaranteed/i);
+  assert.match(en.reply, /university|embassy|immigration authority/i);
+
+  const bn = await (await onRequest({
+    request: request({
+      message: 'Study Abroad-এ কী কী সাহায্য করেন? admission বা visa approval কি গ্যারান্টি?',
+      language: 'bn',
+    }),
+    env: {},
+  })).json();
+  assert.equal(bn.language, 'bn');
+  assert.equal(bn.primaryIntent, 'study_outcome_guarantee');
+  assert.match(bn.reply, /guaranteed|গ্যারান্টি/i);
+  assert.match(bn.reply, /university|embassy|immigration authority/i);
+});
