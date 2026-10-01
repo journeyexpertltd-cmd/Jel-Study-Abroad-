@@ -28,7 +28,7 @@ test('Speech uses official Gemini 3.8 generateContent WAV and maps quota errors 
  assert.equal(body.contents[0].parts[0].text, 'আমি অ্যাঞ্জেলা');
  assert.match(body.contents[0].parts[0].speech_metadata.style, /professional adult female/i);
  assert.deepEqual(body.generationConfig.responseModalities, ['AUDIO']);
- assert.equal(body.generationConfig.speechConfig.voiceConfig.voice, 'Aoede');
+ assert.equal(body.generationConfig.speechConfig.voiceConfig.prebuiltVoiceConfig.voiceName, 'Aoede');
  return Response.json({ candidates: [{ content: { parts: [{ inlineData: { data: encoded, mimeType: 'audio/wav' } }] } }] });
  };
  const response = await onRequest({ request: request('আমি অ্যাঞ্জেলা'), env: { GEMINI_API_KEY: 'test-key' } });
