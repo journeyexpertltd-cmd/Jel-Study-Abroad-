@@ -342,7 +342,7 @@ export function AIChatAssistant() {
     }
 
     try {
-      const wantsBanglaVoice = isBanglaText(cleanSpeech) || languageModeRef.current === "bn";
+      const wantsBanglaVoice = isBanglaText(cleanSpeech);
       let voices = voiceCatalogRef.current.length
         ? voiceCatalogRef.current
         : (window.speechSynthesis?.getVoices() || []);
