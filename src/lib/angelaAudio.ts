@@ -207,7 +207,7 @@ export async function fetchAngelaSpeech(text: string, signal: AbortSignal): Prom
   signal.addEventListener('abort', abortTts, { once: true });
   const ttsTimer = window.setTimeout(() => ttsController.abort(), 10500);
   try {
-    const response = await fetch('/angela/speech', {
+    const response = await fetch('/api/angela/speech', {
       method: 'POST',
       signal: ttsController.signal,
       headers: { 'Content-Type': 'application/json' },

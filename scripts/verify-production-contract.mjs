@@ -41,7 +41,7 @@ requireText(audio, "data instanceof Blob", 'Angela browser audio');
 requireText(audio, "fetch('/api/gemini/live-token'", 'Angela browser audio');
 requireText(audio, "voiceName: 'Aoede'", 'Angela browser audio');
 requireText(audio, "gemini-3.8-live", 'Angela browser audio');
-requireText(audio, "fetch('/angela/speech'", 'Angela browser audio');
+requireText(audio, "fetch('/api/angela/speech'", 'Angela browser audio');
 requireText(audio, "window.setTimeout(() => ttsController.abort(), 10500)", 'Angela browser audio');
 requireText(audio, "return await fetchAngelaLiveSpeech(speechText, signal)", 'Angela browser audio');
 requireText(audio, "live_voice_timeout')), 1800", 'Angela browser audio');
