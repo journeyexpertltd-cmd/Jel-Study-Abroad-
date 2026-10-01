@@ -1134,7 +1134,9 @@ app.get("/api/angela/health", (req, res) => {
   });
 });
 
-app.post("/angela/transcribe", handleAngelaTranscribe);\napp.post("/api/angela/transcribe", handleAngelaTranscribe);\napp.post("/angela/speech", handleAngelaSpeech);
+app.post("/angela/transcribe", handleAngelaTranscribe);
+app.post("/api/angela/transcribe", handleAngelaTranscribe);
+app.post("/angela/speech", handleAngelaSpeech);
 app.post("/api/angela/speech", handleAngelaSpeech);
 app.post("/api/gemini/chat", handleAngelaChat);
 app.post("/api/gemini/live-token", handleAngelaLiveToken);
