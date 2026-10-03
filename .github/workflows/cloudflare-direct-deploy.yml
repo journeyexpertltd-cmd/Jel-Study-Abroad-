@@ -47,6 +47,9 @@ jobs:
       - name: Validate source
         run: npm run lint
 
+      - name: Verify Angela production contract
+        run: node scripts/verify-production-contract.mjs
+
       - name: Build production artifacts
         run: npm run build
 
@@ -113,9 +116,9 @@ jobs:
         run: |
           {
             echo "## Cloudflare Direct Pages Deploy"
-            echo "- Project: `jel-study-abroad`"
-            echo "- Source: `$GITHUB_SHA`"
-            echo "- Direct-deploy credentials available: `${{ steps.cf.outputs.available || 'unknown' }}`"
+            echo '- Project: jel-study-abroad'
+            echo "- Source: $GITHUB_SHA"
+            echo "- Direct-deploy credentials available: ${{ steps.cf.outputs.available || 'unknown' }}"
             echo "- Safety: source validation and build run before any deployment."
             echo "- Safety: preview Functions smoke test must pass before production deployment."
             echo "- Existing DNS, custom domains, bindings, and dashboard variables are not modified by this workflow."
