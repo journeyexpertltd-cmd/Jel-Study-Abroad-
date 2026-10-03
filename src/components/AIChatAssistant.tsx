@@ -10,9 +10,9 @@ import { fetchAngelaSpeech, voiceErrorMessage } from "../lib/angelaAudio";
 
 const jelBrandIcon = new URL("../assets/images/jel-study-abroad-official.webp", import.meta.url).href;
 
-const ENGLISH_WELCOME = "Assalamu Alaikum. I am Angela, the AI assistant for JEL Study Abroad, a brand of Journey Expert Limited. You can speak to me in Bangla or English. How can I help you?";
+const ENGLISH_WELCOME = "Assalamu Alaikum. I am Angela, the official AI voice assistant for Journey Expert Limited. You can speak to me in Bangla or English about air tickets, visas, tours, hotels, Hajj and Umrah, Study Abroad, medical tourism, insurance, corporate travel, Meet & Greet, and other verified JEL services. How can I help you?";
 
-const BANGLA_WELCOME = "আসসালামু আলাইকুম। আমি অ্যাঞ্জেলা, Journey Expert Limited-এর ব্র্যান্ড JEL Study Abroad-এর AI সহকারী। বাংলা বা ইংরেজিতে আপনার প্রশ্ন করুন। আমি কীভাবে সাহায্য করতে পারি?";
+const BANGLA_WELCOME = "আসসালামু আলাইকুম। আমি অ্যাঞ্জেলা, Journey Expert Limited-এর অফিসিয়াল AI voice assistant। এয়ার টিকিট, ভিসা, ট্যুর, হোটেল, হজ ও উমরাহ, Study Abroad, মেডিকেল ট্যুরিজম, ইন্স্যুরেন্স, কর্পোরেট ট্রাভেল, Meet & Greet এবং JEL-এর অন্যান্য যাচাইকৃত সেবা সম্পর্কে বাংলা বা ইংরেজিতে প্রশ্ন করতে পারেন। আমি কীভাবে সাহায্য করতে পারি?";
 
 const isBanglaText = (text: string) => /[\u0980-\u09FF]/.test(text);
 const welcomeFor = (mode: "en" | "bn") => mode === "bn" ? BANGLA_WELCOME : ENGLISH_WELCOME;
@@ -842,27 +842,27 @@ export function AIChatAssistant() {
     ]);
   };
 
-  // Study-abroad-only quick inquiry prompts
+  // Full Journey Expert Limited quick inquiry prompts
   const quickPrompts = [
     {
-      en: "UK university and intake options",
-      bn: "UK-তে কোন university ও intake আমার জন্য উপযুক্ত?",
-      icon: Award
+      en: "Air ticket, fare, reissue and refund support",
+      bn: "এয়ার টিকিট, fare, reissue ও refund support সম্পর্কে বলুন",
+      icon: Plane
     },
     {
-      en: "Canada study requirements and documents",
-      bn: "Canada study-এর requirements ও documents কী?",
-      icon: Building2
-    },
-    {
-      en: "Scholarship and tuition guidance",
-      bn: "Scholarship ও tuition planning কীভাবে করব?",
+      en: "Visa, tours, hotels and travel support",
+      bn: "ভিসা, ট্যুর, হোটেল ও travel support সম্পর্কে বলুন",
       icon: Compass
     },
     {
-      en: "SOP, IELTS and student visa documents",
-      bn: "SOP, IELTS এবং student visa documents সম্পর্কে বলুন",
-      icon: Plane
+      en: "Hajj and Umrah services",
+      bn: "হজ ও উমরাহ সার্ভিস সম্পর্কে বলুন",
+      icon: Building2
+    },
+    {
+      en: "Study Abroad, medical, insurance and corporate travel",
+      bn: "Study Abroad, medical, insurance ও corporate travel সম্পর্কে বলুন",
+      icon: Award
     }
   ];
 
