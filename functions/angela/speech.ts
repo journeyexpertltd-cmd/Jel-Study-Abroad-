@@ -74,16 +74,18 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
     'gemini-3.8-flash-tts',
   ].filter((model): model is string => Boolean(model))));
 
+  // Full Bangla/English answers need longer than the old greeting-sized timeout.
+  // Keep one bounded provider attempt; do not abort and restart valid generation.
   let sawQuota = false;
   let lastProviderStatus = 0;
-  const voiceDeadline = Date.now() + 9000;
+  const voiceDeadline = Date.now() + 30000;
 
   outer: for (const key of keys) {
     for (const model of models) {
       const remaining = voiceDeadline - Date.now();
       if (remaining < 800) break outer;
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), Math.min(7000, remaining));
+      const timer = setTimeout(() => controller.abort(), remaining);
 
       try {
         const response = await fetch(
@@ -175,3 +177,4 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
     providerStatus: lastProviderStatus || undefined,
   }, 503);
 }
+
