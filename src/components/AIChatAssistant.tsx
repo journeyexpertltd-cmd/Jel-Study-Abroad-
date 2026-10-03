@@ -340,7 +340,7 @@ export function AIChatAssistant() {
       // Robust chain: direct Gemini 3.8 TTS -> Gemini Live Aoede -> device speech.
       const cloudController = new AbortController();
       serverSpeechRef.current = cloudController;
-      const cloudTimer = window.setTimeout(() => cloudController.abort(), 15500);
+      const cloudTimer = window.setTimeout(() => cloudController.abort(), 45000);
       try {
         const blob = await fetchAngelaSpeech(cleanSpeech, cloudController.signal);
         if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
@@ -1408,5 +1408,6 @@ export function AIChatAssistant() {
 
 // Named alias export for authoritative integration
 export { AIChatAssistant as AngelaVoiceAssistant };
+
 
 

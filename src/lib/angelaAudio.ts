@@ -118,7 +118,7 @@ async function fetchAngelaLiveSpeech(text: string, signal: AbortSignal): Promise
     signal.addEventListener('abort', onAbort, { once: true });
     // Keep backup speech conversational. The primary TTS already had its own
     // bounded attempt, so a long second wait makes Angela feel unresponsive.
-    const timer = window.setTimeout(() => fail(new Error('live_voice_timeout')), 1800);
+    const timer = window.setTimeout(() => fail(new Error('live_voice_timeout')), 8000);
 
     socket.onopen = () => {
       socket.send(JSON.stringify({
@@ -205,7 +205,7 @@ export async function fetchAngelaSpeech(text: string, signal: AbortSignal): Prom
   const ttsController = new AbortController();
   const abortTts = () => ttsController.abort();
   signal.addEventListener('abort', abortTts, { once: true });
-  const ttsTimer = window.setTimeout(() => ttsController.abort(), 10500);
+  const ttsTimer = window.setTimeout(() => ttsController.abort(), 32000);
   try {
     const response = await fetch('/api/angela/speech', {
       method: 'POST',
@@ -260,4 +260,5 @@ export function voiceErrorMessage(error: unknown): string {
   if (error instanceof Error && error.name === 'NotAllowedError') return 'শব্দ চালাতে উত্তরের Listen বোতামটি চাপুন।';
   return 'এই মুহূর্তে Angela-র বাংলা female voice চালানো যাচ্ছে না। Listen চেপে আবার চেষ্টা করুন।';
 }
+
 

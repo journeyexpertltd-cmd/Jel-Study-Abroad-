@@ -28,7 +28,7 @@ export async function onRequest({ request }: Context): Promise<Response> {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Origin': target.origin },
       body,
-      signal: AbortSignal.timeout(9000),
+      signal: AbortSignal.timeout(32000),
     });
     const headers = new Headers(upstream.headers);
     Object.entries(cors(origin)).forEach(([key, value]) => headers.set(key, value));
@@ -37,3 +37,4 @@ export async function onRequest({ request }: Context): Promise<Response> {
     return Response.json({ error: 'voice_provider_unavailable' }, { status: 503, headers: cors(origin) });
   }
 }
+
