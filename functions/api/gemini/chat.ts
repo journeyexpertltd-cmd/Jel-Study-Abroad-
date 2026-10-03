@@ -51,9 +51,9 @@ const JEL_SEMANTIC_KNOWLEDGE: JelKnowledgeEntry[] = [
     id: 'identity',
     priority: 40,
     keywords: ['what is your name', 'whats your name', "what's your name", 'your name', 'who are you', 'who is angela', 'angela', 'আপনার নাম', 'তোমার নাম', 'আপনি কে', 'তুমি কে', 'অ্যাঞ্জেলা', 'এঞ্জেলা'],
-    facts: 'The assistant is Angela, the AI assistant for JEL Study Abroad, a brand of Journey Expert Limited.',
-    fallbackBn: 'আমার নাম অ্যাঞ্জেলা। আমি Journey Expert Limited-এর ব্র্যান্ড JEL Study Abroad-এর AI সহকারী।',
-    fallbackEn: 'My name is Angela. I am the AI assistant for JEL Study Abroad, a brand of Journey Expert Limited.',
+    facts: 'The assistant is Angela, the official AI assistant for Journey Expert Limited (JEL), serving all verified JEL services in Bangla and English.',
+    fallbackBn: 'আমার নাম অ্যাঞ্জেলা। আমি Journey Expert Limited (JEL)-এর অফিসিয়াল AI সহকারী। JEL-এর যাচাইকৃত সব সার্ভিস বিষয়ে বাংলা ও ইংরেজিতে সহায়তা করি।',
+    fallbackEn: 'My name is Angela. I am the official AI assistant for Journey Expert Limited (JEL), supporting visitors in Bangla and English across verified JEL services.',
   },
   {
     id: 'contact',
