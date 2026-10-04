@@ -5,6 +5,11 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/wallet-free-angela-live-diagnostic.yml"
+      - "scripts/probe-angela-female-voice.mjs"
+      - "src/lib/angelaAudio.ts"
+      - "src/components/AIChatAssistant.tsx"
+      - "functions/api/angela/speech.ts"
+      - "functions/api/gemini/live-token.ts"
   workflow_dispatch:
 
 permissions:
@@ -16,6 +21,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
+      - name: Check out diagnostic source
+        uses: actions/checkout@v4
+
       - name: Probe Study Abroad / BD production
         shell: bash
         run: |
@@ -107,6 +115,9 @@ jobs:
           [ "$fail" = "0" ]
           echo "BD_LIVE_DIAGNOSTIC_PASS=true"
 
+      - name: Probe actual BD female audio path
+        run: node scripts/probe-angela-female-voice.mjs https://journeyexpertbd.com
+
       - name: Probe Corporate / LTD production
         shell: bash
         run: |
@@ -188,5 +199,5 @@ jobs:
             echo "## Wallet-Free Angela Production Diagnostic"
             echo "- TinyFish/browser-agent credits: not used"
             echo "- Domains tested: journeyexpertbd.com, journeyexpertltd.com"
-            echo "- Checks: health, Bangla chat, English chat, service knowledge, hotline on BD, direct female-speech endpoint, required Live voice fallback token"
+            echo "- Checks: health, Bangla chat, English chat, service knowledge, hotline on BD, direct female-speech endpoint, required Live voice token, and actual Gemini Live Aoede audio bytes"
           } >> "$GITHUB_STEP_SUMMARY"
