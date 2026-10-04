@@ -193,58 +193,60 @@ export async function fetchAngelaSpeech(text: string, signal: AbortSignal): Prom
   const cached = speechCache.get(speechText);
   if (cached) return cached;
 
-  // A provider 429 is usually account/project quota. During Retry-After, skip
-  // both direct TTS and the same-provider Live path so AIChatAssistant can
-  // immediately use a positively identified female device voice.
-  if (Date.now() < voiceQuotaCooldownUntil) {
-    throw new Error('voice_quota_exceeded');
-  }
+  // Treat direct TTS quota as a cooldown for that endpoint only. Gemini Live
+  // uses a separate session/token path and should still be attempted before
+  // falling back to a device voice or text-only response.
+  const directTtsCoolingDown = Date.now() < voiceQuotaCooldownUntil;
 
-  // Low-latency path: use the same-origin Gemini TTS endpoint first.
-  // This avoids paying a WebSocket setup + 10s Live timeout before TTS.
-  const ttsController = new AbortController();
-  const abortTts = () => ttsController.abort();
-  signal.addEventListener('abort', abortTts, { once: true });
-  const ttsTimer = window.setTimeout(() => ttsController.abort(), 32000);
-  try {
-    const response = await fetch('/api/angela/speech', {
-      method: 'POST',
-      signal: ttsController.signal,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: speechText }),
-    });
+  if (!directTtsCoolingDown) {
+    // Low-latency path: use the same-origin Gemini TTS endpoint first.
+    const ttsController = new AbortController();
+    const abortTts = () => ttsController.abort();
+    signal.addEventListener('abort', abortTts, { once: true });
+    const ttsTimer = window.setTimeout(() => ttsController.abort(), 32000);
 
-    if (response.ok && response.headers.get('content-type')?.includes('audio/wav')) {
-      const blob = await response.blob();
-      const bytes = new Uint8Array(await blob.arrayBuffer());
-      const riff = new TextDecoder().decode(bytes.slice(0, 4));
-      const wave = new TextDecoder().decode(bytes.slice(8, 12));
-      if (bytes.byteLength >= 1000 && riff === 'RIFF' && wave === 'WAVE') {
-        const normalized = new Blob([bytes], { type: 'audio/wav' });
-        voiceQuotaCooldownUntil = 0;
-        rememberSpeech(speechText, normalized);
-        return normalized;
+    try {
+      const response = await fetch('/api/angela/speech', {
+        method: 'POST',
+        signal: ttsController.signal,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: speechText }),
+      });
+
+      if (response.ok && response.headers.get('content-type')?.includes('audio/wav')) {
+        const blob = await response.blob();
+        const bytes = new Uint8Array(await blob.arrayBuffer());
+        const riff = new TextDecoder().decode(bytes.slice(0, 4));
+        const wave = new TextDecoder().decode(bytes.slice(8, 12));
+        if (bytes.byteLength >= 1000 && riff === 'RIFF' && wave === 'WAVE') {
+          const normalized = new Blob([bytes], { type: 'audio/wav' });
+          voiceQuotaCooldownUntil = 0;
+          rememberSpeech(speechText, normalized);
+          return normalized;
+        }
+        console.warn('Angela TTS notice: invalid WAV payload; using Live fallback');
       }
-      console.warn('Angela TTS notice: invalid WAV payload; using Live fallback');
-    }
 
-    const data = await response.json().catch(() => ({}));
-    if (response.status === 429) {
-      const retryAfterSeconds = Number(response.headers.get('retry-after'));
-      const cooldownSeconds = Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0
-        ? Math.min(300, Math.max(15, retryAfterSeconds))
-        : 60;
-      voiceQuotaCooldownUntil = Date.now() + cooldownSeconds * 1000;
-      throw new Error(data?.error || 'voice_quota_exceeded');
+      const data = await response.json().catch(() => ({}));
+      if (response.status === 429) {
+        const retryAfterSeconds = Number(response.headers.get('retry-after'));
+        const cooldownSeconds = Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0
+          ? Math.min(300, Math.max(15, retryAfterSeconds))
+          : 60;
+        voiceQuotaCooldownUntil = Date.now() + cooldownSeconds * 1000;
+        console.warn('Angela direct TTS quota reached; using Live fallback.', data?.error || response.status);
+      } else {
+        console.warn('Angela TTS notice:', data?.error || response.status);
+      }
+    } catch (ttsError) {
+      if (signal.aborted) throw ttsError;
+      console.warn('Angela TTS notice; using Live fallback:', ttsError);
+    } finally {
+      window.clearTimeout(ttsTimer);
+      signal.removeEventListener('abort', abortTts);
     }
-    console.warn('Angela TTS notice:', data?.error || response.status);
-  } catch (ttsError) {
-    if (signal.aborted) throw ttsError;
-    if (ttsError instanceof Error && ttsError.message === 'voice_quota_exceeded') throw ttsError;
-    console.warn('Angela TTS notice:', ttsError);
-  } finally {
-    window.clearTimeout(ttsTimer);
-    signal.removeEventListener('abort', abortTts);
+  } else {
+    console.warn('Angela direct TTS quota cooldown active; using Live fallback.');
   }
 
   // Short Live fallback only when the direct TTS endpoint is unavailable.
