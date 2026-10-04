@@ -167,6 +167,7 @@ jobs:
             --data '{"message":"What services does Journey Expert Limited provide?","language":"en"}' \
             --output "$services" \
             https://journeyexpertbd.com/api/gemini/chat
+          echo "SERVICES_RESPONSE=$(cat "$services")"
           grep -q '"language":"en"' "$services"
           grep -q '"primaryIntent":"services_overview"' "$services"
           grep -Eqi 'air ticketing' "$services"
@@ -182,6 +183,7 @@ jobs:
             --data '{"message":"I need Hajj visa and Makkah hotel guidance","language":"en"}' \
             --output "$hajj" \
             https://journeyexpertbd.com/api/gemini/chat
+          echo "HAJJ_RESPONSE=$(cat "$hajj")"
           grep -q '"primaryIntent":"hajj_umrah"' "$hajj"
           grep -Eqi 'Hajj and Umrah' "$hajj"
           grep -Eqi 'Makkah/Madinah' "$hajj"
