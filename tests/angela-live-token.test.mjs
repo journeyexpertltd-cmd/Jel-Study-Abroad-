@@ -46,3 +46,32 @@ test('Live token endpoint creates a one-use short-lived token without exposing t
     globalThis.fetch = original;
   }
 });
+
+
+test('Live token endpoint retries unconstrained token creation after provider 400', async () => {
+  const original = globalThis.fetch;
+  const bodies = [];
+  try {
+    globalThis.fetch = async (_url, options) => {
+      const body = JSON.parse(options.body);
+      bodies.push(body);
+      if (bodies.length === 1) return Response.json({ error: { message: 'constraints rejected' } }, { status: 400 });
+      return Response.json({ name: 'auth_tokens/fallback-token' });
+    };
+
+    const response = await onRequest({
+      request: request(),
+      env: { GEMINI_API_KEY: 'secret-test-key', GEMINI_TTS_API_KEY: 'backup-test-key' },
+    });
+    assert.equal(response.status, 200);
+    const data = await response.json();
+    assert.equal(data.token, 'auth_tokens/fallback-token');
+    assert.equal(bodies.length, 2);
+    assert.equal(bodies[0].liveConnectConstraints.model, 'models/gemini-3.8-live');
+    assert.equal(bodies[1].liveConnectConstraints, undefined);
+    assert.equal(bodies[1].uses, 1);
+    assert.ok(bodies[1].newSessionExpireTime);
+  } finally {
+    globalThis.fetch = original;
+  }
+});
