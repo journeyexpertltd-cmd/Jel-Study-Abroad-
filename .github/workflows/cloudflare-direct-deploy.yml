@@ -47,20 +47,31 @@ jobs:
       - name: Validate source
         run: npm run lint
 
+      - name: Verify Angela production contract
+        run: node scripts/verify-production-contract.mjs
+
       - name: Build production artifacts
         run: npm run build
 
-      - name: Detect Cloudflare deployment credentials
+      - name: Validate optional Cloudflare direct-deploy token
         id: cf
         shell: bash
         run: |
           set -euo pipefail
-          if [ -n "${CLOUDFLARE_API_TOKEN:-}" ]; then
+          if [ -z "${CLOUDFLARE_API_TOKEN:-}" ]; then
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Direct Wrangler deploy is disabled because no Cloudflare API token is configured. The connected Cloudflare Pages Git integration remains the canonical wallet-free deployment path."
+            exit 0
+          fi
+
+          verify="$(curl --silent --show-error --max-time 20             -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN"             -H "Content-Type: application/json"             https://api.cloudflare.com/client/v4/user/tokens/verify || true)"
+
+          if jq -e '.success == true and .result.status == "active"' >/dev/null 2>&1 <<<"$verify"; then
             echo "available=true" >> "$GITHUB_OUTPUT"
-            echo "Cloudflare direct-deploy credentials are available."
+            echo "Cloudflare direct-deploy token is active."
           else
             echo "available=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::Cloudflare direct deploy skipped because CLOUDFLARE_API_TOKEN is not configured in GitHub Actions secrets."
+            echo "::notice::Cloudflare direct-deploy token is absent, expired, or invalid. Skipping Wrangler direct upload; connected Cloudflare Pages Git integration remains the canonical wallet-free deployment path."
           fi
 
       - name: Deploy preview through Wrangler
@@ -94,29 +105,35 @@ jobs:
           set -euo pipefail
           npx --yes wrangler@4 pages deploy dist             --project-name=jel-study-abroad             --branch=main             --commit-hash="$GITHUB_SHA"
 
-      - name: Verify public production health
-        if: steps.cf.outputs.available == 'true'
+      - name: Verify canonical production health
         shell: bash
         run: |
           set -euo pipefail
-          sleep 8
-          body="$(curl --fail --silent --show-error --max-time 30 https://journeyexpertbd.com/api/health)"
-          echo "$body" | jq -e '.ok == true'
-          echo "$body" | jq -e '.checks.gemini == true'
-          echo "$body" | jq -e '.checks.supabase == true'
-          echo "$body" | jq -e '.configured == true'
-          echo "$body" | jq -e 'has("optional")'
+          # This custom-domain verification runs whether deployment came from
+          # Wrangler or the connected Cloudflare Pages Git integration.
+          for attempt in 1 2 3 4 5 6; do
+            if body="$(curl --fail --silent --show-error --max-time 30 "https://journeyexpertbd.com/api/health?deploy_check=$GITHUB_SHA")"; then
+              if echo "$body" | jq -e '.ok == true and .checks.gemini == true and .checks.supabase == true and .configured == true' >/dev/null; then
+                echo "Canonical production health is good."
+                exit 0
+              fi
+            fi
+            sleep 5
+          done
+          echo "::error::Canonical production health did not become healthy within the bounded verification window."
+          exit 1
 
       - name: Publish summary
         if: always()
         shell: bash
         run: |
           {
-            echo "## Cloudflare Direct Pages Deploy"
-            echo "- Project: `jel-study-abroad`"
-            echo "- Source: `$GITHUB_SHA`"
-            echo "- Direct-deploy credentials available: `${{ steps.cf.outputs.available || 'unknown' }}`"
-            echo "- Safety: source validation and build run before any deployment."
-            echo "- Safety: preview Functions smoke test must pass before production deployment."
+            echo "## Cloudflare Pages Deploy"
+            echo "- Project: jel-study-abroad"
+            echo "- Source: $GITHUB_SHA"
+            echo "- Wrangler direct-deploy token active: ${{ steps.cf.outputs.available || 'unknown' }}"
+            echo "- Primary wallet-free path: connected Cloudflare Pages Git integration on main."
+            echo "- Optional path: Wrangler direct upload only when the stored token verifies as active."
+            echo "- Safety: source validation, Angela production contract, and production build run before deployment checks."
             echo "- Existing DNS, custom domains, bindings, and dashboard variables are not modified by this workflow."
           } >> "$GITHUB_STEP_SUMMARY"
