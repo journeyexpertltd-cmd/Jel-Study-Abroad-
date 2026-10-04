@@ -22,7 +22,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Check out diagnostic source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Probe Study Abroad / BD production
         shell: bash
