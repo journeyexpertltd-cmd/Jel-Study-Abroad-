@@ -505,7 +505,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
     return semanticFallback(contextualQuery, bn);
   };
   // Stable published JEL facts do not need an external AI request.
-  if (contextualQuery === last && retrievedKnowledge.primary && ['identity', 'contact', 'services_overview', 'hajj_umrah', 'study_uk_masters', 'company_directory', 'brands'].includes(retrievedKnowledge.primary.id)) return fallback();
+  if (contextualQuery === last && retrievedKnowledge.primary && ['identity', 'contact', 'services_overview', 'study_uk_masters', 'company_directory', 'brands'].includes(retrievedKnowledge.primary.id)) return fallback();
   // Reuse the working server-side Gemini auth key when deployments expose text and TTS keys separately.
   const apiKeys = Array.from(new Set([
     env.GEMINI_API_KEY?.trim(),
