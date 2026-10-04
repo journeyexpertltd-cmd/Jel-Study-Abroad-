@@ -62,3 +62,9 @@ test('Client speech chain keeps Gemini Live fallback available during direct TTS
  assert.match(source, /direct TTS quota cooldown active; using Live fallback/);
  assert.doesNotMatch(source, /Date\.now\(\) < voiceQuotaCooldownUntil[\s\S]{0,120}throw new Error\('voice_quota_exceeded'\)/);
 });
+
+
+test('BD Angela Live female renderer keeps a bounded 12s audio window', async () => {
+ const source = await readFile(new URL('../src/lib/angelaAudio.ts', import.meta.url), 'utf8');
+ assert.match(source, /live_voice_timeout'\)\), 12000/);
+});

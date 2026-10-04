@@ -118,7 +118,7 @@ async function fetchAngelaLiveSpeech(text: string, signal: AbortSignal): Promise
     signal.addEventListener('abort', onAbort, { once: true });
     // Keep backup speech conversational. The primary TTS already had its own
     // bounded attempt, so a long second wait makes Angela feel unresponsive.
-    const timer = window.setTimeout(() => fail(new Error('live_voice_timeout')), 8000);
+    const timer = window.setTimeout(() => fail(new Error('live_voice_timeout')), 12000);
 
     socket.onopen = () => {
       socket.send(JSON.stringify({
