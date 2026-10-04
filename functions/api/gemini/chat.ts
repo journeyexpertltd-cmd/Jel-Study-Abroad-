@@ -201,8 +201,10 @@ function retrieveJelKnowledge(query: string) {
   const normalized = normalizeForKnowledge(query);
   // A company-directory request must include all requested categories, rather
   // than allowing a higher-priority service entry to hide brands and contact.
-  const directoryRequest = /brand|ব্র্যান্ড|ব্রান্ড|কো-ব্র্যান্ড|co-brand/.test(normalized)
-    && /service|সার্ভিস|সেবা|যোগাযোগ|phone|ফোন|hotline|হটলাইন|contact/.test(normalized);
+  const asksServices = /service|সার্ভিস|সেবা/.test(normalized);
+  const asksContact = /যোগাযোগ|phone|ফোন|hotline|হটলাইন|contact|whatsapp/.test(normalized);
+  const directoryRequest = (/brand|ব্র্যান্ড|ব্রান্ড|কো-ব্র্যান্ড|co-brand/.test(normalized)
+    && (asksServices || asksContact)) || (asksServices && asksContact);
   if (directoryRequest) {
     const entries = ['services_overview', 'brands', 'contact'].map(id => JEL_SEMANTIC_KNOWLEDGE.find(entry => entry.id === id)!);
     const primary: JelKnowledgeEntry = {
@@ -215,7 +217,7 @@ function retrieveJelKnowledge(query: string) {
   }
 
   const explicitServicesQuestion =
-    /what services|which services|services.*provide|services.*offer|jel services|journey expert.*services|কি কি সার্ভিস|কী কী সার্ভিস|কি কি সেবা|কী কী সেবা|সার্ভিস.*দে/.test(normalized);
+    /what services|which services|all services|services.*provide|services.*offer|jel services|journey expert.*services|কি কি সার্ভিস|কী কী সার্ভিস|কি কি সেবা|কী কী সেবা|সব সেবা|সকল সেবা|সব সার্ভিস|সকল সার্ভিস|সার্ভিস.*দে/.test(normalized);
   const serviceMentions = [
     /air ticket|ticketing|flight|টিকিট|ফ্লাইট/.test(normalized),
     /visa|ভিসা/.test(normalized),

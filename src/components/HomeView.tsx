@@ -234,7 +234,7 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
             <div className="relative z-10">
               <div className="inline-flex items-center gap-2 rounded-full border border-[#7EF3BE]/15 bg-[#7EF3BE]/10 px-3 py-2 text-[10px] font-black uppercase tracking-[0.15em] text-[#A6F4D0]"><Bot className="h-4 w-4" /> Angela AI</div>
               <h3 className="mt-7 text-3xl font-black text-white sm:text-4xl">AI-assisted guidance,<br />connected to your JEL experience.</h3>
-              <p className="mt-5 max-w-[560px] text-sm leading-7 text-[#A7C7B7]">Angela remains available as the floating AI assistant for travel and education questions, with English, বাংলা and Banglish support. Existing Angela logic is not replaced by this design.</p>
+              <p className="mt-5 max-w-[560px] text-sm leading-7 text-[#A7C7B7]">Meet Angela, Journey Expert Limited’s AI assistant. Ask about air tickets, visas, tours, hotels, Hajj & Umrah, Study Abroad and our other services in English, বাংলা or Banglish.</p>
               <div className="mt-7 flex flex-wrap gap-2">
                 {["Study Abroad", "Universities", "Scholarships", "Visa Guidance", "Travel Support"].map((label) => <span key={label} className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 text-[11px] font-bold text-[#CDE8DA]">{label}</span>)}
               </div>
@@ -313,8 +313,8 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
         <div className="grid grid-cols-1 gap-5 rounded-[30px] border border-white/10 bg-[linear-gradient(120deg,rgba(16,212,134,.11),rgba(255,255,255,.02))] p-6 sm:p-9 lg:grid-cols-[1.15fr_.85fr] lg:p-10">
           <div>
             <div className="text-xs font-black uppercase tracking-[0.18em] text-[#7FE4B2]">Connected platform</div>
-            <h3 className="mt-3 text-3xl font-black text-white sm:text-4xl">New frontend. Same protected JEL platform underneath.</h3>
-            <p className="mt-4 max-w-[760px] text-sm leading-7 text-[#A7C4B6]">The visual experience connects to the existing student portal, counselling flow, planning tools, CRM entry point and Angela assistant. Your established backend and data structures remain the operational foundation.</p>
+            <h3 className="mt-3 text-3xl font-black text-white sm:text-4xl">Your journey, supported at every step.</h3>
+            <p className="mt-4 max-w-[760px] text-sm leading-7 text-[#A7C4B6]">Explore study options, book counselling and keep track of your application in one place. Angela and our human advisors help you plan your next step with Journey Expert Limited.</p>
             <div className="mt-6 flex flex-wrap gap-2">{["Student Portal", "Counselling", "Course Finder", "Eligibility Planner", "ECTS", "Angela AI"].map((chip) => <span key={chip} className="rounded-full border border-white/10 bg-white/[0.035] px-3 py-2 text-[11px] font-bold text-[#CDE8DA]">{chip}</span>)}</div>
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
