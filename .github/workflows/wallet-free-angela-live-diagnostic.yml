@@ -1,0 +1,186 @@
+name: Wallet-Free Angela Live Diagnostic
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/wallet-free-angela-live-diagnostic.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-diagnostic:
+    name: Test both JEL domains without browser-agent credits
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Probe Study Abroad / BD production
+        shell: bash
+        run: |
+          set -u
+          base="https://journeyexpertbd.com"
+          nonce="$(date +%s)"
+          tmp="$(mktemp -d)"
+          trap 'rm -rf "$tmp"' EXIT
+
+          health_status="$(curl --silent --show-error --max-time 25 -o "$tmp/health" -w '%{http_code}' "$base/api/health?diag=$nonce" || true)"
+          echo "BD_HEALTH_STATUS=$health_status"
+          cat "$tmp/health" || true
+          echo
+
+          en_status="$(curl --silent --show-error --max-time 35 -H 'Content-Type: application/json' -H "Origin: $base"             --data '{"message":"What services does JEL provide and what is your hotline?","language":"en","history":[]}'             -o "$tmp/en" -w '%{http_code}' "$base/api/gemini/chat?diag=$nonce" || true)"
+          echo "BD_EN_STATUS=$en_status"
+          python - "$tmp/en" <<'PY' || true
+          import json,sys
+          try:
+              d=json.load(open(sys.argv[1],encoding="utf-8"))
+              r=str(d.get("reply") or d.get("response") or "")
+              print("BD_EN_LANGUAGE="+str(d.get("language")))
+              print("BD_EN_MODE="+str(d.get("mode")))
+              print("BD_EN_HAS_HAJJ="+str("hajj" in r.lower()))
+              print("BD_EN_HAS_STUDY="+str("study abroad" in r.lower()))
+              print("BD_EN_HAS_HOTLINE="+str("01926400400" in r or "+8801926400400" in r.replace(" ","")))
+          except Exception as e: print("BD_EN_PARSE_ERROR="+type(e).__name__)
+          PY
+
+          bn_status="$(curl --silent --show-error --max-time 35 -H 'Content-Type: application/json' -H "Origin: $base"             --data '{"message":"তুমি কি বাংলা বলতে পারো? তোমাদের সব সেবা ও ফোন নম্বর বলো।","language":"bn","history":[]}'             -o "$tmp/bn" -w '%{http_code}' "$base/api/gemini/chat?diag=$nonce" || true)"
+          echo "BD_BN_STATUS=$bn_status"
+          python - "$tmp/bn" <<'PY' || true
+          import json,re,sys
+          try:
+              d=json.load(open(sys.argv[1],encoding="utf-8"))
+              r=str(d.get("reply") or d.get("response") or "")
+              print("BD_BN_LANGUAGE="+str(d.get("language")))
+              print("BD_BN_MODE="+str(d.get("mode")))
+              print("BD_BN_HAS_BENGALI="+str(bool(re.search(r"[\u0980-\u09ff]",r))))
+              print("BD_BN_HAS_HAJJ="+str("hajj" in r.lower() or "হজ" in r))
+              print("BD_BN_HAS_STUDY="+str("study abroad" in r.lower()))
+              print("BD_BN_HAS_HOTLINE="+str("01926400400" in r or "+8801926400400" in r.replace(" ","")))
+          except Exception as e: print("BD_BN_PARSE_ERROR="+type(e).__name__)
+          PY
+
+          speech_status="$(curl --silent --show-error --max-time 50 -H 'Content-Type: application/json' -H "Origin: $base"             --data '{"text":"আসসালামু আলাইকুম। আমি অ্যাঞ্জেলা, Journey Expert Limited-এর AI assistant।"}'             -D "$tmp/speech_headers" -o "$tmp/speech" -w '%{http_code}' "$base/api/angela/speech?diag=$nonce" || true)"
+          echo "BD_SPEECH_STATUS=$speech_status"
+          echo "BD_SPEECH_BYTES=$(wc -c < "$tmp/speech")"
+          echo "BD_SPEECH_TYPE=$(grep -i '^content-type:' "$tmp/speech_headers" | tail -1 | tr -d '\r' || true)"
+          if [ "$speech_status" != "200" ]; then
+            echo "BD_SPEECH_BODY=$(head -c 600 "$tmp/speech" | tr '\n' ' ')"
+          fi
+
+          live_status="$(curl --silent --show-error --max-time 25 -X POST -H 'Content-Type: application/json' -H "Origin: $base"             -o "$tmp/live" -w '%{http_code}' "$base/api/gemini/live-token?diag=$nonce" || true)"
+          echo "BD_LIVE_TOKEN_STATUS=$live_status"
+          if [ "$live_status" != "200" ]; then echo "BD_LIVE_TOKEN_BODY=$(head -c 500 "$tmp/live" | tr '\n' ' ')"; fi
+
+          fail=0
+          [ "$health_status" = "200" ] || fail=1
+          grep -q '"ok":true' "$tmp/health" || fail=1
+          [ "$en_status" = "200" ] || fail=1
+          [ "$bn_status" = "200" ] || fail=1
+          python - "$tmp/en" "$tmp/bn" <<'PY' || fail=1
+          import json,re,sys
+          en=json.load(open(sys.argv[1],encoding="utf-8"))
+          bn=json.load(open(sys.argv[2],encoding="utf-8"))
+          er=str(en.get("reply") or en.get("response") or "")
+          br=str(bn.get("reply") or bn.get("response") or "")
+          assert "hajj" in er.lower()
+          assert "study abroad" in er.lower()
+          assert "01926400400" in er or "+8801926400400" in er.replace(" ","")
+          assert re.search(r"[\u0980-\u09ff]",br)
+          assert ("hajj" in br.lower() or "হজ" in br)
+          assert "study abroad" in br.lower()
+          assert "01926400400" in br or "+8801926400400" in br.replace(" ","")
+          PY
+          if [ "$speech_status" = "200" ]; then
+            grep -Eqi '^content-type: audio/' "$tmp/speech_headers" || fail=1
+            [ "$(wc -c < "$tmp/speech")" -gt 1000 ] || fail=1
+          elif [ "$live_status" != "200" ]; then
+            fail=1
+          fi
+          [ "$fail" = "0" ]
+          echo "BD_LIVE_DIAGNOSTIC_PASS=true"
+
+      - name: Probe Corporate / LTD production
+        shell: bash
+        run: |
+          set -u
+          base="https://journeyexpertltd.com"
+          nonce="$(date +%s)"
+          tmp="$(mktemp -d)"
+          trap 'rm -rf "$tmp"' EXIT
+
+          health_status="$(curl --silent --show-error --max-time 25 -o "$tmp/health" -w '%{http_code}' "$base/api/health?diag=$nonce" || true)"
+          echo "LTD_HEALTH_STATUS=$health_status"
+          cat "$tmp/health" || true
+          echo
+
+          en_status="$(curl --silent --show-error --max-time 35 -H 'Content-Type: application/json' -H "Origin: $base"             --data '{"message":"What services does Journey Expert Limited provide and what is your hotline?","language":"en","history":[]}'             -o "$tmp/en" -w '%{http_code}' "$base/angela/chat?diag=$nonce" || true)"
+          echo "LTD_EN_STATUS=$en_status"
+          python - "$tmp/en" <<'PY' || true
+          import json,sys
+          try:
+              d=json.load(open(sys.argv[1],encoding="utf-8"))
+              r=str(d.get("reply") or d.get("response") or "")
+              print("LTD_EN_LANGUAGE="+str(d.get("language")))
+              print("LTD_EN_MODE="+str(d.get("mode")))
+              print("LTD_EN_HAS_SERVICE_TERM="+str(any(x in r.lower() for x in ["ticket","visa","hajj","study abroad","travel"])))
+          except Exception as e: print("LTD_EN_PARSE_ERROR="+type(e).__name__)
+          PY
+
+          bn_status="$(curl --silent --show-error --max-time 35 -H 'Content-Type: application/json' -H "Origin: $base"             --data '{"message":"আপনি কি বাংলায় কথা বলতে পারেন? Journey Expert Limited-এর প্রধান সেবাগুলো বলুন।","language":"bn","history":[]}'             -o "$tmp/bn" -w '%{http_code}' "$base/angela/chat?diag=$nonce" || true)"
+          echo "LTD_BN_STATUS=$bn_status"
+          python - "$tmp/bn" <<'PY' || true
+          import json,re,sys
+          try:
+              d=json.load(open(sys.argv[1],encoding="utf-8"))
+              r=str(d.get("reply") or d.get("response") or "")
+              print("LTD_BN_LANGUAGE="+str(d.get("language")))
+              print("LTD_BN_MODE="+str(d.get("mode")))
+              print("LTD_BN_HAS_BENGALI="+str(bool(re.search(r"[\u0980-\u09ff]",r))))
+          except Exception as e: print("LTD_BN_PARSE_ERROR="+type(e).__name__)
+          PY
+
+          speech_status="$(curl --silent --show-error --max-time 50 -H 'Content-Type: application/json' -H "Origin: $base"             --data '{"text":"আসসালামু আলাইকুম। আমি অ্যাঞ্জেলা।","language":"bn"}'             -D "$tmp/speech_headers" -o "$tmp/speech" -w '%{http_code}' "$base/angela/speech?diag=$nonce" || true)"
+          echo "LTD_SPEECH_STATUS=$speech_status"
+          echo "LTD_SPEECH_BYTES=$(wc -c < "$tmp/speech")"
+          echo "LTD_SPEECH_TYPE=$(grep -i '^content-type:' "$tmp/speech_headers" | tail -1 | tr -d '\r' || true)"
+          if [ "$speech_status" != "200" ]; then
+            echo "LTD_SPEECH_BODY=$(head -c 600 "$tmp/speech" | tr '\n' ' ')"
+          fi
+
+          live_status="$(curl --silent --show-error --max-time 25 -X POST -H 'Content-Type: application/json' -H "Origin: $base"             -o "$tmp/live" -w '%{http_code}' "$base/angela/live-token?diag=$nonce" || true)"
+          echo "LTD_LIVE_TOKEN_STATUS=$live_status"
+          if [ "$live_status" != "200" ]; then echo "LTD_LIVE_TOKEN_BODY=$(head -c 500 "$tmp/live" | tr '\n' ' ')"; fi
+
+          fail=0
+          [ "$health_status" = "200" ] || fail=1
+          [ "$en_status" = "200" ] || fail=1
+          [ "$bn_status" = "200" ] || fail=1
+          python - "$tmp/en" "$tmp/bn" <<'PY' || fail=1
+          import json,re,sys
+          en=json.load(open(sys.argv[1],encoding="utf-8"))
+          bn=json.load(open(sys.argv[2],encoding="utf-8"))
+          er=str(en.get("reply") or en.get("response") or "")
+          br=str(bn.get("reply") or bn.get("response") or "")
+          assert any(x in er.lower() for x in ["ticket","visa","hajj","study abroad","travel"])
+          assert re.search(r"[\u0980-\u09ff]",br)
+          PY
+          if [ "$speech_status" = "200" ]; then
+            grep -Eqi '^content-type: audio/' "$tmp/speech_headers" || fail=1
+            [ "$(wc -c < "$tmp/speech")" -gt 1000 ] || fail=1
+          elif [ "$live_status" != "200" ]; then
+            fail=1
+          fi
+          [ "$fail" = "0" ]
+          echo "LTD_LIVE_DIAGNOSTIC_PASS=true"
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "## Wallet-Free Angela Production Diagnostic"
+            echo "- TinyFish/browser-agent credits: not used"
+            echo "- Domains tested: journeyexpertbd.com, journeyexpertltd.com"
+            echo "- Checks: health, Bangla chat, English chat, service knowledge, hotline on BD, direct female-speech endpoint, Live voice fallback token"
+          } >> "$GITHUB_STEP_SUMMARY"
