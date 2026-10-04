@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { onRequest, pcmToWav } from '../functions/angela/speech.ts';
 const request = (text, extra = {}) => new Request('https://example.pages.dev/angela/speech', {
  method: 'POST', headers: { origin: 'https://example.pages.dev', 'content-type': 'application/json' },
@@ -53,3 +54,11 @@ test('Speech uses official Gemini 3.8 generateContent WAV and maps quota errors 
 
 
 
+
+
+test('Client speech chain keeps Gemini Live fallback available during direct TTS quota cooldown', async () => {
+ const source = await readFile(new URL('../src/lib/angelaAudio.ts', import.meta.url), 'utf8');
+ assert.match(source, /direct TTS quota reached; using Live fallback/);
+ assert.match(source, /direct TTS quota cooldown active; using Live fallback/);
+ assert.doesNotMatch(source, /Date\.now\(\) < voiceQuotaCooldownUntil[\s\S]{0,120}throw new Error\('voice_quota_exceeded'\)/);
+});
