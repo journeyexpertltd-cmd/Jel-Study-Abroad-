@@ -2,6 +2,19 @@ import { test, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { onRequest } from '../functions/api/gemini/chat.ts';
 const nativeFetch = globalThis.fetch;
+test('combined service and contact questions include both requested answers', async () => {
+  for (const [message, language] of [
+    ['তুমি কি বাংলা বলতে পারো? তোমাদের সব সেবা ও ফোন নম্বর বলো।', 'bn'],
+    ['What services does JEL provide and what is your hotline?', 'en'],
+  ]) {
+    const data = await (await onRequest({ request: new Request('https://journeyexpertbd.com/api/gemini/chat', {
+      method: 'POST', body: JSON.stringify({ message, language }),
+    }), env: {} })).json();
+    assert.match(data.reply, /Hajj/);
+    assert.match(data.reply, /Study Abroad/);
+    assert.match(data.reply, /01926400400/);
+  }
+});
 beforeEach(() => { globalThis.fetch = async () => { throw new Error('Network is disabled in unit tests'); }; });
 afterEach(() => { globalThis.fetch = nativeFetch; });
 
