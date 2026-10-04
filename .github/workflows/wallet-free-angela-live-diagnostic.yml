@@ -69,7 +69,12 @@ jobs:
             echo "BD_SPEECH_BODY=$(head -c 600 "$tmp/speech" | tr '\n' ' ')"
           fi
 
-          live_status="$(curl --silent --show-error --max-time 25 -X POST -H 'Content-Type: application/json' -H "Origin: $base"             -o "$tmp/live" -w '%{http_code}' "$base/api/gemini/live-token?diag=$nonce" || true)"
+          live_status="000"
+          for attempt in 1 2 3 4 5 6; do
+            live_status="$(curl --silent --show-error --max-time 25 -X POST -H 'Content-Type: application/json' -H "Origin: $base" -o "$tmp/live" -w '%{http_code}' "$base/api/gemini/live-token?diag=$nonce&attempt=$attempt" || true)"
+            [ "$live_status" = "200" ] && break
+            sleep 5
+          done
           echo "BD_LIVE_TOKEN_STATUS=$live_status"
           if [ "$live_status" != "200" ]; then echo "BD_LIVE_TOKEN_BODY=$(head -c 500 "$tmp/live" | tr '\n' ' ')"; fi
 
@@ -95,9 +100,10 @@ jobs:
           if [ "$speech_status" = "200" ]; then
             grep -Eqi '^content-type: audio/' "$tmp/speech_headers" || fail=1
             [ "$(wc -c < "$tmp/speech")" -gt 1000 ] || fail=1
-          elif [ "$live_status" != "200" ]; then
+          else
             fail=1
           fi
+          [ "$live_status" = "200" ] || fail=1
           [ "$fail" = "0" ]
           echo "BD_LIVE_DIAGNOSTIC_PASS=true"
 
@@ -182,5 +188,5 @@ jobs:
             echo "## Wallet-Free Angela Production Diagnostic"
             echo "- TinyFish/browser-agent credits: not used"
             echo "- Domains tested: journeyexpertbd.com, journeyexpertltd.com"
-            echo "- Checks: health, Bangla chat, English chat, service knowledge, hotline on BD, direct female-speech endpoint, Live voice fallback token"
+            echo "- Checks: health, Bangla chat, English chat, service knowledge, hotline on BD, direct female-speech endpoint, required Live voice fallback token"
           } >> "$GITHUB_STEP_SUMMARY"
