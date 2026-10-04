@@ -3,7 +3,7 @@ const origin = new URL(base).origin;
 const text = 'হ্যালো, আমি অ্যাঞ্জেলা।';
 
 async function primary() {
-  const response = await fetch(origin + '/angela/speech', {
+  const response = await fetch(origin + '/api/angela/speech', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Origin: origin },
     body: JSON.stringify({ text }),
@@ -15,7 +15,7 @@ async function primary() {
   if (!type.includes('audio/wav') || bytes.byteLength < 1000 || riff !== 'RIFF') {
     throw new Error('Primary female TTS returned invalid audio');
   }
-  console.log('Primary Gemini female TTS passed');
+  console.log('BD primary Gemini female TTS passed');
   return { ok: true, status: 200 };
 }
 
@@ -35,7 +35,7 @@ async function liveFallback() {
     let sent = false;
     let settled = false;
 
-    const timer = setTimeout(() => fail(new Error('Live female audio timeout')), 12000);
+    const timer = setTimeout(() => fail(new Error('Live female audio timeout')), 15000);
     const cleanup = () => { clearTimeout(timer); try { socket.close(); } catch {} };
     const fail = (error) => {
       if (settled) return;
@@ -48,7 +48,7 @@ async function liveFallback() {
       if (audioBytes < 1000) return fail(new Error('Live female audio too small'));
       settled = true;
       cleanup();
-      console.log('Gemini Live Aoede female audio fallback passed');
+      console.log('BD Gemini Live Aoede female audio fallback passed');
       resolve();
     };
 
@@ -113,6 +113,6 @@ if (!result.ok) {
   if (![429, 502, 503, 424].includes(result.status)) {
     throw new Error('Unexpected primary TTS status: ' + result.status);
   }
-  console.log('Primary TTS unavailable (' + result.status + '); testing verified Live female fallback');
+  console.log('BD primary TTS unavailable (' + result.status + '); testing verified Live female fallback');
   await liveFallback();
 }
