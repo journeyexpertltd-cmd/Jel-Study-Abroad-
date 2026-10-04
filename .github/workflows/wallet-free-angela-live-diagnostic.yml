@@ -142,6 +142,8 @@ jobs:
               print("LTD_EN_LANGUAGE="+str(d.get("language")))
               print("LTD_EN_MODE="+str(d.get("mode")))
               print("LTD_EN_HAS_SERVICE_TERM="+str(any(x in r.lower() for x in ["ticket","visa","hajj","study abroad","travel"])))
+              print("LTD_EN_HAS_HOTLINE="+str("01926400400" in r or "+8801926400400" in r.replace(" ","")))
+              print("LTD_EN_HAS_LEGACY_PHONE="+str("9830404" in r))
           except Exception as e: print("LTD_EN_PARSE_ERROR="+type(e).__name__)
           PY
 
@@ -181,6 +183,8 @@ jobs:
           er=str(en.get("reply") or en.get("response") or "")
           br=str(bn.get("reply") or bn.get("response") or "")
           assert any(x in er.lower() for x in ["ticket","visa","hajj","study abroad","travel"])
+          assert "01926400400" in er or "+8801926400400" in er.replace(" ","")
+          assert "9830404" not in er
           assert re.search(r"[\u0980-\u09ff]",br)
           PY
           if [ "$speech_status" = "200" ]; then
