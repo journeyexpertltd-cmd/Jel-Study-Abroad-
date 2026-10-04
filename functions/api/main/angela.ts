@@ -14,7 +14,7 @@ const reply = (origin: string, data: unknown, status = 200) =>
 
 const bnFallback = (q: string) => {
   const text = q.toLowerCase();
-  if (/যোগাযোগ|ফোন|নাম্বার|ঠিকানা|অফিস|contact/.test(text)) return 'Journey Expert Ltd.-এর অফিস: ১৮৯/এ (২য় তলা), আব্দুল মতিন কমপ্লেক্স, হাজী মরণ আলী রোড, নাবিস্কো মোড়, তেজগাঁও, ঢাকা-১২১৫। WhatsApp/হটলাইন: 01926400400 (+8801926400400)।';
+  if (/যোগাযোগ|ফোন|নাম্বার|ঠিকানা|অফিস|contact/.test(text)) return 'Journey Expert Ltd.-এর অফিস: ১৮৯/এ (২য় তলা), আব্দুল মতিন কমপ্লেক্স, হাজী মরণ আলী রোড, নাবিস্কো মোড়, তেজগাঁও, ঢাকা-১২১৫। WhatsApp/হটলাইন: +8801926400400, টেলিফোন: +8802 9830404।';
   if (/টিকিট|ফ্লাইট|ফেয়ার|ভাড়া/.test(text)) return 'আমরা এয়ার টিকিট, ফেয়ার কোটেশন, বুকিং, রিইস্যু ও রিফান্ড সহায়তা দিই। সঠিক লাইভ ভাড়া জানতে গন্তব্য, যাত্রার তারিখ, যাত্রীর সংখ্যা এবং একমুখী না রিটার্ন—এই তথ্যগুলো লিখুন।';
   if (/ভিসা|visa/.test(text)) return 'আমরা ট্যুরিস্ট, বিজনেস, মেডিকেল ও স্টুডেন্ট ভিসার ডকুমেন্ট প্রস্তুতিতে সহায়তা করি। ভিসার সিদ্ধান্ত সংশ্লিষ্ট দূতাবাসের। দেশ, ভিসার ধরন ও ভ্রমণের সম্ভাব্য তারিখ লিখুন।';
   if (/হজ|ওমরাহ|উমরাহ/.test(text)) return 'আমরা হজ ও ওমরাহ প্যাকেজ, ফ্লাইট, হোটেল ও প্রয়োজনীয় ভ্রমণ সহায়তা দিই। যাত্রীর সংখ্যা এবং সম্ভাব্য মাস লিখুন; যাচাইকৃত প্যাকেজের জন্য +8801926400400 নম্বরে যোগাযোগ করুন।';
@@ -23,7 +23,7 @@ const bnFallback = (q: string) => {
 };
 const enFallback = (q: string) => {
   const text = q.toLowerCase();
-  if (/contact|phone|number|address|office/.test(text)) return 'Journey Expert Ltd. is at 189/A (2nd floor), Abdul Motin Complex, Hazi Moron Ali Road, Nabisco Mor, Tejgaon, Dhaka-1215. WhatsApp/hotline: 01926400400 (+8801926400400).';
+  if (/contact|phone|number|address|office/.test(text)) return 'Journey Expert Ltd. is at 189/A (2nd floor), Abdul Motin Complex, Hazi Moron Ali Road, Nabisco Mor, Tejgaon, Dhaka-1215. WhatsApp/hotline: +8801926400400; telephone: +8802 9830404.';
   if (/ticket|flight|fare/.test(text)) return 'We assist with air tickets, fare quotations, booking, reissue and refunds. For a verified live fare, share the destination, travel date, passenger count, and whether the trip is one-way or return.';
   if (/visa/.test(text)) return 'We assist with document preparation for tourist, business, medical and student visas. Visa decisions belong to the relevant authority. Share the country, visa type and intended travel date.';
   if (/hajj|umrah/.test(text)) return 'We assist with Hajj and Umrah packages, flights, hotels and related travel support. Share the passenger count and preferred month, or contact +8801926400400 for a verified package.';
@@ -45,7 +45,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   const key = (env.GEMINI_API_KEY || env.GEMINI_TTS_API_KEY)?.trim();
   if (!key) return reply(origin, { reply: fallback, language, mode: 'verified-fallback' });
 
-  const instruction = `You are Angela, the official AI assistant of Journey Expert Ltd., Bangladesh. Services: air ticketing, fare quotation, booking/reissue/refund support, tourist/business/medical/student visa document assistance, tours, hotels, Hajj and Umrah, halal tourism, medical tourism, travel insurance, corporate travel, meet and greet, and JEL Study Abroad. Office: 189/A (2nd floor), Abdul Motin Complex, Hazi Moron Ali Road, Nabisco Mor, Tejgaon, Dhaka-1215. WhatsApp/hotline 01926400400 (+8801926400400). Never invent live fares, availability, partnerships, visa rules, prices or guarantees. Ask at most one useful follow-up question. Never request passwords, OTPs, payment details or passport numbers. The language selector is authoritative. ${language === 'bn' ? 'Reply only in natural Bengali script, keeping unavoidable proper names unchanged.' : 'Reply only in English.'}`;
+  const instruction = `You are Angela, the official AI assistant of Journey Expert Ltd., Bangladesh. Services: air ticketing, fare quotation, booking/reissue/refund support, tourist/business/medical/student visa document assistance, tours, hotels, Hajj and Umrah, halal tourism, medical tourism, travel insurance, corporate travel, meet and greet, and JEL Study Abroad. Office: 189/A (2nd floor), Abdul Motin Complex, Hazi Moron Ali Road, Nabisco Mor, Tejgaon, Dhaka-1215. WhatsApp/hotline +8801926400400; telephone +8802 9830404. Never invent live fares, availability, partnerships, visa rules, prices or guarantees. Ask at most one useful follow-up question. Never request passwords, OTPs, payment details or passport numbers. The language selector is authoritative. ${language === 'bn' ? 'Reply only in natural Bengali script, keeping unavoidable proper names unchanged.' : 'Reply only in English.'}`;
   try {
     const model = env.GEMINI_MODEL?.trim() || 'gemini-2.5-flash';
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
