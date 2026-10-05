@@ -19,11 +19,11 @@ const robots = await readFile("public/robots.txt", "utf8");
 const sitemap = await readFile("public/sitemap.xml", "utf8");
 
 const requiredHtml = [
-  "<title>Study Abroad Consultancy in Bangladesh | JEL Study Abroad</title>",
+  "<title>Journey Expert Limited | AI Travel, Visa, Study Abroad & Global Mobility</title>",
   'content="index,follow,max-image-preview:large"',
   'rel="canonical" href="https://journeyexpertbd.com/"',
   'hreflang="en-BD"',
-  'property="og:site_name" content="JEL Study Abroad"',
+  'property="og:site_name" content="Journey Expert Limited"',
   "/assets/images/jel-study-abroad-official-v2.png",
 ];
 for (const value of requiredHtml) {
@@ -55,4 +55,4 @@ for (const url of urls) {
   }
 }
 
-console.log(`SEO safety checks passed: ${urls.length} Study Abroad sitemap URL(s) validated.`);
+console.log(`SEO safety checks passed: ${urls.length} journeyexpertbd.com sitemap URL(s) validated.`);
