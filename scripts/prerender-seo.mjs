@@ -8,11 +8,11 @@ const source = await readFile(new URL("index.html", dist), "utf8");
 
 const pages = {
   "/": {
-    title: "Study Abroad Consultancy in Bangladesh | JEL Study Abroad",
-    description: "JEL Study Abroad helps Bangladeshi students with university applications, scholarship research, document preparation and student visa guidance from Dhaka.",
+    title: "Journey Expert Limited | AI Travel, Visa, Study Abroad & Global Mobility",
+    description: "Journey Expert Limited (JEL) is a Bangladesh-based AI-powered travel and global mobility ecosystem covering air ticketing, visa assistance, tours, hotels, Hajj & Umrah, Study Abroad, medical tourism, insurance and corporate travel.",
     details: [
-      "JEL Study Abroad supports students who are planning higher education in destinations such as the United Kingdom, Canada, Australia, the United States, Germany and Ireland. Guidance can cover course and university research, application planning, document checklists, statement-of-purpose review, English-language preparation and practical next steps before a visa application.",
-      "Students can use the website to explore destinations, scholarships, university options, an ECTS calculator, eligibility tools and counseling support. Admission, scholarship and visa decisions are always made by the relevant university, scholarship provider or government authority, so JEL focuses on preparation, documentation and verified guidance rather than guarantees."
+      "Journey Expert Limited supports travelers, students, families and corporate clients through connected services including air ticketing and fare support, visa-document assistance, tours and hotels, Hajj and Umrah, halal tourism, medical tourism, travel insurance, corporate travel management, Meet & Greet, Study Abroad and compliance advisory support.",
+      "JEL Study Abroad remains a dedicated education module within the wider Journey Expert Limited ecosystem, helping Bangladeshi students research destinations, universities, scholarships, applications and student-visa preparation. Angela AI and human specialists provide guidance while final airline, university, scholarship and immigration decisions remain with the relevant providers and authorities."
     ]
   },
   "/about/": {
@@ -156,7 +156,7 @@ function renderPage(path, meta) {
     .map(([href, item]) => `<a href="${href}">${escapeHtml(item.title.split(" | ")[0])}</a>`)
     .join(" · ");
   const details = meta.details.map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join("");
-  const content = `<main data-prerendered-seo="true"><h1>${escapeHtml(meta.title.split(" | ")[0])}</h1><p>${escapeHtml(meta.description)}</p>${details}<nav aria-label="Study abroad services">${navigation}</nav><p>Contact JEL Study Abroad: <a href="tel:+8801926400400">+880 1926-400400</a> · <a href="mailto:journeyexpertbd@gmail.com">journeyexpertbd@gmail.com</a></p></main>`;
+  const content = `<main data-prerendered-seo="true"><h1>${escapeHtml(meta.title.split(" | ")[0])}</h1><p>${escapeHtml(meta.description)}</p>${details}<nav aria-label="Journey Expert services">${navigation}</nav><p>Contact Journey Expert Limited: <a href="tel:+8801926400400">+880 1926-400400</a> · <a href="mailto:journeyexpertbd@gmail.com">journeyexpertbd@gmail.com</a></p></main>`;
   html = html.replace(/<div\s+id="root"\s*>\s*<\/div>/i, `<div id="root">${content}</div>`);
   return html;
 }
