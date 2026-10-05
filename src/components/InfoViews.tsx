@@ -758,8 +758,7 @@ export function ContactView() {
                 <Phone className="h-5 w-5 text-[#00AEEF]" />
                 <div>
                   <p className="font-bold text-slate-800">Telephones / Hotline:</p>
-                  <p className="text-slate-500 mt-0.5 leading-normal">+8802 9830404</p>
-                  <p className="text-slate-500 leading-normal">+8801926400400 (WhatsApp)</p>
+                  <a href="tel:+8801926400400" className="text-slate-500 mt-0.5 leading-normal hover:text-[#0B5D3B] hover:underline">+880 1926-400400 (Hotline & WhatsApp)</a>
                 </div>
               </div>
 
