@@ -1,0 +1,94 @@
+name: One-time GSC Finalize
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/one-time-gsc-finalize.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  gsc-finalize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: python -m pip install --upgrade google-api-python-client google-auth requests
+      - name: Submit sitemap and inspect priority URLs
+        env:
+          GSC_SERVICE_ACCOUNT_JSON: ${{ secrets.GSC_SERVICE_ACCOUNT_JSON }}
+        run: |
+          python - <<'PY'
+          import json, os, sys
+          import requests
+          from google.oauth2 import service_account
+          from google.auth.transport.requests import Request
+          from googleapiclient.discovery import build
+          site = "sc-domain:journeyexpertbd.com"
+          sitemap = "https://journeyexpertbd.com/sitemap.xml"
+          urls = [
+              "https://journeyexpertbd.com/",
+              "https://journeyexpertbd.com/contact/",
+              "https://journeyexpertbd.com/services/",
+          ]
+          secret = os.getenv("GSC_SERVICE_ACCOUNT_JSON", "").strip()
+          if not secret:
+              raise SystemExit("GSC_SERVICE_ACCOUNT_JSON is not configured")
+          creds = service_account.Credentials.from_service_account_info(
+              json.loads(secret),
+              scopes=["https://www.googleapis.com/auth/webmasters"],
+          )
+          svc = build("searchconsole", "v1", credentials=creds, cache_discovery=False)
+          svc.sitemaps().submit(siteUrl=site, feedpath=sitemap).execute()
+          listed = svc.sitemaps().list(siteUrl=site).execute().get("sitemap", [])
+          creds.refresh(Request())
+          results = []
+          for url in urls:
+              r = requests.post(
+                  "https://searchconsole.googleapis.com/v1/urlInspection/index:inspect",
+                  headers={"Authorization": f"Bearer {creds.token}", "Content-Type": "application/json"},
+                  json={"inspectionUrl": url, "siteUrl": site, "languageCode": "en-US"},
+                  timeout=30,
+              )
+              item = {"url": url, "http": r.status_code}
+              if r.ok:
+                  idx = r.json().get("inspectionResult", {}).get("indexStatusResult", {})
+                  item.update({
+                      "verdict": idx.get("verdict"),
+                      "coverageState": idx.get("coverageState"),
+                      "robotsTxtState": idx.get("robotsTxtState"),
+                      "indexingState": idx.get("indexingState"),
+                      "userCanonical": idx.get("userCanonical"),
+                      "googleCanonical": idx.get("googleCanonical"),
+                      "lastCrawlTime": idx.get("lastCrawlTime"),
+                      "sitemap": idx.get("sitemap"),
+                  })
+              else:
+                  item["error"] = r.text[:500]
+              results.append(item)
+          summary = {
+              "site": site,
+              "sitemapSubmitted": sitemap,
+              "sitemaps": [
+                  {
+                      "path": s.get("path"),
+                      "lastSubmitted": s.get("lastSubmitted"),
+                      "lastDownloaded": s.get("lastDownloaded"),
+                      "isPending": s.get("isPending"),
+                      "warnings": s.get("warnings"),
+                      "errors": s.get("errors"),
+                  } for s in listed
+              ],
+              "inspections": results,
+          }
+          print(json.dumps(summary, ensure_ascii=False, indent=2))
+          if any(x["http"] >= 400 for x in results):
+              sys.exit(1)
+          PY
