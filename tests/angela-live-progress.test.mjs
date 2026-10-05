@@ -28,18 +28,18 @@ for (const scenario of ['progress', 'stall', 'deadline', 'cancel']) {
       await socket.message({ setupComplete: {} });
       const chunk = { serverContent: { modelTurn: { parts: [{ inlineData: { data: Buffer.alloc(2400).toString('base64'), mimeType: 'audio/pcm;rate=24000' } }] } } };
       if (scenario === 'stall') {
-        t.mock.timers.tick(12000);
+        t.mock.timers.tick(5000);
         assert.equal((await outcome).error?.message, 'live_voice_timeout');
       } else if (scenario === 'cancel') {
         controller.abort();
         assert.equal((await outcome).error?.name, 'AbortError');
       } else if (scenario === 'deadline') {
-        for (let i = 0; i < 5; i++) { t.mock.timers.tick(8000); await socket.message(chunk); }
-        t.mock.timers.tick(5000);
+        for (let i = 0; i < 4; i++) { t.mock.timers.tick(3000); await socket.message(chunk); }
+        t.mock.timers.tick(2500);
         assert.equal((await outcome).error?.message, 'live_voice_timeout');
       } else {
-        t.mock.timers.tick(8000); await socket.message(chunk);
-        t.mock.timers.tick(8000); await socket.message(chunk);
+        t.mock.timers.tick(3000); await socket.message(chunk);
+        t.mock.timers.tick(3000); await socket.message(chunk);
         await socket.message({ serverContent: { turnComplete: true } });
         const { value, error } = await outcome;
         assert.equal(error, undefined);
