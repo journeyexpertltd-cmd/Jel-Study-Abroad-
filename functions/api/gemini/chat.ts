@@ -563,12 +563,12 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   // Keep the customer-facing endpoint bounded. Free Gemini credentials can
   // be rate-limited or temporarily slow; do not serially wait through every
   // model/key combination. The direct provider gets one short total budget.
-  const directDeadline = Date.now() + 5500;
+  const directDeadline = Date.now() + 3500;
   direct: for (const apiKey of apiKeys) {
     for (const model of candidateModels) {
       const remaining = directDeadline - Date.now();
       if (remaining < 900) break direct;
-      const response = await makeRequest(model, apiKey, Math.min(model === 'gemini-3.8-flash' ? 3500 : 2200, remaining));
+      const response = await makeRequest(model, apiKey, Math.min(model === 'gemini-3.8-flash' ? 2500 : 1400, remaining));
       if (!response) continue;
 
       // A quota/auth response applies to the credential, so trying more models
@@ -605,7 +605,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
     try {
       const response = await fetch('https://journeyexpertltd.com/angela/chat', {
         method: 'POST',
-        signal: AbortSignal.timeout(4000),
+        signal: AbortSignal.timeout(1800),
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: last,
@@ -642,7 +642,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   try {
     const response = await fetch(`${studyAiStudioOrigin}/api/gemini/chat`, {
       method: 'POST',
-      signal: AbortSignal.timeout(3000),
+      signal: AbortSignal.timeout(1200),
       headers: { 'Content-Type': 'application/json', 'Origin': new URL(request.url).origin },
       body: JSON.stringify({
         message: last,
