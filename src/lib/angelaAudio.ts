@@ -119,8 +119,8 @@ async function fetchAngelaLiveSpeech(text: string, signal: AbortSignal): Promise
     signal.addEventListener('abort', onAbort, { once: true });
     // Fail quickly when no audio arrives, but let an active response finish.
     // A fixed 12-second total timer discarded valid chunks on long replies.
-    let timer = window.setTimeout(() => fail(new Error('live_voice_timeout')), 12000);
-    const deadlineTimer = window.setTimeout(() => fail(new Error('live_voice_timeout')), 45000);
+    let timer = window.setTimeout(() => fail(new Error('live_voice_timeout')), 5000);
+    const deadlineTimer = window.setTimeout(() => fail(new Error('live_voice_timeout')), 14000);
     const noteAudioProgress = () => {
       window.clearTimeout(timer);
       timer = window.setTimeout(() => fail(new Error('live_voice_timeout')), 12000);
@@ -210,7 +210,7 @@ export async function fetchAngelaSpeech(text: string, signal: AbortSignal): Prom
     const ttsController = new AbortController();
     const abortTts = () => ttsController.abort();
     signal.addEventListener('abort', abortTts, { once: true });
-    const ttsTimer = window.setTimeout(() => ttsController.abort(), 32000);
+    const ttsTimer = window.setTimeout(() => ttsController.abort(), 4500);
 
     try {
       const response = await fetch('/api/angela/speech', {

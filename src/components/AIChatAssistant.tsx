@@ -14,6 +14,26 @@ const ENGLISH_WELCOME = "Assalamu Alaikum. I am Angela, the official AI voice as
 
 const BANGLA_WELCOME = "আসসালামু আলাইকুম। আমি অ্যাঞ্জেলা, Journey Expert Limited-এর অফিসিয়াল AI voice assistant। এয়ার টিকিট, ভিসা, ট্যুর, হোটেল, হজ ও উমরাহ, Study Abroad, মেডিকেল ট্যুরিজম, ইন্স্যুরেন্স, কর্পোরেট ট্রাভেল, Meet & Greet এবং JEL-এর অন্যান্য যাচাইকৃত সেবা সম্পর্কে বাংলা বা ইংরেজিতে প্রশ্ন করতে পারেন। আমি কীভাবে সাহায্য করতে পারি?";
 
+function getInstantConversationReply(text: string, selectedLanguage: "bn" | "en") {
+  const q = text.toLowerCase().replace(/\s+/g, " ").trim();
+  const asksBangla = /(বাংলা|বাংলায়|বাংলায়|bangla|bengali|bengla)/i.test(q)
+    && /(কথা|বলতে|বুঝতে|পারো|পারেন|পারবে|পারবেন|speak|talk|understand)/i.test(q)
+    && q.length < 180;
+  if (asksBangla) {
+    return {
+      language: "bn" as const,
+      text: "হ্যাঁ, অবশ্যই। আমি বাংলায় কথা বলতে ও উত্তর দিতে পারি। আপনি বাংলা, Banglish বা English-এ প্রশ্ন করতে পারেন। কীভাবে সাহায্য করতে পারি?",
+    };
+  }
+  const greetingOnly = /^(?:hi|hello|hey|হ্যালো|হাই|সালাম|আসসালামু আলাইকুম)(?:\s+(?:angela|অ্যাঞ্জেলা))?[!?.,\s]*$/i.test(q);
+  if (greetingOnly) {
+    return selectedLanguage === "bn"
+      ? { language: "bn" as const, text: "ওয়ালাইকুম আসসালাম। আমি অ্যাঞ্জেলা, Journey Expert Limited-এর AI সহকারী। বলুন, কীভাবে সাহায্য করতে পারি?" }
+      : { language: "en" as const, text: "Wa Alaikum Assalam. I’m Angela, Journey Expert Limited’s AI assistant. How can I help you?" };
+  }
+  return null;
+}
+
 const isBanglaText = (text: string) => /[\u0980-\u09FF]/.test(text);
 const welcomeFor = (mode: "en" | "bn") => mode === "bn" ? BANGLA_WELCOME : ENGLISH_WELCOME;
 
@@ -336,11 +356,46 @@ export function AIChatAssistant() {
 
       if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
 
-      // CLOUD_FEMALE_PRIMARY_FAST: same JEL-rendered voice across devices.
+      // DEVICE_FIRST_ANGELA_VOICE: a verified local female voice starts immediately
+      // when available. This avoids waiting on free cloud quota and keeps follow-up
+      // turns conversationally fast. Cloud Aoede remains the fallback.
+      const fastDeviceVoice = window.speechSynthesis
+        ? pickOpeningGreetingVoice(voices, wantsBanglaVoice ? "bn" : "en")
+        : null;
+      if (fastDeviceVoice && window.speechSynthesis) {
+        const utterance = new SpeechSynthesisUtterance(cleanSpeech);
+        utterance.voice = fastDeviceVoice;
+        utterance.lang = fastDeviceVoice.lang || (wantsBanglaVoice ? "bn-BD" : "en-US");
+        utterance.rate = wantsBanglaVoice ? 1.05 : 1.02;
+        utterance.pitch = wantsBanglaVoice ? 1.1 : 1.04;
+        currentUtteranceRef.current = utterance;
+        utterance.onstart = () => {
+          if (currentUtteranceRef.current !== utterance) return;
+          setVoiceState("SPEAKING");
+          setErrorMessage(null);
+          if (messageId) setActiveSpeakingId(messageId);
+        };
+        utterance.onend = () => {
+          if (currentUtteranceRef.current !== utterance) return;
+          currentUtteranceRef.current = null;
+          setVoiceState("READY");
+          setActiveSpeakingId(null);
+        };
+        utterance.onerror = () => {
+          if (currentUtteranceRef.current !== utterance) return;
+          currentUtteranceRef.current = null;
+          setVoiceState("READY");
+          setActiveSpeakingId(null);
+        };
+        window.speechSynthesis.speak(utterance);
+        return;
+      }
+
+      // CLOUD_FEMALE_PRIMARY_FAST: use cloud Aoede only when no verified local female voice exists.
       // Robust chain: direct Gemini 3.8 TTS -> Gemini Live Aoede -> device speech.
       const cloudController = new AbortController();
       serverSpeechRef.current = cloudController;
-      const cloudTimer = window.setTimeout(() => cloudController.abort(), 80000);
+      const cloudTimer = window.setTimeout(() => cloudController.abort(), 18000);
       try {
         const blob = await fetchAngelaSpeech(cleanSpeech, cloudController.signal);
         if (attempt !== speechAttemptRef.current || !enabledRef.current) return;
@@ -509,7 +564,7 @@ export function AIChatAssistant() {
     cancelPending();
     const controller = new AbortController();
     requestRef.current = controller;
-    const timer = setTimeout(() => controller.abort(), 20000);
+    const timer = setTimeout(() => controller.abort(), 9000);
 
     // Barge-in: interrupt any current speech synthesis immediately
     stopSpeaking();
@@ -526,6 +581,24 @@ export function AIChatAssistant() {
     setInputValue("");
     setInterimTranscript("");
     setVoiceState("THINKING");
+
+    const instantReply = getInstantConversationReply(trimmed, languageModeRef.current);
+    if (instantReply) {
+      clearTimeout(timer);
+      if (requestRef.current === controller) requestRef.current = null;
+      languageModeRef.current = instantReply.language;
+      setLanguageMode(instantReply.language);
+      const assistantMsgId = `m-${Date.now() + 1}`;
+      setMessages(prev => [...prev, {
+        id: assistantMsgId,
+        sender: "assistant",
+        text: instantReply.text,
+        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      }]);
+      if (isVoiceEnabled || triggeredByVoice) void speakText(instantReply.text, assistantMsgId);
+      else setVoiceState("READY");
+      return;
+    }
 
     try {
       const selectedLanguage = languageModeRef.current;
@@ -616,7 +689,7 @@ export function AIChatAssistant() {
     const audio = await blobToBase64(blob);
     const response = await fetch("/api/gemini/chat", {
       method: "POST",
-      signal: AbortSignal.timeout(15000),
+      signal: AbortSignal.timeout(7000),
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         mode: "transcribe",
@@ -711,6 +784,14 @@ export function AIChatAssistant() {
 
     if (typeof window === "undefined") return;
     setVoiceState("LISTENING");
+
+    // LOW_LATENCY_VOICE_INPUT: browser speech recognition is usually much faster
+    // than record-upload-transcribe and uses no Gemini transcription quota.
+    if (window.SpeechRecognition || window.webkitSpeechRecognition) {
+      startBrowserRecognitionFallback();
+      return;
+    }
+
     const recorderSupported = typeof MediaRecorder !== "undefined" && Boolean(navigator.mediaDevices?.getUserMedia);
     if (!recorderSupported) {
       startBrowserRecognitionFallback();
