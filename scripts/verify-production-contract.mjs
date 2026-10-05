@@ -20,7 +20,9 @@ const [assistant, audio, speech, chat, token, sitemap, redirects] = await Promis
 
 requireText(assistant, "MediaRecorder", 'Angela customer voice input');
 requireText(assistant, "startBrowserRecognitionFallback(notice)", 'Angela customer voice input');
-requireText(assistant, "CLOUD_FEMALE_PRIMARY_FAST", 'Angela cloud female primary voice');
+requireText(assistant, "DEVICE_FIRST_ANGELA_VOICE", 'Angela low-latency verified female voice');
+requireText(assistant, "LOW_LATENCY_VOICE_INPUT", 'Angela low-latency browser recognition');
+requireText(assistant, "CLOUD_FEMALE_PRIMARY_FAST", 'Angela cloud female fallback voice');
 requireText(assistant, "fetchAngelaSpeech", 'Angela robust cloud voice chain');
 requireText(assistant, "greetAngelaOnOpen", 'Angela immediate opening greeting');
 requireText(assistant, 'void speakText(BANGLA_WELCOME, "welcome-angela-jel")', 'Angela cloud-first opening speech');
@@ -42,9 +44,9 @@ requireText(audio, "fetch('/api/gemini/live-token'", 'Angela browser audio');
 requireText(audio, "voiceName: 'Aoede'", 'Angela browser audio');
 requireText(audio, "gemini-3.8-live", 'Angela browser audio');
 requireText(audio, "fetch('/api/angela/speech'", 'Angela browser audio');
-requireText(audio, "window.setTimeout(() => ttsController.abort(), 32000)", 'Angela browser audio');
+requireText(audio, "window.setTimeout(() => ttsController.abort(), 4500)", 'Angela browser audio');
 requireText(audio, "return await fetchAngelaLiveSpeech(speechText, signal)", 'Angela browser audio');
-requireText(audio, "live_voice_timeout')), 12000", 'Angela browser audio');
+requireText(audio, "live_voice_timeout')), 5000", 'Angela browser audio');
 requireText(audio, "clientContent", 'Angela browser audio');
 requireText(audio, "turnComplete: true", 'Angela browser audio');
 forbidText(audio, "realtimeInput: {\n              text:", 'Angela browser audio');
