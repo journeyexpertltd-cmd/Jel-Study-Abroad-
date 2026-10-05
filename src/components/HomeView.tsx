@@ -97,23 +97,23 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
           <div className="relative z-10 max-w-[790px]">
             <div className="inline-flex items-center gap-3 rounded-full border border-[#45FFA9]/20 bg-[#00613C]/20 px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.18em] text-[#C7EADB] sm:text-xs">
               <span className="h-2.5 w-2.5 rounded-full bg-[#11DD8A] shadow-[0_0_18px_rgba(17,221,138,.75)]" />
-              Global admissions guidance
+              AI-powered travel & global mobility
             </div>
 
             <h1 className="mt-9 max-w-[780px] text-[52px] font-black leading-[0.94] tracking-[-0.065em] text-[#F1FFF8] sm:text-[72px] lg:text-[88px] xl:text-[102px]">
-              Your ambition.<br />A world of <span className="bg-[linear-gradient(90deg,#7EF3BE_10%,#9BEFA8_48%,#F6D143_92%)] bg-clip-text text-transparent">possibilities.</span>
+              Your Journey.<br /><span className="bg-[linear-gradient(90deg,#7EF3BE_10%,#9BEFA8_48%,#F6D143_92%)] bg-clip-text text-transparent">Our Expertise.</span>
             </h1>
 
             <p className="mt-7 max-w-[760px] text-base leading-8 text-[#B9D2C6] sm:text-xl sm:leading-9">
-              From profile assessment and university selection to visa guidance and pre-departure support—move forward with a clear, expert-led plan.
+              Journey Expert Limited connects air ticketing, visa assistance, tours, hotels, Hajj & Umrah, Study Abroad, medical tourism, insurance, corporate travel and human + AI guidance in one trusted ecosystem.
             </p>
 
             <div className="mt-9 flex flex-wrap gap-3">
               <button onClick={() => navigate("apply")} className="inline-flex items-center gap-3 rounded-xl bg-[linear-gradient(110deg,#8FF2C6,#F3D14E)] px-6 py-4 text-sm font-black text-[#053324] shadow-[0_16px_34px_rgba(0,0,0,.18)] transition hover:-translate-y-1 hover:brightness-105">
-                Start application <ArrowRight className="h-4 w-4" />
+                Explore Study Abroad <ArrowRight className="h-4 w-4" />
               </button>
               <button onClick={() => navigate("booking")} className="inline-flex items-center gap-3 rounded-xl bg-[#ECFFF6] px-6 py-4 text-sm font-black text-[#053324] shadow-[0_16px_34px_rgba(0,0,0,.18)] transition hover:-translate-y-1 hover:bg-white">
-                Book free counselling <ArrowRight className="h-4 w-4" />
+                Contact JEL <ArrowRight className="h-4 w-4" />
               </button>
               <button onClick={() => navigate("portal")} className="inline-flex items-center gap-3 rounded-xl border border-white/15 bg-white/[0.05] px-6 py-4 text-sm font-black text-white backdrop-blur transition hover:-translate-y-1 hover:bg-white/10">
                 Student portal <ArrowRight className="h-4 w-4" />
@@ -122,9 +122,9 @@ export function HomeView({ setActiveTab, onPreSelectCountry }: HomeViewProps) {
 
             <div className="mt-10 grid max-w-[760px] grid-cols-1 gap-3 sm:grid-cols-3">
               {[
-                { icon: Users, title: "Profile-first guidance", text: "Plan around your goals" },
-                { icon: Globe2, title: "Global opportunities", text: "Explore study destinations" },
-                { icon: Headphones, title: "Human support", text: "Counsellor-led assistance" },
+                { icon: Users, title: "Travel + education", text: "One connected JEL ecosystem" },
+                { icon: Globe2, title: "Bangladesh to the world", text: "Travel, study and mobility" },
+                { icon: Headphones, title: "Human + AI support", text: "Angela plus JEL specialists" },
               ].map(({ icon: Icon, title, text }) => (
                 <div key={title} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.045] p-3.5 backdrop-blur-md">
                   <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[#7EF3BE]/20 bg-[#7EF3BE]/10 text-[#9AF3C8]"><Icon className="h-5 w-5" /></div>
