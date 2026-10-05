@@ -90,6 +90,7 @@ async function fetchAngelaLiveSpeech(text: string, signal: AbortSignal): Promise
 
     const cleanup = () => {
       clearTimeout(timer);
+      clearTimeout(deadlineTimer);
       signal.removeEventListener('abort', onAbort);
       try { socket.close(); } catch { /* already closed */ }
     };
@@ -116,9 +117,14 @@ async function fetchAngelaLiveSpeech(text: string, signal: AbortSignal): Promise
 
     const onAbort = () => fail(new DOMException('Aborted', 'AbortError'));
     signal.addEventListener('abort', onAbort, { once: true });
-    // Keep backup speech conversational. The primary TTS already had its own
-    // bounded attempt, so a long second wait makes Angela feel unresponsive.
-    const timer = window.setTimeout(() => fail(new Error('live_voice_timeout')), 12000);
+    // Fail quickly when no audio arrives, but let an active response finish.
+    // A fixed 12-second total timer discarded valid chunks on long replies.
+    let timer = window.setTimeout(() => fail(new Error('live_voice_timeout')), 12000);
+    const deadlineTimer = window.setTimeout(() => fail(new Error('live_voice_timeout')), 45000);
+    const noteAudioProgress = () => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => fail(new Error('live_voice_timeout')), 12000);
+    };
 
     socket.onopen = () => {
       socket.send(JSON.stringify({
@@ -165,6 +171,7 @@ async function fetchAngelaLiveSpeech(text: string, signal: AbortSignal): Promise
             const audio = part?.inlineData;
             if (audio?.data && (!audio.mimeType || String(audio.mimeType).includes('audio'))) {
               chunks.push(base64ToBytes(audio.data));
+              noteAudioProgress();
             }
           }
         }
@@ -262,5 +269,6 @@ export function voiceErrorMessage(error: unknown): string {
   if (error instanceof Error && error.name === 'NotAllowedError') return 'শব্দ চালাতে উত্তরের Listen বোতামটি চাপুন।';
   return 'এই মুহূর্তে Angela-র বাংলা female voice চালানো যাচ্ছে না। Listen চেপে আবার চেষ্টা করুন।';
 }
+
 
 
