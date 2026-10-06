@@ -1,4 +1,4 @@
-const MAX_SPEECH_CHARS = 700;
+const MAX_SPEECH_CHARS = 1200;
 const MAX_CACHE_ENTRIES = 12;
 const LIVE_FALLBACK_MODEL = 'gemini-3.8-live';
 const speechCache = new Map<string, Blob>();
@@ -200,6 +200,17 @@ export async function fetchAngelaSpeech(text: string, signal: AbortSignal): Prom
   const cached = speechCache.get(speechText);
   if (cached) return cached;
 
+  // The opening greeting is a pre-rendered Aoede recording, independent of AI quota.
+  if (speechText === 'আসসালামু আলাইকুম। আমি অ্যাঞ্জেলা, JEL Study Abroad-এর AI সহকারী। পড়াশোনা, ভর্তি ও স্কলারশিপ নিয়ে কীভাবে সাহায্য করতে পারি?') {
+    const response = await fetch('/audio/angela-welcome-bn.mp3', { signal });
+    if (response.ok && response.headers.get('content-type')?.includes('audio')) {
+      const blob = await response.blob();
+      if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
+      rememberSpeech(speechText, blob);
+      return blob;
+    }
+  }
+
   // Treat direct TTS quota as a cooldown for that endpoint only. Gemini Live
   // uses a separate session/token path and should still be attempted before
   // falling back to a device voice or text-only response.
@@ -210,7 +221,7 @@ export async function fetchAngelaSpeech(text: string, signal: AbortSignal): Prom
     const ttsController = new AbortController();
     const abortTts = () => ttsController.abort();
     signal.addEventListener('abort', abortTts, { once: true });
-    const ttsTimer = window.setTimeout(() => ttsController.abort(), 4500);
+    const ttsTimer = window.setTimeout(() => ttsController.abort(), 12000);
 
     try {
       const response = await fetch('/api/angela/speech', {
@@ -258,7 +269,10 @@ export async function fetchAngelaSpeech(text: string, signal: AbortSignal): Prom
 
   // Short Live fallback only when the direct TTS endpoint is unavailable.
   if (signal.aborted) throw new DOMException("Aborted", "AbortError");
-  return await fetchAngelaLiveSpeech(speechText, signal);
+  const blob = await fetchAngelaLiveSpeech(speechText, signal);
+  if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
+  rememberSpeech(speechText, blob);
+  return blob;
 }
 
 export function voiceErrorMessage(error: unknown): string {
@@ -269,6 +283,7 @@ export function voiceErrorMessage(error: unknown): string {
   if (error instanceof Error && error.name === 'NotAllowedError') return 'শব্দ চালাতে উত্তরের Listen বোতামটি চাপুন।';
   return 'এই মুহূর্তে Angela-র বাংলা female voice চালানো যাচ্ছে না। Listen চেপে আবার চেষ্টা করুন।';
 }
+
 
 
 

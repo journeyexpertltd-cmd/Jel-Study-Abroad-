@@ -78,7 +78,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   // Keep one bounded provider attempt; do not abort and restart valid generation.
   let sawQuota = false;
   let lastProviderStatus = 0;
-  const voiceDeadline = Date.now() + 30000;
+  const voiceDeadline = Date.now() + 11000;
 
   outer: for (const key of keys) {
     for (const model of models) {
@@ -88,34 +88,17 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
       const timer = setTimeout(() => controller.abort(), remaining);
 
       try {
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
-          {
-            method: 'POST',
-            signal: controller.signal,
-            headers: {
-              'Content-Type': 'application/json',
-              'x-goog-api-key': key,
-            },
-            body: JSON.stringify({
-              contents: [{
-                role: 'user',
-                parts: [{
-                  text,
-                  speech_metadata: {
-                    style: 'Warm, natural, professional adult female delivery. Speak the text exactly as written in its original language.',
-                  },
-                }],
-              }],
-              generationConfig: {
-                responseModalities: ['AUDIO'],
-                speechConfig: {
-                  voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Aoede' } },
-                },
-              },
-            }),
-          },
-        );
+        const response = await fetch('https://generativelanguage.googleapis.com/v1beta/interactions', {
+          method: 'POST', signal: controller.signal,
+          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+          body: JSON.stringify({
+            model,
+            input: [{ type: 'user_input', content: [{ type: 'text', text,
+              annotations: [{ type: 'speech_metadata', style: 'Warm, natural, professional adult female delivery. Speak the exact text in its original language.' }] }] }],
+            response_format: { type: 'audio' },
+            generation_config: { speech_config: [{ voice: 'Aoede' }] },
+          }),
+        });
 
         lastProviderStatus = response.status;
         if (!response.ok) {
@@ -128,9 +111,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
         }
 
         const data: any = await response.json();
-        const audio = data?.candidates?.[0]?.content?.parts
-          ?.map((part: any) => part?.inlineData)
-          .find((part: any) => part && typeof part.data === 'string' && String(part.mimeType || '').startsWith('audio/'));
+        const audio = findAudio(data);
 
         if (!audio?.data) continue;
         const rawAudio = Uint8Array.from(atob(audio.data), character => character.charCodeAt(0));
@@ -177,4 +158,5 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
     providerStatus: lastProviderStatus || undefined,
   }, 503);
 }
+
 
