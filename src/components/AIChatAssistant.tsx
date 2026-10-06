@@ -13,14 +13,15 @@ const jelBrandIcon = new URL("../assets/images/jel-study-abroad-official.webp", 
 
 const ENGLISH_WELCOME = "Assalamu Alaikum. I am Angela, the official AI voice assistant for Journey Expert Limited. You can speak to me in Bangla or English about air tickets, visas, tours, hotels, Hajj and Umrah, Study Abroad, medical tourism, insurance, corporate travel, Meet & Greet, and other verified JEL services. How can I help you?";
 
-const BANGLA_WELCOME = "আসসালামু আলাইকুম। আমি অ্যাঞ্জেলা, JEL Study Abroad-এর AI সহকারী। পড়াশোনা, ভর্তি ও স্কলারশিপ নিয়ে কীভাবে সাহায্য করতে পারি?";
+const BANGLA_WELCOME = "আসসালামু আলাইকুম। আমি অ্যাঞ্জেলা, Journey Expert Limited-এর AI সহকারী। ভ্রমণ, ভিসা, হজ ও উমরাহ, Study Abroad এবং JEL-এর অন্যান্য সেবা নিয়ে কীভাবে সাহায্য করতে পারি?";
 
 function getInstantConversationReply(text: string, selectedLanguage: "bn" | "en") {
   const q = text.toLowerCase().replace(/\s+/g, " ").trim();
   const asksBangla = /(বাংলা|বাংলায়|বাংলায়|bangla|bengali|bengla)/i.test(q)
     && /(কথা|বলতে|বুঝতে|পারো|পারেন|পারবে|পারবেন|speak|talk|understand)/i.test(q)
     && q.length < 180;
-  if (asksBangla) {
+  const hasServiceQuestion = /hotline|phone|contact|whatsapp|হটলাইন|ফোন|নম্বর|নাম্বার|যোগাযোগ|visa|ভিসা|ticket|টিকিট|umrah|উমরাহ|হজ|study|পড়াশোনা|পড়াশোনা|সার্ভিস|service/i.test(q);
+  if (asksBangla && !hasServiceQuestion) {
     return {
       language: "bn" as const,
       text: "হ্যাঁ, অবশ্যই। আমি বাংলায় কথা বলতে ও উত্তর দিতে পারি। আপনি বাংলা, Banglish বা English-এ প্রশ্ন করতে পারেন। কীভাবে সাহায্য করতে পারি?",
