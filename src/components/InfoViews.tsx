@@ -11,7 +11,7 @@ export function AboutView() {
         <span className="text-xs bg-[#00AEEF] text-slate-900 font-bold px-3 py-1 rounded uppercase tracking-wider">Meet the Brand</span>
         <h2 className="text-3xl font-display font-black">A Brand of Journey Expert Ltd.</h2>
         <p className="text-slate-300 text-sm max-w-xl mx-auto leading-relaxed">
-          Providing transparent study-abroad guidance, application support, interview preparation, and document-readiness assistance for Bangladeshi students.
+          Establishing transparent guidance, professional mock interviewing, and high visa conversions for Bangladeshi students aiming at world heights.
         </p>
       </div>
 
@@ -33,7 +33,7 @@ export function AboutView() {
             { title: "Integrity Above All", desc: "We commit to zero forged documentation, ensuring student profiles reflect 100% truth." },
             { title: "Absolute Transparency", desc: "No hidden package charges. You hand-transfer your tuition fees directly to selected universities yourself." },
             { title: "Academic Excellence", desc: "We guide you through rigorous mock university and embassy question templates." },
-            { title: "Student-First Legacy", desc: "We provide pre-departure and post-arrival planning guidance and can explain common accommodation and arrival considerations." }
+            { title: "Student-First Legacy", desc: "We connect you to established alumni hosts in Toronto, London, and Melbourne." }
           ].map((val, idx) => (
             <div key={idx} className="bg-white border border-slate-100 p-5 rounded-2xl shadow-sm space-y-2">
               <span className="text-lg">💎</span>
@@ -93,8 +93,8 @@ export function AboutView() {
       <section className="space-y-8" id="about-team">
         <div className="text-center space-y-1">
           <span className="text-xs text-[#00AEEF] font-bold uppercase tracking-wider block">Leadership & Experts</span>
-          <h3 className="text-2xl font-display font-black text-[#0B5D3B]">JEL Study Abroad Team</h3>
-          <p className="text-slate-500 text-xs sm:text-sm">Supported by a team focused on student counseling, admissions preparation and study-abroad guidance.</p>
+          <h3 className="text-2xl font-display font-black text-[#0B5D3B]">JEL Board of Counselors</h3>
+          <p className="text-slate-500 text-xs sm:text-sm">Driven by certified professionals with profound immigration insights.</p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -172,7 +172,7 @@ export function ServicesView() {
               "Negotiation on course academic fee discounts",
               "Assisting in government fully-funded nominations (Chevening, DAAD)"
             ],
-            desc: "We help students identify scholarship opportunities that may match their profile. Availability, eligibility and awards are determined by the relevant scholarship provider or institution.",
+            desc: "JEL has helped students secure up to 100% tuition coverage to lower overall overseas living and academic expenditures.",
             bg: "bg-amber-50/50"
           },
           {
@@ -258,7 +258,7 @@ export function CountriesView({ selectedCountryName }: CountriesViewProps) {
             <div className="flex items-center space-x-3">
               <span className="text-4xl">{activeCountry.flag}</span>
               <div>
-                <span className="text-[#00AEEF] text-xs font-bold uppercase tracking-widest block font-mono">Study Destination</span>
+                <span className="text-[#00AEEF] text-xs font-bold uppercase tracking-widest block font-mono">Affiliated Partner Seat</span>
                 <h3 className="font-display font-black text-slate-900 text-2xl">{activeCountry.name}</h3>
               </div>
             </div>
@@ -282,7 +282,7 @@ export function CountriesView({ selectedCountryName }: CountriesViewProps) {
           <div className="lg:col-span-5 bg-slate-950 text-[#00AEEF] border border-slate-850 p-6 rounded-2xl space-y-4">
             <div className="flex items-center space-x-2 border-b border-slate-800 pb-2">
               <GraduationCap className="h-5 w-5 text-amber-500 animate-pulse" />
-              <span className="text-white text-xs uppercase font-mono tracking-widest font-bold">Popular Universities</span>
+              <span className="text-white text-xs uppercase font-mono tracking-widest font-bold">QS Top 100 Co-Host Universities</span>
             </div>
             
             <ul className="space-y-2 text-xs font-mono">
@@ -295,7 +295,7 @@ export function CountriesView({ selectedCountryName }: CountriesViewProps) {
             </ul>
             
             <div className="text-[11px] text-slate-400 leading-normal border-t border-slate-800 pt-3">
-              Ask a JEL counselor to verify current application routes, course availability and scholarship information for this destination.
+              We process applications directly matching this destination's scholarship lists. Consult JEL managers.
             </div>
           </div>
         </div>
@@ -333,8 +333,8 @@ export function UniversitiesView({ onPreSelectCourse, initialSearchTerm = "" }: 
     <div className="space-y-8 animate-in fade-in duration-300 font-sans" id="universities-view">
       <div className="text-center space-y-2 max-w-2xl mx-auto">
         <span className="text-xs text-[#00AEEF] font-bold uppercase tracking-wider block">Affiliations</span>
-        <h2 className="text-3xl font-display font-black text-[#0B5D3B]">University & Education Options</h2>
-        <p className="text-slate-500 text-xs sm:text-sm">Filter and review university information and study options. Current courses, admissions and scholarship details must be verified with the relevant institution.</p>
+        <h2 className="text-3xl font-display font-black text-[#0B5D3B]">50+ Certified Partner Universities</h2>
+        <p className="text-slate-500 text-xs sm:text-sm">Filter, search, and review active courses with global scholarship options available right now.</p>
       </div>
 
       {/* Sorting components */}
