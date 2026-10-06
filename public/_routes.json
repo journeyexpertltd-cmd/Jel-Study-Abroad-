@@ -1,1 +1,1 @@
-{"version":1,"include":["/api/*","/angela/*"],"exclude":[]}
+{"version":1,"include":["/*"],"exclude":["/assets/*","/privacy/*","/terms/*","/refund/*","/cookies/*","/robots.txt","/sitemap.xml","/site.webmanifest"]}
