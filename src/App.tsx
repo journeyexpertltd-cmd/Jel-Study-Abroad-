@@ -41,7 +41,7 @@ const verifiedSocialLinks = [
   { label: "IG", name: "Instagram", href: "https://www.instagram.com/journeyexpertltd/" },
   { label: "YT", name: "YouTube", href: "https://www.youtube.com/@JELSTUDYABROAD" },
   { label: "in", name: "LinkedIn", href: "https://www.linkedin.com/in/journey-expert-ltd-jel-13b6123b1" },
-  { label: "WA", name: "WhatsApp", href: "https://wa.me/8801926400400" },
+  { label: "WA", name: "WhatsApp", href: "https://wa.me/8801926400400?text=Assalamu%20Alaikum%20JEL%20Study%20Abroad.%20I%20visited%20journeyexpertbd.com%20and%20would%20like%20study%20abroad%20assistance." },
 ];
 
 const tabToPath: Record<string, string> = {
@@ -312,7 +312,7 @@ export default function App() {
 
       <AIChatAssistant />
 
-      <a href="https://wa.me/8801926400400" target="_blank" rel="noreferrer" className="fixed bottom-5 right-5 z-40 grid h-12 w-12 place-items-center rounded-full bg-[#25D366] text-white shadow-xl transition hover:-translate-y-1" aria-label="WhatsApp JEL"><Phone className="h-5 w-5" /></a>
+      <a href="https://wa.me/8801926400400?text=Assalamu%20Alaikum%20JEL%20Study%20Abroad.%20I%20visited%20journeyexpertbd.com%20and%20would%20like%20study%20abroad%20assistance." target="_blank" rel="noreferrer" className="fixed bottom-5 right-5 z-40 grid h-12 w-12 place-items-center rounded-full bg-[#25D366] text-white shadow-xl transition hover:-translate-y-1" aria-label="WhatsApp JEL"><Phone className="h-5 w-5" /></a>
 
       <footer className="border-t border-white/[0.08] bg-[#00150E] text-white">
         <div className="mx-auto grid max-w-[1480px] grid-cols-1 gap-9 px-5 py-10 sm:px-8 md:grid-cols-2 lg:grid-cols-[1.15fr_.7fr_1fr_1fr] lg:px-10 xl:px-14">
