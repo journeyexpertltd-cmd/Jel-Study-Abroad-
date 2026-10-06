@@ -289,6 +289,7 @@ function retrieveJelKnowledge(query: string) {
 
 // Handle conversation independently of provider quota and business-fact retrieval.
 function conversationReply(message: string, bangla: boolean) {
+  if (/hotline|phone|contact|whatsapp|হটলাইন|ফোন|নম্বর|নাম্বার|যোগাযোগ|হোয়াটসঅ্যাপ|হোয়াটসঅ্যাপ/i.test(message)) return null;
   const q = message.normalize('NFKC').toLowerCase().trim().replace(/[?!।.,]+$/g, '').trim();
   const answer = (bn: string, en: string, language = bangla ? 'bn' : 'en') => ({
     reply: language === 'bn' ? bn : en, language, mode: 'conversation',
