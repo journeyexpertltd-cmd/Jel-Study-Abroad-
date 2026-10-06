@@ -5,7 +5,6 @@ declare global {
   }
 }
 
-// Pixel ID is injected at build time from Cloudflare Pages.
 const pixelId = (import.meta as any).env?.VITE_META_PIXEL_ID?.trim?.() || '';
 
 export function initMetaPixel() {
