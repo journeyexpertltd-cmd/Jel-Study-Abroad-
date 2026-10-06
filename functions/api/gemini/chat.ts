@@ -563,12 +563,12 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   // Keep the customer-facing endpoint bounded. Free Gemini credentials can
   // be rate-limited or temporarily slow; do not serially wait through every
   // model/key combination. The direct provider gets one short total budget.
-  const directDeadline = Date.now() + 3500;
+  const directDeadline = Date.now() + 6500;
   direct: for (const apiKey of apiKeys) {
     for (const model of candidateModels) {
       const remaining = directDeadline - Date.now();
       if (remaining < 900) break direct;
-      const response = await makeRequest(model, apiKey, Math.min(model === 'gemini-3.8-flash' ? 2500 : 1400, remaining));
+      const response = await makeRequest(model, apiKey, Math.min(model === 'gemini-3.8-flash' ? 5000 : 1400, remaining));
       if (!response) continue;
 
       // A quota/auth response applies to the credential, so trying more models
@@ -596,43 +596,6 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
       } catch {
         continue;
       }
-    }
-  }
-
-  // Reuse the already-validated corporate Angela brain before another slow
-  // external provider. Both public domains share the same verified JEL service scope.
-  {
-    try {
-      const response = await fetch('https://journeyexpertltd.com/angela/chat', {
-        method: 'POST',
-        signal: AbortSignal.timeout(1800),
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: last,
-          language: bn ? 'bn' : 'en',
-          history: turns.slice(0, -1).map((turn: any) => ({
-            role: turn.role === 'model' ? 'assistant' : 'user',
-            content: turn.parts[0].text,
-          })),
-        }),
-      });
-      if (response.ok) {
-        const data: any = await response.json();
-        if (data.mode === 'ai'
-          && typeof data.reply === 'string'
-          && data.reply.trim()
-          && !(bn && !/[\u0980-\u09FF]/.test(data.reply))
-          && !(!bn && /[\u0980-\u09FF]/.test(data.reply))) {
-          return json({
-            reply: data.reply.slice(0, 1800),
-            mode: 'ai',
-            language: bn ? 'bn' : 'en',
-            providerModel: 'jel-corporate-' + (data.providerModel || 'gemini'),
-          });
-        }
-      }
-    } catch {
-      // Continue to the dedicated Study AI Studio fallback.
     }
   }
 
@@ -675,4 +638,5 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
 
   return fallback();
 }
+
 
