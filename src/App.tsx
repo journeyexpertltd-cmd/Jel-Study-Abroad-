@@ -12,7 +12,6 @@ import {
 } from "lucide-react";
 import { AIChatAssistant } from "./components/AIChatAssistant";
 import { SearchModal } from "./components/SearchModal";
-import { CookieConsent } from "./components/CookieConsent";
 import { trackMetaPageView } from "./lib/metaPixel";
 
 const SmartCourseFinder = lazy(() => import("./components/SmartCourseFinder").then((m) => ({ default: m.SmartCourseFinder })));
@@ -326,8 +325,6 @@ export default function App() {
         </div>
         <div className="border-t border-white/[0.08] bg-[#00110B]"><div className="mx-auto flex max-w-[1480px] flex-col justify-between gap-3 px-5 py-4 text-[10px] text-[#789989] sm:px-8 md:flex-row lg:px-10 xl:px-14"><span>© {new Date().getFullYear()} JEL Study Abroad, a brand of Journey Expert Ltd.</span><div className="flex flex-wrap gap-4"><a href="/privacy/" className="hover:text-white">Privacy Policy</a><a href="/terms/" className="hover:text-white">Terms & Conditions</a><a href="/refund/" className="hover:text-white">Refund & Cancellation</a><a href="/cookies/" className="hover:text-white">Cookie Policy</a><span>Your Journey, Our Expertise.</span></div></div></div>
       </footer>
-
-      <CookieConsent />
 
       <SearchModal isOpen={searchOpen} onClose={() => setSearchOpen(false)} setActiveTab={setActiveTab} setUniversitySearch={setUniSearch} setScholarshipSearch={setScholarshipSearch} setBlogSearch={setBlogSearch} setInitialBlogId={setInitialBlogId} />
     </div>
