@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { AIChatAssistant } from "./components/AIChatAssistant";
 import { SearchModal } from "./components/SearchModal";
+import { trackMetaPageView } from "./lib/metaPixel";
 
 const SmartCourseFinder = lazy(() => import("./components/SmartCourseFinder").then((m) => ({ default: m.SmartCourseFinder })));
 const EligibilityChecker = lazy(() => import("./components/EligibilityChecker").then((m) => ({ default: m.EligibilityChecker })));
@@ -121,6 +122,7 @@ export default function App() {
   useEffect(() => {
     const target = tabToPath[activeTab] || "/";
     if (window.location.pathname !== target) window.history.pushState(null, "", target);
+    trackMetaPageView();
   }, [activeTab]);
 
   useEffect(() => {
