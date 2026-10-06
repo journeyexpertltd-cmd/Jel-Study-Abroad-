@@ -184,6 +184,7 @@ export default function App() {
         "@type": "Organization",
         name: "Journey Expert Ltd.",
         url: "https://journeyexpertbd.com",
+        identifier: "Trade / Travel Agency / Civil Aviation Licence No. 102",
         logo: "https://journeyexpertbd.com/assets/images/jel-study-abroad-official-v2.png",
         sameAs: verifiedSocialLinks.filter((item) => item.name !== "WhatsApp").map((item) => item.href),
         contactPoint: { "@type": "ContactPoint", telephone: "+8801926400400", contactType: "customer service", areaServed: "BD", availableLanguage: ["en", "bn"] },
@@ -195,7 +196,7 @@ export default function App() {
         url: "https://journeyexpertbd.com",
         telephone: "+8801926400400",
         email: "journeyexpertbd@gmail.com",
-        address: { "@type": "PostalAddress", streetAddress: "189/A, Abdul Motin Complex, Nabisco Mor, Tejgaon", addressLocality: "Dhaka", addressCountry: "BD" },
+        address: { "@type": "PostalAddress", streetAddress: "189/A (2nd Floor), Abdul Motin Complex, Hazi Moron Ali Road, Nabisco Mor, Tejgaon", addressLocality: "Dhaka", addressCountry: "BD" },
       },
     ];
     const script = document.createElement("script");
@@ -260,7 +261,7 @@ export default function App() {
       <header className="border-b border-white/[0.07] bg-[#00150E] text-[10px] text-[#9BBBAD]">
         <div className="mx-auto flex max-w-[1480px] flex-wrap items-center justify-between gap-2 px-5 py-2 sm:px-8 lg:px-10 xl:px-14">
           <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
-            <span className="inline-flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5 text-[#9AF3C8]" />189/A, Abdul Motin Complex, Tejgaon, Dhaka</span>
+            <span className="inline-flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5 text-[#9AF3C8]" />189/A (2nd Floor), Abdul Motin Complex, Hazi Moron Ali Road, Nabisco Mor, Tejgaon, Dhaka-1215</span>
             <span className="hidden items-center gap-1.5 md:inline-flex"><Clock3 className="h-3.5 w-3.5 text-[#9AF3C8]" />Sat–Thu, 10:00–19:00</span>
             <a href="mailto:journeyexpertbd@gmail.com" className="hidden items-center gap-1.5 lg:inline-flex"><Mail className="h-3.5 w-3.5 text-[#9AF3C8]" />journeyexpertbd@gmail.com</a>
           </div>
