@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { AlertCircle, Calendar, CheckCircle2, Globe, Mail, Phone, ShieldCheck, Sparkles, User } from "lucide-react";
+import { trackMetaLead } from "../lib/metaPixel";
 
 interface ConsultationBookingProps {
   preSelectedUniversity: string;
@@ -77,6 +78,7 @@ export function ConsultationBooking({
         phone: mobileNumber.trim(),
         country: preferredCountry,
       });
+      trackMetaLead("consultation");
       setFullName("");
       setEmail("");
       setMobileNumber("");
