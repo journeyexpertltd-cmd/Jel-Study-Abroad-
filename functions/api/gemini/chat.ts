@@ -5,7 +5,7 @@ function resolveAngelaLanguage(message, selected) {
   if (/[\u0980-\u09FF]/.test(message)) return 'bn';
   if (/\b(ami|amar|amake|apni|apnar|apnader|tumi|tomar|tomader|chai|jabo|jete|koto|kivabe|ki|keno|kobe|hobe|korbo|korte|lagbe|bolen|diben|pari|parbo)\b/i.test(message)) return 'bn';
   if (/\b(what|which|how|where|when|can|could|please|tell|your|you|services)\b/i.test(message)) return 'en';
-  return selected === 'en' ? 'en' : 'bn';
+  return selected === 'bn' ? 'bn' : 'en';
 }
 type Context = { request: Request; env: Record<string, string | undefined> };
 
@@ -646,6 +646,23 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   } catch {
     // Fall through immediately to verified local guidance.
   }
+
+  // Reuse JEL's independently configured corporate brain only after local AI fails.
+  try {
+    const response = await fetch('https://journeyexpertltd.com/angela/chat', {
+      method: 'POST', signal: AbortSignal.timeout(1200),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: last, language: bn ? 'bn' : 'en',
+        history: turns.slice(0, -1).map((turn: any) => ({ role: turn.role === 'model' ? 'assistant' : 'user', content: turn.parts[0].text })) }),
+    });
+    if (response.ok) {
+      const data: any = await response.json();
+      if (data.mode === 'ai' && typeof data.reply === 'string' && data.reply.trim()
+          && (bn ? /[\u0980-\u09FF]/.test(data.reply) : !/[\u0980-\u09FF]/.test(data.reply))) {
+        return json({ reply: data.reply.slice(0, 1800), language: bn ? 'bn' : 'en', mode: 'ai', providerModel: 'jel-corporate-' + (data.providerModel || 'chat') });
+      }
+    }
+  } catch { /* Preserve verified local guidance when both providers are unavailable. */ }
 
   return fallback();
 }
