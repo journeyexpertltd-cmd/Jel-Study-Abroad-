@@ -5,7 +5,8 @@ declare global {
   }
 }
 
-const pixelId = (import.meta as any).env?.VITE_META_PIXEL_ID?.trim?.() || '';
+const VERIFIED_JEL_META_PIXEL_ID = '1420574480184897';
+const pixelId = (import.meta as any).env?.VITE_META_PIXEL_ID?.trim?.() || VERIFIED_JEL_META_PIXEL_ID;
 
 export function initMetaPixel() {
   if (!pixelId || typeof window === 'undefined' || typeof document === 'undefined') return false;
@@ -33,10 +34,10 @@ export function trackMetaPageView() {
   if (initMetaPixel()) window.fbq?.('track', 'PageView');
 }
 
-export function trackMetaContact(channel: 'whatsapp' | 'facebook' | 'instagram' | 'youtube' | 'linkedin') {
+export function trackMetaContact(channel: 'whatsapp' | 'phone' | 'email' | 'form' | 'facebook' | 'instagram' | 'youtube' | 'linkedin') {
   if (!initMetaPixel()) return;
-  if (channel === 'whatsapp') {
-    window.fbq?.('track', 'Contact', { channel: 'whatsapp' });
+  if (['whatsapp', 'phone', 'email', 'form'].includes(channel)) {
+    window.fbq?.('track', 'Contact', { channel });
   } else {
     window.fbq?.('trackCustom', 'SocialOutboundClick', { channel });
   }
@@ -50,6 +51,8 @@ export function installMetaOutboundTracking() {
     if (!anchor) return;
     const href = anchor.href.toLowerCase();
     if (href.includes('wa.me/') || href.includes('whatsapp.com/')) return trackMetaContact('whatsapp');
+    if (href.startsWith('tel:')) return trackMetaContact('phone');
+    if (href.startsWith('mailto:')) return trackMetaContact('email');
     if (href.includes('facebook.com/')) return trackMetaContact('facebook');
     if (href.includes('instagram.com/')) return trackMetaContact('instagram');
     if (href.includes('youtube.com/')) return trackMetaContact('youtube');
@@ -57,4 +60,9 @@ export function installMetaOutboundTracking() {
   };
   document.addEventListener('click', handler, { capture: true });
   return () => document.removeEventListener('click', handler, { capture: true } as any);
+}
+
+
+export function trackMetaLead(source: 'consultation' | 'student_application' | 'contact_form') {
+  if (initMetaPixel()) window.fbq?.('track', 'Lead', { source });
 }
