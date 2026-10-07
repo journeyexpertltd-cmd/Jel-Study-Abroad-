@@ -43,6 +43,7 @@ const BANGLA_FEMALE_HINTS = ["nabanita", "nabanita online", "tanishaa", "lekha",
 const BANGLA_MALE_HINTS = ["pradeep", "pradip", "bhashkar", "bhaskar", "bashkar", "male", "man"];
 const ENGLISH_FEMALE_HINTS = ["zira", "aria", "jenny", "sonia", "samantha", "victoria", "ava", "allison", "karen", "susan", "hazel", "libby", "natasha", "serena", "moira", "fiona", "tessa", "veena", "female", "woman", "google uk english female"];
 
+// DEVICE_FIRST_ANGELA_VOICE: prefer a verified female device voice first; only then use server/Live speech fallback.
 function pickAngelaDeviceVoice(voices: SpeechSynthesisVoice[], language: "bn" | "en"): SpeechSynthesisVoice | null {
   // STRICT_FEMALE_ONLY: never let a language-only match select an arbitrary
   // default voice. If an explicitly female voice cannot be identified, Angela

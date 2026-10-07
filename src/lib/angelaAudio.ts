@@ -201,7 +201,7 @@ export async function fetchAngelaSpeech(text: string, signal: AbortSignal): Prom
   if (cached) return cached;
 
   // The opening greeting is a pre-rendered Aoede recording, independent of AI quota.
-  if (speechText === 'আসসালামু আলাইকুম। আমি অ্যাঞ্জেলা, JEL Study Abroad-এর AI সহকারী। পড়াশোনা, ভর্তি ও স্কলারশিপ নিয়ে কীভাবে সাহায্য করতে পারি?') {
+  if (speechText === 'আসসালামু আলাইকুম। আমি অ্যাঞ্জেলা, Journey Expert Limited-এর AI সহকারী। ভ্রমণ, ভিসা, হজ ও উমরাহ, Study Abroad এবং JEL-এর অন্যান্য সেবা নিয়ে কীভাবে সাহায্য করতে পারি?') {
     const response = await fetch('/audio/angela-welcome-bn.mp3', { signal });
     if (response.ok && response.headers.get('content-type')?.includes('audio')) {
       const blob = await response.blob();
@@ -217,6 +217,7 @@ export async function fetchAngelaSpeech(text: string, signal: AbortSignal): Prom
   const directTtsCoolingDown = Date.now() < voiceQuotaCooldownUntil;
 
   if (!directTtsCoolingDown) {
+    // CLOUD_FEMALE_PRIMARY_FAST: prefer the bounded server-side female TTS path before Gemini Live fallback.
     // Low-latency path: use the same-origin Gemini TTS endpoint first.
     const ttsController = new AbortController();
     const abortTts = () => ttsController.abort();

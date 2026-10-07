@@ -637,6 +637,46 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
     // Fall through immediately to verified local guidance.
   }
 
+  // Reuse the corporate Angela service as a final AI fallback when the local
+  // Gemini credentials and Study AI Studio are degraded. Keep this bounded so
+  // a corporate outage never stalls the customer-facing Study endpoint.
+  if (new URL(request.url).hostname !== 'journeyexpertltd.com') {
+    try {
+      const response = await fetch('https://journeyexpertltd.com/angela/chat', {
+        method: 'POST',
+        signal: AbortSignal.timeout(1400),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: last,
+          language: bn ? 'bn' : 'en',
+          history: turns.slice(0, -1).map((turn: any) => ({
+            role: turn.role === 'model' ? 'assistant' : 'user',
+            content: turn.parts[0].text,
+          })),
+        }),
+      });
+      if (response.ok) {
+        const data: any = await response.json();
+        const reply = typeof data.reply === 'string' ? data.reply.trim() : '';
+        const validLanguage = reply
+          && !(bn && !/[\u0980-\u09FF]/.test(reply))
+          && !(!bn && /[\u0980-\u09FF]/.test(reply));
+        if (validLanguage && data.mode !== 'fallback') {
+          return json({
+            reply: reply.slice(0, 1800),
+            mode: 'ai',
+            language: bn ? 'bn' : 'en',
+            providerModel: 'jel-corporate-' + (data.providerModel || 'chat'),
+            primaryIntent: retrievedKnowledge.primary?.id || 'unverified',
+            groundingIds: retrievedKnowledge.ids,
+          });
+        }
+      }
+    } catch {
+      // Fall through immediately to verified local guidance.
+    }
+  }
+
   return fallback();
 }
 
