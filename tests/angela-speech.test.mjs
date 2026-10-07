@@ -17,20 +17,21 @@ test('Speech endpoint rejects bad requests and missing credentials without calli
  assert.equal((await onRequest({ request: request('হ্যালো'), env: {} })).status, 503);
  } finally { globalThis.fetch = original; }
 });
-test('Speech uses official Gemini 3.8 generateContent WAV and maps quota errors without exposing secrets', async () => {
+test('Speech uses official Gemini interactions WAV and maps quota errors without exposing secrets', async () => {
  const original = globalThis.fetch;
  try {
  const pcm = new Uint8Array(pcmToWav(new Uint8Array([0,0,0,0])));
  const encoded = Buffer.from(pcm).toString('base64');
  globalThis.fetch = async (url, options) => {
- assert.equal(String(url), 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash-lite-tts:generateContent');
+ assert.equal(String(url), 'https://generativelanguage.googleapis.com/v1beta/interactions');
  assert.equal(options.headers['x-goog-api-key'], 'test-key');
  const body = JSON.parse(options.body);
- assert.equal(body.contents[0].parts[0].text, 'আমি অ্যাঞ্জেলা');
- assert.match(body.contents[0].parts[0].speech_metadata.style, /professional adult female/i);
- assert.deepEqual(body.generationConfig.responseModalities, ['AUDIO']);
- assert.equal(body.generationConfig.speechConfig.voiceConfig.prebuiltVoiceConfig.voiceName, 'Aoede');
- return Response.json({ candidates: [{ content: { parts: [{ inlineData: { data: encoded, mimeType: 'audio/wav' } }] } }] });
+ assert.equal(body.input[0].content[0].text, 'আমি অ্যাঞ্জেলা');
+ assert.match(body.input[0].content[0].annotations[0].style, /professional adult female/i);
+ assert.deepEqual(body.response_format, { type: 'audio' });
+ assert.equal(body.model, 'gemini-3.8-flash-lite-tts');
+ assert.equal(body.generation_config.speech_config[0].voice, 'Aoede');
+ return Response.json({ steps: [{ content: [{ type: 'audio', data: encoded, mime_type: 'audio/wav' }] }] });
  };
  const response = await onRequest({ request: request('আমি অ্যাঞ্জেলা'), env: { GEMINI_API_KEY: 'test-key' } });
  assert.equal(response.status, 200);
@@ -68,3 +69,4 @@ test('BD Angela Live female renderer keeps a bounded 12s audio window', async ()
  const source = await readFile(new URL('../src/lib/angelaAudio.ts', import.meta.url), 'utf8');
  assert.match(source, /live_voice_timeout'\)\), 12000/);
 });
+
