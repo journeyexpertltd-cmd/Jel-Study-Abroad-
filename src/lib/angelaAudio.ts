@@ -217,6 +217,7 @@ export async function fetchAngelaSpeech(text: string, signal: AbortSignal): Prom
   const directTtsCoolingDown = Date.now() < voiceQuotaCooldownUntil;
 
   if (!directTtsCoolingDown) {
+    // CLOUD_FEMALE_PRIMARY_FAST: prefer the bounded server-side female TTS path before Gemini Live fallback.
     // Low-latency path: use the same-origin Gemini TTS endpoint first.
     const ttsController = new AbortController();
     const abortTts = () => ttsController.abort();
