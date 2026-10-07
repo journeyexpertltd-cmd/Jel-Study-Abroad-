@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { AIChatAssistant } from "./components/AIChatAssistant";
 import { SearchModal } from "./components/SearchModal";
+import { CookieConsent } from "./components/CookieConsent";
 import { trackMetaPageView } from "./lib/metaPixel";
 
 const SmartCourseFinder = lazy(() => import("./components/SmartCourseFinder").then((m) => ({ default: m.SmartCourseFinder })));
@@ -328,6 +329,7 @@ export default function App() {
       </footer>
 
       <SearchModal isOpen={searchOpen} onClose={() => setSearchOpen(false)} setActiveTab={setActiveTab} setUniversitySearch={setUniSearch} setScholarshipSearch={setScholarshipSearch} setBlogSearch={setBlogSearch} setInitialBlogId={setInitialBlogId} />
-    </div>
+      <CookieConsent />
+</div>
   );
 }
