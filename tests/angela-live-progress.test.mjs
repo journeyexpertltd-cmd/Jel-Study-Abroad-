@@ -20,7 +20,7 @@ for (const scenario of ['progress', 'stall', 'deadline', 'cancel']) {
       : Response.json({ error: 'test-primary-unavailable' }, { status: 503 });
     try {
       const controller = new AbortController();
-      const result = fetchAngelaSpeech('A complete voice reply', controller.signal);
+      const result = fetchAngelaSpeech(`A complete voice reply: ${scenario}`,  controller.signal);
       const outcome = result.then(value => ({value}), error => ({error}));
       for (let i = 0; i < 50 && !socket; i++) await Promise.resolve();
       assert.ok(socket, 'Live fallback must open');
@@ -54,3 +54,4 @@ for (const scenario of ['progress', 'stall', 'deadline', 'cancel']) {
     }
   });
 }
+

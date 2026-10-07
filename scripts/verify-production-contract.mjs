@@ -8,7 +8,7 @@ const forbidText = (text, needle, label) => {
   if (text.includes(needle)) throw new Error(`${label}: forbidden legacy contract found: ${needle}`);
 };
 
-const [assistant, audio, speech, chat, token, sitemap, redirects] = await Promise.all([
+const [assistant, audio, speech, chat, token, sitemap, redirects, playback] = await Promise.all([
   read('src/components/AIChatAssistant.tsx'),
   read('src/lib/angelaAudio.ts'),
   read('functions/angela/speech.ts'),
@@ -16,13 +16,14 @@ const [assistant, audio, speech, chat, token, sitemap, redirects] = await Promis
   read('functions/api/gemini/live-token.ts'),
   read('public/sitemap.xml'),
   read('public/_redirects'),
+  read('src/lib/angelaPlayback.ts'),
 ]);
 
 requireText(assistant, "MediaRecorder", 'Angela customer voice input');
 requireText(assistant, "startBrowserRecognitionFallback(notice)", 'Angela customer voice input');
-requireText(assistant, "DEVICE_FIRST_ANGELA_VOICE", 'Angela low-latency verified female voice');
+requireText(playback, "if (voice && window.speechSynthesis)", 'Angela low-latency verified female voice');
 requireText(assistant, "LOW_LATENCY_VOICE_INPUT", 'Angela low-latency browser recognition');
-requireText(assistant, "CLOUD_FEMALE_PRIMARY_FAST", 'Angela cloud female fallback voice');
+requireText(assistant, "playbackRef.current!.play(text, voice, fetchAngelaSpeech", 'Angela cloud female fallback voice');
 requireText(assistant, "fetchAngelaSpeech", 'Angela robust cloud voice chain');
 requireText(assistant, "greetAngelaOnOpen", 'Angela immediate opening greeting');
 requireText(assistant, 'void speakText(BANGLA_WELCOME, "welcome-angela-jel")', 'Angela cloud-first opening speech');
@@ -32,10 +33,10 @@ requireText(assistant, 'data-voice-contract="cloud female primary; device voice 
 requireText(assistant, "BANGLA_FEMALE_HINTS", 'Angela cross-platform female voice selection');
 requireText(assistant, "BANGLA_MALE_HINTS", 'Angela male voice exclusion');
 requireText(assistant, "pickAngelaDeviceVoice", 'Angela cross-platform voice ranking');
-requireText(assistant, "if (!preferredDeviceVoice)", 'Angela requires an identified female device voice');
-requireText(assistant, "speakWithBrowser(utterance, preferredDeviceVoice)", 'Angela female-only device fallback');
+requireText(assistant, "femaleNamed && !maleNamed && languageMatch", 'Angela requires an identified female device voice');
+requireText(playback, "utterance.voice = voice", 'Angela female-only device fallback');
 forbidText(assistant, "|| voices.find", 'Angela must not choose an arbitrary or male device voice');
-requireText(assistant, 'if (context?.state === "running")', 'Angela Web Audio must be running before playback');
+requireText(playback, "if (context?.state === 'running')", 'Angela Web Audio must be running before playback');
 requireText(chat, "You serve visitors on both journeyexpertbd.com and journeyexpertltd.com", 'Angela unified JEL knowledge');
 requireText(chat, "air ticketing; fare quotation; reissue/refund support", 'Angela unified JEL services');
 requireText(chat, "https://journeyexpertltd.com/angela/transcribe", 'Angela transcription failover');
@@ -44,8 +45,8 @@ requireText(audio, "fetch('/api/gemini/live-token'", 'Angela browser audio');
 requireText(audio, "voiceName: 'Aoede'", 'Angela browser audio');
 requireText(audio, "gemini-3.8-live", 'Angela browser audio');
 requireText(audio, "fetch('/api/angela/speech'", 'Angela browser audio');
-requireText(audio, "window.setTimeout(() => ttsController.abort(), 4500)", 'Angela browser audio');
-requireText(audio, "return await fetchAngelaLiveSpeech(speechText, signal)", 'Angela browser audio');
+requireText(audio, "window.setTimeout(() => ttsController.abort(), 12000)", 'Angela browser audio');
+requireText(audio, "await fetchAngelaLiveSpeech(speechText, signal)", 'Angela browser audio');
 requireText(audio, "live_voice_timeout')), 5000", 'Angela browser audio');
 requireText(audio, "clientContent", 'Angela browser audio');
 requireText(audio, "turnComplete: true", 'Angela browser audio');
@@ -55,14 +56,14 @@ requireText(speech, "env.GEMINI_TTS_API_KEY?.trim()", 'Angela TTS endpoint prima
 requireText(speech, "env.GEMINI_API_KEY?.trim()", 'Angela TTS endpoint secondary key');
 requireText(speech, "for (const key of keys)", 'Angela TTS key failover');
 requireText(speech, "env.ANGELA_SERVER_VOICE === 'off'", 'Angela TTS endpoint');
-requireText(speech, "const voiceDeadline = Date.now() + 30000", 'Angela TTS endpoint');
+requireText(speech, "const voiceDeadline = Date.now() + 11000", 'Angela TTS endpoint');
 requireText(speech, "gemini-3.8-flash-lite-tts", 'Angela TTS endpoint');
-requireText(speech, "v1beta/models/", 'Angela TTS endpoint');
-requireText(speech, ":generateContent", 'Angela TTS endpoint');
+requireText(speech, "v1beta/interactions", 'Angela TTS endpoint');
+requireText(speech, "speech_metadata", 'Angela TTS endpoint');
 forbidText(speech, "sample_rate", 'Angela TTS endpoint');
-requireText(speech, "prebuiltVoiceConfig: { voiceName: 'Aoede' }", 'Angela TTS endpoint');
+requireText(speech, "speech_config: [{ voice: 'Aoede' }]", 'Angela TTS endpoint');
 requireText(speech, "audio/wav", 'Angela TTS endpoint');
-requireText(speech, "responseModalities: ['AUDIO']", 'Angela TTS endpoint');
+requireText(speech, "response_format: { type: 'audio' }", 'Angela TTS endpoint');
 requireText(speech, "gemini-3.8-flash-tts", 'Angela TTS endpoint');
 
 requireText(chat, "const candidateModels = ['gemini-3.8-flash', 'gemini-3.5-flash', 'gemini-2.5-flash']", 'Angela chat endpoint');
@@ -95,4 +96,5 @@ forbidText(redirects, '/about /about/ 301', 'Redirects');
 forbidText(redirects, '/ects-calculator /ects-calculator/ 301', 'Redirects');
 
 console.log('Production contract verified: bounded bilingual AI, cloud-to-device voice resilience, transcription failover, domain and canonical rules are locked.');
+
 

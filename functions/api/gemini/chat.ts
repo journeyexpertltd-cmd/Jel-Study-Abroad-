@@ -1,3 +1,12 @@
+function resolveAngelaLanguage(message, selected) {
+  // Explicit language instructions override the previous conversation language.
+  if (/(?:answer|reply|respond|speak|talk|বলুন|বলো|উত্তর).*?(?:in\s+)?(?:english|ইংরেজি)|(?:english|ইংরেজি)(?:\s+please|তে\s*(?:বলুন|বলো|উত্তর))/i.test(message)) return 'en';
+  if (/(?:answer|reply|respond|speak|talk).*?(?:bangla|bengali)|বাংলা(?:য়|য়|তে)?\s*(?:উত্তর|বলুন|বলো)/i.test(message)) return 'bn';
+  if (/[\u0980-\u09FF]/.test(message)) return 'bn';
+  if (/\b(ami|amar|amake|apni|apnar|apnader|tumi|tomar|tomader|chai|jabo|jete|koto|kivabe|ki|keno|kobe|hobe|korbo|korte|lagbe|bolen|diben|pari|parbo)\b/i.test(message)) return 'bn';
+  if (/\b(what|which|how|where|when|can|could|please|tell|your|you|services)\b/i.test(message)) return 'en';
+  return selected === 'bn' ? 'bn' : 'en';
+}
 type Context = { request: Request; env: Record<string, string | undefined> };
 
 // Production redeploy marker 2026-09-23: keep the latest resilient Angela chat fallback chain active on Cloudflare Pages.
@@ -466,6 +475,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   if (!turns.length || turns[turns.length - 1].role !== 'user') return json({ error: 'User message required' }, 400);
   const last = turns[turns.length - 1].parts[0].text;
   const fromVoice = body.source === 'voice';
+  const responseLanguage = resolveAngelaLanguage(last, body.language);
 
   // OUTCOME_GUARANTEE_CONTRACT_LOCK: Any explicit admission/scholarship/visa
   // guarantee question must receive an explicit no-guarantee statement,
@@ -476,13 +486,13 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   const hasStudyOutcomeContext =
     /study|student|university|admission|scholarship|visa|permit|course|destination|স্টাডি|স্টুডেন্ট|বিশ্ববিদ্যাল|অ্যাডমিশন|স্কলারশিপ|ভিসা/.test(normalizedLast);
   if (asksOutcomeGuarantee && hasStudyOutcomeContext) {
-    const reply = body.language === 'bn' || /[\u0980-\u09FF]/.test(last)
+    const reply = responseLanguage === 'bn'
       ? 'JEL Study Abroad প্রোফাইল assessment, দেশ/কোর্স/বিশ্ববিদ্যালয় নির্বাচন, admission ও scholarship guidance, SOP, English-language test guidance, student-visa documents এবং pre-/post-arrival guidance দেয়। Admission, scholarship বা visa approval কোনোভাবেই guaranteed নয়—final decision সংশ্লিষ্ট university, embassy বা immigration authority-এর।'
       : 'JEL Study Abroad supports profile assessment, country/course/university selection, admissions and scholarship guidance, SOP, English-language tests, student-visa documents, and pre-/post-arrival guidance. Admission, scholarship, and visa approval are not guaranteed; final decisions belong to the relevant university, embassy, or immigration authority.';
     return json({
       reply,
       mode: 'verified',
-      language: body.language === 'bn' || /[\u0980-\u09FF]/.test(last) ? 'bn' : 'en',
+      language: responseLanguage === 'bn' ? 'bn' : 'en',
       primaryIntent: 'study_outcome_guarantee',
       groundingIds: ['study_abroad'],
     });
@@ -491,7 +501,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   // otherwise detect common Banglish only for auto/unspecified mode.
   const hasBanglaScript = /[\u0980-\u09FF]/.test(last);
   const looksBanglish = /\b(ami|amar|amake|apni|apnar|tumi|tomar|chai|jabo|jete|koto|kivabe|ki|keno|kobe|hobe|korbo|korte|lagbe|bolen|diben|pari|parbo|porte|bidesh)\b/i.test(last);
-  const bn = hasBanglaScript || body.language === 'bn' || ((body.language === 'auto' || !body.language) && looksBanglish);
+  const bn = responseLanguage === 'bn';
   const conversational = conversationReply(last, bn);
   if (conversational) return json(conversational);
   const contextualQuery = followUpQuery(last, turns);
@@ -637,7 +647,25 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
     // Fall through immediately to verified local guidance.
   }
 
+  // Reuse JEL's independently configured corporate brain only after local AI fails.
+  try {
+    const response = await fetch('https://journeyexpertltd.com/angela/chat', {
+      method: 'POST', signal: AbortSignal.timeout(1200),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: last, language: bn ? 'bn' : 'en',
+        history: turns.slice(0, -1).map((turn: any) => ({ role: turn.role === 'model' ? 'assistant' : 'user', content: turn.parts[0].text })) }),
+    });
+    if (response.ok) {
+      const data: any = await response.json();
+      if (data.mode === 'ai' && typeof data.reply === 'string' && data.reply.trim()
+          && (bn ? /[\u0980-\u09FF]/.test(data.reply) : !/[\u0980-\u09FF]/.test(data.reply))) {
+        return json({ reply: data.reply.slice(0, 1800), language: bn ? 'bn' : 'en', mode: 'ai', providerModel: 'jel-corporate-' + (data.providerModel || 'chat') });
+      }
+    }
+  } catch { /* Preserve verified local guidance when both providers are unavailable. */ }
+
   return fallback();
 }
+
 
 
