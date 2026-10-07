@@ -6,9 +6,14 @@ declare global {
 }
 
 const pixelId = (import.meta as any).env?.VITE_META_PIXEL_ID?.trim?.() || '';
+const CONSENT_KEY = 'jel_cookie_consent';
+
+function hasAnalyticsConsent() {
+  try { return localStorage.getItem(CONSENT_KEY) === 'accepted'; } catch { return false; }
+}
 
 export function initMetaPixel() {
-  if (!pixelId || typeof window === 'undefined' || typeof document === 'undefined') return false;
+  if (!pixelId || typeof window === 'undefined' || typeof document === 'undefined' || !hasAnalyticsConsent()) return false;
   if (window.fbq) return true;
 
   const fbq: any = function (...args: any[]) {
@@ -56,5 +61,12 @@ export function installMetaOutboundTracking() {
     if (href.includes('linkedin.com/')) return trackMetaContact('linkedin');
   };
   document.addEventListener('click', handler, { capture: true });
-  return () => document.removeEventListener('click', handler, { capture: true } as any);
+  const onConsent = (event: Event) => {
+    if ((event as CustomEvent).detail === 'accepted') trackMetaPageView();
+  };
+  window.addEventListener('jel:cookie-consent', onConsent);
+  return () => {
+    document.removeEventListener('click', handler, { capture: true } as any);
+    window.removeEventListener('jel:cookie-consent', onConsent);
+  };
 }
