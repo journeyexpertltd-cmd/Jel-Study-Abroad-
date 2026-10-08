@@ -536,6 +536,7 @@ export function AIChatAssistant() {
 
     let finalTranscript = "";
     let latestInterim = "";
+    let recognitionFailed = false;
 
     recognition.onstart = () => {
       setVoiceState("LISTENING");
@@ -554,6 +555,7 @@ export function AIChatAssistant() {
       setInterimTranscript(interim || finalTranscript);
     };
     recognition.onerror = (event: any) => {
+      recognitionFailed = true;
       if (recognitionRef.current === recognition) recognitionRef.current = null;
       setInterimTranscript("");
       if (event.error === "no-speech") {
@@ -566,7 +568,9 @@ export function AIChatAssistant() {
       setVoiceState("ERROR");
     };
     recognition.onend = () => {
-      if (recognitionRef.current === recognition) recognitionRef.current = null;
+      // Ignore an aborted/replaced recognizer and preserve genuine microphone errors.
+      if (recognitionRef.current !== recognition || recognitionFailed) return;
+      recognitionRef.current = null;
       const spoken = finalTranscript.trim() || latestInterim.trim();
       setInterimTranscript("");
       if (spoken) handleSendMessage(spoken, true);
