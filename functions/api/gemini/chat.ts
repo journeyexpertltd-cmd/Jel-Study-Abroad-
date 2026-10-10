@@ -512,6 +512,50 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
     env.GEMINI_API_KEY?.trim(),
     env.GEMINI_TTS_API_KEY?.trim(),
   ].filter((key): key is string => Boolean(key))));
+  // Cloudflare Workers AI is available within the account's free daily
+  // allocation. It lets both JEL portals answer real questions when the
+  // configured Google AI Studio credential is absent or quota-limited.
+  const workerAI = (env as unknown as { AI?: { run: (model: string, request: unknown) => Promise<any> } }).AI;
+  if (workerAI && typeof workerAI.run === 'function') {
+    try {
+      const languageRule = bn
+        ? 'Respond in natural Bengali script. Answer the exact question directly.'
+        : 'Respond in clear English. Answer the exact question directly.';
+      const previousTurns = turns.slice(0, -1).slice(-5).map((turn: any) => ({
+        role: turn.role === 'model' ? 'assistant' : 'user',
+        content: String(turn.parts?.[0]?.text || '').slice(0, 900),
+      }));
+      const result: any = await Promise.race([
+        workerAI.run('@cf/meta/llama-3.1-8b-instruct-fast', {
+          messages: [
+            { role: 'system', content: 'You are Angela, the assistant of Journey Expert Limited (JEL), Bangladesh. ' +
+              'Reply helpfully and professionally. Do not repeat generic verified knowledge instead of answering. ' +
+              'Company services: travel booking, airline tickets, visas, Study Abroad, hotels, tours, Hajj/Umrah and medical tourism. ' +
+              'Contact: +8801926400400. Do not guarantee visas, admissions, inventory or live pricing. ' +
+              'For unknown JEL facts, disclose uncertainty. ' + languageRule +
+              '\nVerified JEL knowledge: ' + retrievedKnowledge.text.slice(0, 1900) },
+            ...previousTurns,
+            { role: 'user', content: last.slice(0, 1400) },
+          ],
+          max_tokens: 230,
+        }),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('cloudflare_ai_timeout')), 8500)),
+      ]);
+      const answer = String(result?.response || result?.choices?.[0]?.message?.content || '').trim();
+      const matchingLanguage = bn ? /[\u0980-\u09FF]/.test(answer) : !/[\u0980-\u09FF]/.test(answer);
+      if (answer.length >= 12 && matchingLanguage) return json({
+        reply: answer.slice(0, 1800),
+        mode: 'ai',
+        language: bn ? 'bn' : 'en',
+        providerModel: 'cloudflare-llama-3.1-8b-fast',
+        primaryIntent: retrievedKnowledge.primary?.id || 'general',
+        groundingIds: retrievedKnowledge.ids,
+      });
+    } catch (error) {
+      console.warn('Angela Workers AI fallback failed', error instanceof Error ? error.message : 'unknown');
+    }
+  }
+
   if (!apiKeys.length) {
     const studyAiStudioOrigin = (env.STUDY_AI_STUDIO_ORIGIN || 'https://jel-study-abroad.ai.studio').replace(/\/$/, '');
     try {
