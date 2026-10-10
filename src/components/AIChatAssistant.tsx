@@ -36,6 +36,15 @@ function getInstantConversationReply(text: string, selectedLanguage: "bn" | "en"
   return null;
 }
 
+function resolveAngelaLanguage(text: string, current: "bn" | "en"): "bn" | "en" {
+  if (/(?:in|speak|reply|answer|respond|explain)\s+(?:in\s+)?english\b|ইংরেজিতে|ইংলিশে/i.test(text)) return "en";
+  if (/(?:in|speak|reply|answer|respond|explain)\s+(?:in\s+)?(?:bangla|bengali)\b|বাংলায়|বাংলায়/i.test(text)) return "bn";
+  if (/[\u0980-\u09ff]/.test(text)) return "bn";
+  if (/\b(?:ami|amar|apni|apnar|apnader|tumi|tomar|kivabe|kibhabe|koto|chai|chachi|bolun|korbo|achen|ache)\b/i.test(text)) return "bn";
+  if (/\b(?:what|where|when|how|please|could|would|explain|tell|your|services)\b/i.test(text)) return "en";
+  return current;
+}
+
 const isBanglaText = (text: string) => /[\u0980-\u09FF]/.test(text);
 const welcomeFor = (mode: "en" | "bn") => mode === "bn" ? BANGLA_WELCOME : ENGLISH_WELCOME;
 
@@ -389,7 +398,10 @@ export function AIChatAssistant() {
     setInterimTranscript("");
     setVoiceState("THINKING");
 
-    const instantReply = getInstantConversationReply(trimmed, languageModeRef.current);
+    const requestedLanguage = resolveAngelaLanguage(trimmed, languageModeRef.current);
+    languageModeRef.current = requestedLanguage;
+    setLanguageMode(requestedLanguage);
+    const instantReply = getInstantConversationReply(trimmed, requestedLanguage);
     if (instantReply) {
       clearTimeout(timer);
       if (requestRef.current === controller) requestRef.current = null;
