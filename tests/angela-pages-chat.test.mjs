@@ -417,5 +417,5 @@ test('Explicit Study Abroad guarantee questions always receive a no-guarantee gu
   assert.equal(bn.language, 'bn');
   assert.equal(bn.primaryIntent, 'study_outcome_guarantee');
   assert.match(bn.reply, /guaranteed|গ্যারান্টি/i);
-  assert.match(bn.reply, /university|embassy|immigration authority/i);
+  assert.match(bn.reply, /university|embassy|immigration authority|বিশ্ববিদ্যালয়|ইমিগ্রেশন কর্তৃপক্ষ/i);
 });
