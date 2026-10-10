@@ -222,7 +222,7 @@ export async function fetchAngelaSpeech(text: string, signal: AbortSignal): Prom
     const ttsController = new AbortController();
     const abortTts = () => ttsController.abort();
     signal.addEventListener('abort', abortTts, { once: true });
-    const ttsTimer = window.setTimeout(() => ttsController.abort(), 23000);
+    const ttsTimer = window.setTimeout(() => ttsController.abort(), 26000);
 
     try {
       const response = await fetch('/api/angela/speech', {
