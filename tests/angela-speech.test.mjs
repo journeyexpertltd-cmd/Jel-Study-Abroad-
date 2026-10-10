@@ -52,7 +52,7 @@ test('Speech uses official Gemini Interactions WAV and maps quota errors without
  assert.equal(limitedBody.providerStatus,429);
 
  globalThis.fetch = async () => Response.json({ output: [] });
- assert.equal((await onRequest({ request: request('হ্যালো'), env: { GEMINI_API_KEY:'test-key' } })).status,503);
+ assert.equal((await onRequest({ request: request('হ্যালো'), env: { GEMINI_API_KEY:'test-key' } })).status,422);
  } finally { globalThis.fetch=original; }
 });
 
