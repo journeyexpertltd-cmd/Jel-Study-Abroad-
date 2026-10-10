@@ -52,7 +52,7 @@ export class AngelaPlayback {
     const clean = text.replace(/[*#_`]/g, '').replace(/https?:\/\/\S+/g, '').trim();
     if (!clean) return;
     try {
-      if (voice && window.speechSynthesis) {
+      if (voice && /female|zira|samantha|victoria|aria|jenny|heera|tania|priya|kalpana|nabanita|tanishaa|lekha|sangeeta/i.test(voice.name) && window.speechSynthesis) {
         const played = await new Promise<boolean>((resolve) => {
           const utterance = new SpeechSynthesisUtterance(clean);
           this.utterance = utterance;
