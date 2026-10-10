@@ -247,6 +247,11 @@ export async function fetchAngelaSpeech(text: string, signal: AbortSignal): Prom
       }
 
       const data = await response.json().catch(() => ({}));
+      // Do not retry with an English-only voice disguised as Bangla. The UI
+      // explains how to enable a genuine Bengali female device voice.
+      if (response.status === 422 && data?.error === 'native_bengali_voice_required') {
+        throw new Error('native_bengali_voice_required');
+      }
       if (response.status === 429) {
         const retryAfterSeconds = Number(response.headers.get('retry-after'));
         const cooldownSeconds = Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0
@@ -259,6 +264,7 @@ export async function fetchAngelaSpeech(text: string, signal: AbortSignal): Prom
       }
     } catch (ttsError) {
       if (signal.aborted) throw ttsError;
+      if (ttsError instanceof Error && ttsError.message === 'native_bengali_voice_required') throw ttsError;
       console.warn('Angela TTS notice; using Live fallback:', ttsError);
     } finally {
       window.clearTimeout(ttsTimer);
@@ -278,6 +284,7 @@ export async function fetchAngelaSpeech(text: string, signal: AbortSignal): Prom
 
 export function voiceErrorMessage(error: unknown): string {
   const code = error instanceof Error ? error.message : '';
+  if (code === 'native_bengali_voice_required') return 'ভুল Banglish উচ্চারণ বন্ধ করা হয়েছে। সঠিক বাংলা female voice পেতে ডিভাইসে বাংলা TTS voice ইনস্টল/নির্বাচন করুন। উত্তরটি লেখা আছে।';
   if (code === 'voice_not_configured') return 'Angela-র বাংলা female voice এখনও চালু হয়নি। আপাতত লেখা পড়ে নিতে পারেন।';
   if (code === 'voice_quota_exceeded' || code === 'live_voice_quota_exceeded') return 'Angela-র voice quota সাময়িকভাবে ব্যস্ত। একটু পরে Listen আবার চাপুন।';
   if (code === 'live_voice_timeout' || code === 'live_voice_unavailable') return 'Angela-র backup female voice সাময়িকভাবে পাওয়া যাচ্ছে না। একটু পরে Listen আবার চাপুন।';
