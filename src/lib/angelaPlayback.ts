@@ -131,6 +131,46 @@ export class AngelaPlayback {
       }
       if (current()) onState(false);
     } catch (error) {
+      if (!current()) return;
+      // When cloud TTS and Gemini Live are unavailable, use a device female voice.
+      // This keeps the conversation audible without another paid API request.
+      const synthesis = window.speechSynthesis;
+      const isBangla = /[\\u0980-\\u09FF]/.test(clean);
+      const locale = isBangla ? 'bn-BD' : 'en-US';
+      const deviceVoices = synthesis?.getVoices() || [];
+      const femalePattern = /female|woman|zira|samantha|victoria|susan|aria|jenny|heera|tania|priya|kalpana/i;
+      const female = deviceVoices.find(v => v.lang.toLowerCase().startsWith(isBangla ? 'bn' : 'en') && femalePattern.test(v.name));
+      if (synthesis && female) {
+        try {
+          await new Promise<void>((resolve, reject) => {
+            const utterance = new SpeechSynthesisUtterance(clean);
+            this.utterance = utterance;
+            utterance.voice = female;
+            utterance.lang = locale;
+            utterance.rate = 1;
+            let settled = false;
+            const finish = (failed = false) => {
+              if (settled) return;
+              settled = true;
+              clearTimeout(watchdog);
+              utterance.onstart = utterance.onend = utterance.onerror = null;
+              if (this.utterance === utterance) this.utterance = null;
+              this.settle = null;
+              failed ? reject(new Error('device_voice_failed')) : resolve();
+            };
+            const watchdog = setTimeout(() => finish(true), 45000);
+            this.settle = () => finish();
+            utterance.onstart = () => { if (current()) onState(true); };
+            utterance.onend = () => finish();
+            utterance.onerror = () => finish(true);
+            synthesis.cancel();
+            synthesis.resume();
+            synthesis.speak(utterance);
+          });
+          if (current()) onState(false);
+          return;
+        } catch { /* preserve original cloud speech error below */ }
+      }
       if (current()) { this.cancel(); onState(false); onError(error); }
     }
   }
