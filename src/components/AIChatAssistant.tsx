@@ -802,7 +802,7 @@ export function AIChatAssistant() {
   };
 
   return (
-    <div className="fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] right-3 sm:right-6 z-50 font-sans" id="angela-ai-voice-assistant-widget" data-voice-contract="cloud female primary; device voice fallback">
+    <div className="fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] right-3 sm:right-6 z-[10001] pointer-events-auto font-sans" id="angela-ai-voice-assistant-widget" data-voice-contract="cloud female primary; device voice fallback">
       {/* Floating Action Button with Angela Avatar & Glowing Voice Wave */}
       {!isOpen && (
         <button
@@ -812,7 +812,7 @@ export function AIChatAssistant() {
           aria-label="Open Angela AI Voice Assistant"
         >
           {/* Animated Glowing Ring */}
-          <span className="absolute -inset-1 rounded-full bg-gradient-to-r from-emerald-500 to-amber-400 opacity-60 blur-sm group-hover:opacity-100 transition duration-300 animate-pulse"></span>
+          <span className="pointer-events-none absolute -inset-1 rounded-full bg-gradient-to-r from-emerald-500 to-amber-400 opacity-60 blur-sm group-hover:opacity-100 transition duration-300 animate-pulse"></span>
 
           {/* Assistant Face / Logo Icon */}
           <div className="relative h-11 w-11 sm:h-12 sm:w-12 rounded-full overflow-hidden border-2 border-white/90 bg-white flex items-center justify-center p-0.5 shadow-inner">
