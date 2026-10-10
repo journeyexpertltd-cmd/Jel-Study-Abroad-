@@ -5,8 +5,7 @@ declare global {
   }
 }
 
-// Official Journey Expert Meta dataset confirmed by the account owner.
-const pixelId = '973366755816560';
+const pixelId = (import.meta as any).env?.VITE_META_PIXEL_ID?.trim?.() || '';
 const CONSENT_KEY = 'jel_cookie_consent';
 
 function hasAnalyticsConsent() {
