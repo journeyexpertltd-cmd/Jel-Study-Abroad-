@@ -489,8 +489,8 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
     /study|student|university|admission|scholarship|visa|permit|course|destination|স্টাডি|স্টুডেন্ট|বিশ্ববিদ্যাল|অ্যাডমিশন|স্কলারশিপ|ভিসা/.test(normalizedLast);
   if (asksOutcomeGuarantee && hasStudyOutcomeContext) {
     const reply = body.language === 'bn' || /[\u0980-\u09FF]/.test(last)
-      ? 'JEL Study Abroad প্রোফাইল assessment, দেশ/কোর্স/বিশ্ববিদ্যালয় নির্বাচন, admission ও scholarship guidance, SOP, English-language test guidance, student-visa documents এবং pre-/post-arrival guidance দেয়। Admission, scholarship বা visa approval কোনোভাবেই guaranteed নয়—final decision সংশ্লিষ্ট university, embassy বা immigration authority-এর।'
-      : 'JEL Study Abroad supports profile assessment, country/course/university selection, admissions and scholarship guidance, SOP, English-language tests, student-visa documents, and pre-/post-arrival guidance. Admission, scholarship, and visa approval are not guaranteed; final decisions belong to the relevant university, embassy, or immigration authority.';
+      ? 'না। কোনো এজেন্সি বিশ্ববিদ্যালয়ে ভর্তি, স্কলারশিপ বা স্টুডেন্ট ভিসার অনুমোদন নিশ্চিত করতে পারে না। সংশ্লিষ্ট বিশ্ববিদ্যালয় ও ইমিগ্রেশন কর্তৃপক্ষই সিদ্ধান্ত দেয়। জার্নি এক্সপার্ট লিমিটেড আপনার প্রোফাইল যাচাই, কোর্স নির্বাচন, আবেদন ও প্রয়োজনীয় নথিপত্র প্রস্তুতিতে সহায়তা করতে পারে।'
+      : 'No. Neither JEL nor any agency can guarantee a university admission, scholarship or student visa approval; only the institution or immigration authority decides. JEL can help you assess eligibility, shortlist courses, prepare applications and organize supporting documents.';
     return json({
       reply,
       mode: 'verified',
