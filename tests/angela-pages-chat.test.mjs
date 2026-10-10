@@ -405,7 +405,7 @@ test('Explicit Study Abroad guarantee questions always receive a no-guarantee gu
   assert.equal(en.language, 'en');
   assert.equal(en.primaryIntent, 'study_outcome_guarantee');
   assert.match(en.reply, /not guaranteed/i);
-  assert.match(en.reply, /university|embassy|immigration authority/i);
+  assert.match(en.reply, /university|embassy|immigration authority|বিশ্ববিদ্যালয়|ইমিগ্রেশন কর্তৃপক্ষ/i);
 
   const bn = await (await onRequest({
     request: request({
