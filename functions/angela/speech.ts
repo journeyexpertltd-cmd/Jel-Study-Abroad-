@@ -81,6 +81,35 @@ async function freeFemaleSpeech(text: string, env: Context['env']): Promise<Resp
   }
 }
 
+// Reuse the JEL Cloudflare Worker that already has a usable Gemini secret.
+// All customer speech content is relayed server-to-server; no API key is
+// exposed to a browser and no paid third-party wallet is introduced.
+async function nativeFemaleGeminiSpeech(text: string): Promise<Response | null> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 17000);
+  try {
+    const response=await fetch('https://journey-expert-ltd-main.journeyexpertltd.workers.dev/api/angela/native-tts',{
+      method:'POST',signal:controller.signal,
+      headers:{'content-type':'application/json','origin':'https://journeyexpertbd.com'},
+      body:JSON.stringify({text})
+    });
+    if (!response.ok || !response.headers.get('content-type')?.includes('audio/wav')) return null;
+    const bytes=new Uint8Array(await response.arrayBuffer());
+    if(bytes.length<1200 || String.fromCharCode(...bytes.subarray(0,4))!=='RIFF'
+      || String.fromCharCode(...bytes.subarray(8,12))!=='WAVE') return null;
+    return new Response(bytes,{status:200,headers:{
+      'Content-Type':'audio/wav','Cache-Control':'no-store',
+      'X-Content-Type-Options':'nosniff',
+      'X-Angela-Voice':response.headers.get('x-angela-voice')||'Aoede',
+      'X-Angela-Voice-Mode':response.headers.get('x-angela-voice-mode')||'native-bengali-female',
+      'X-Angela-Voice-Model':response.headers.get('x-angela-voice-model')||'gemini-3.8-flash-lite-tts'
+    }});
+  } catch(e) {
+    console.warn('Angela native speech proxy unavailable',e instanceof Error?e.name:'unknown');
+    return null;
+  } finally {clearTimeout(timer);}
+}
+
 export async function onRequest({ request, env }: Context): Promise<Response> {
   if (request.method !== 'POST') return new Response(null, { status: 405, headers: { Allow: 'POST' } });
   const url = new URL(request.url);
@@ -97,6 +126,11 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   if (originalText.length > 1800) return json({ error: 'text_too_long' }, 413);
   const text = originalText.replace(/\s+/g, ' ').trim();
   if (!text) return json({ error: 'text_required' }, 400);
+
+  if (env.ANGELA_SERVER_VOICE !== 'off') {
+    const native = await nativeFemaleGeminiSpeech(text);
+    if (native) return native;
+  }
 
   const keys = Array.from(new Set([
     env.GEMINI_TTS_API_KEY?.trim(),
