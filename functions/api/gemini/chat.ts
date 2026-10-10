@@ -524,36 +524,51 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
     env.GEMINI_API_KEY?.trim(),
     env.GEMINI_TTS_API_KEY?.trim(),
   ].filter((key): key is string => Boolean(key))));
-  // Use the account's free Cloudflare Workers AI before Gemini to answer real
-  // Bangla and English questions even if the Gemini key or quota is missing.
+  // Use the free Cloudflare Workers AI allowance, with a stronger multilingual
+  // model first. Keep JEL-specific answers grounded in the verified catalogue.
   const freeAI = (env as unknown as {AI?: {run: (model:string, input:unknown)=>Promise<any>}}).AI;
   if (freeAI?.run) {
-    try {
-      const langRule = bn ? 'Answer in natural Bengali script.' : 'Answer in natural English.';
-      const prior = turns.slice(0,-1).slice(-5).map((t:any)=>({
-        role: t.role === 'model' ? 'assistant' : 'user',
-        content: String(t.parts?.[0]?.text || '').slice(0,900),
-      }));
-      const result:any = await Promise.race([
-        freeAI.run('@cf/meta/llama-3.1-8b-instruct-fast', {
-          messages: [
-            { role:'system', content:'You are Angela, assistant for Journey Expert Limited in Bangladesh. ' +
-              'Answer the exact question, not a generic company service paragraph. ' +
-              'The company provides flights, visas, tours, hotels, Hajj/Umrah, medical tourism, and Study Abroad. ' +
-              'Hotline/WhatsApp +8801926400400. Never guarantee a visa, price, booking, or admission. ' +
-              'For unknown JEL-specific facts, say they are unverified. ' + langRule +
-              '\nRelevant verified information: ' + retrievedKnowledge.text.slice(0,1800) },
-            ...prior, {role:'user',content:last.slice(0,1300)}
-          ],max_tokens:240,
-        }),
-        new Promise<never>((_,reject)=>setTimeout(()=>reject(new Error('cf_ai_timeout')),9000)),
-      ]);
-      const reply=String(result?.response || result?.choices?.[0]?.message?.content || '').trim();
-      if(reply.length>12 && (bn ? /[\u0980-\u09FF]/.test(reply): !/[\u0980-\u09FF]/.test(reply))) {
-        return json({reply:reply.slice(0,1800),language:bn?'bn':'en',mode:'ai',providerModel:'cloudflare-llama-3.1-8b-fast',
-          primaryIntent:retrievedKnowledge.primary?.id||'general',groundingIds:retrievedKnowledge.ids});
+    const languageRule = bn
+      ? 'Always respond in natural, polite Bangladeshi Bengali script, even if the user typed Banglish.'
+      : 'Always respond in concise natural English.';
+    const prior = turns.slice(0,-1).slice(-6).map((t:any)=>({
+      role: t.role === 'model' ? 'assistant' : 'user',
+      content: String(t.parts?.[0]?.text || '').slice(0, 800),
+    }));
+    const modelList = ['@cf/google/gemma-4-26b-a4b-it','@cf/meta/llama-3.1-8b-instruct-fast'];
+    for (const model of modelList) {
+      try {
+        const response: any = await Promise.race([
+          freeAI.run(model, {
+            messages: [
+              { role:'system', content:
+                'You are Angela, official assistant for Journey Expert Limited (JEL) in Bangladesh. ' +
+                'Answer the actual question in 2-4 short sentences, not a generic advertisement. ' +
+                'Speak politely in Bangladeshi Bengali (আপনি) for Bengali questions. ' +
+                'Only assert company-specific services, partnerships, agreements, address or achievements when present in the verified JEL context. ' +
+                'Company services: flight ticketing, visas, tours, hotels, Hajj/Umrah, medical tourism, corporate travel and Study Abroad. ' +
+                'Study portal: journeyexpertbd.com. WhatsApp +8801926400400. ' +
+                'For immigration/admissions rules give only general orientation and refer to official visa and university sources for changing details. ' +
+                'NEVER invent visa fees, requirements, timelines, admission success rates, scholarships, live fare or inventory; never promise approval. ' +
+                'If the necessary verified fact is missing, say so. ' + languageRule +
+                '\nRetrieved verified JEL facts: ' + retrievedKnowledge.text.slice(0, 2200) },
+              ...prior,
+              {role:'user',content:last.slice(0,1400)}
+            ],
+            max_tokens: 350, temperature: 0.2,
+            ...(model.includes('gemma-4') ? {chat_template_kwargs:{enable_thinking:false}} : {}),
+          }),
+          new Promise<never>((_,reject)=>setTimeout(()=>reject(new Error('cf_ai_timeout')),model.includes('gemma-4')?8500:4200)),
+        ]);
+        const reply=String(response?.response || response?.choices?.[0]?.message?.content || '').trim();
+        if(reply.length > 12 && (bn ? /[\u0980-\u09FF]/.test(reply) : !/[\u0980-\u09FF]/.test(reply))) {
+          return json({reply:reply.slice(0,1800),language:bn?'bn':'en',mode:'ai',providerModel:model,
+            primaryIntent:retrievedKnowledge.primary?.id||'general',groundingIds:retrievedKnowledge.ids});
+        }
+      } catch (error) {
+        console.warn('Angela stronger free AI temporarily unavailable',model,error instanceof Error ? error.name : 'unknown');
       }
-    }catch(e){console.warn('Angela free AI temporarily unavailable');}
+    }
   }
   if (!apiKeys.length) {
     const studyAiStudioOrigin = (env.STUDY_AI_STUDIO_ORIGIN || 'https://jel-study-abroad.ai.studio').replace(/\/$/, '');
