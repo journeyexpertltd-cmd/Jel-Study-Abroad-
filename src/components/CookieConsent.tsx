@@ -27,7 +27,7 @@ export function CookieConsent() {
             {' '}<a className="font-semibold text-emerald-700 underline" href="/cookies/">Cookie Policy</a>
           </p>
         </div>
-        <div className="flex flex-wrap shrink-0 gap-2">
+        <div className="flex shrink-0 gap-2">
           <button onClick={() => save('declined')} className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold text-slate-700">Decline analytics</button>
           <button onClick={() => save('accepted')} className="rounded-xl bg-emerald-700 px-4 py-2 text-sm font-bold text-white">Accept analytics</button>
         </div>
