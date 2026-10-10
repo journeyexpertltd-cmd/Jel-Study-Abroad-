@@ -75,7 +75,25 @@ export class AngelaPlayback {
     const clean = prepareAngelaSpeech(text);
     if (!clean) return;
     try {
-      if (voice && /female|zira|samantha|victoria|aria|jenny|heera|tania|priya|kalpana|nabanita|tanishaa|lekha|sangeeta/i.test(voice.name) && window.speechSynthesis) {
+      const synth = window.speechSynthesis;
+      const bengali = /[\\u0980-\\u09FF]/.test(clean);
+      const locale = bengali ? 'bn' : 'en';
+      // getVoices() may initially be empty on mobile. Give voiceschanged a moment
+      // before treating paid/quota-limited remote speech as the only option.
+      if (synth && synth.getVoices().length === 0) {
+        await new Promise<void>(resolve => {
+          const done = () => { clearTimeout(wait); synth.removeEventListener('voiceschanged', done); resolve(); };
+          const wait = setTimeout(done, 700);
+          synth.addEventListener('voiceschanged', done, { once: true });
+          synth.getVoices();
+        });
+      }
+      if (!current()) return;
+      const female = /female|woman|zira|samantha|victoria|aria|jenny|sonia|ava|allison|karen|susan|hazel|libby|natasha|serena|moira|fiona|tessa|veena|heera|tania|priya|kalpana|nabanita|tanishaa|lekha|sangeeta/i;
+      const localVoice = voice?.lang.toLowerCase().startsWith(locale) && female.test(voice.name)
+        ? voice
+        : synth?.getVoices().find(v => v.lang.toLowerCase().startsWith(locale) && female.test(v.name)) || null;
+      if (localVoice && synth) {
         const played = await new Promise<boolean>((resolve) => {
           const utterance = new SpeechSynthesisUtterance(clean);
           this.utterance = utterance;
@@ -88,8 +106,8 @@ export class AngelaPlayback {
             resolve(ok);
           };
           this.settle = () => finish(false);
-          utterance.voice = voice;
-          utterance.lang = voice.lang;
+          utterance.voice = localVoice;
+          utterance.lang = localVoice.lang;
           utterance.rate = 1.03;
           utterance.onstart = () => {
             if (!current()) return finish(false);
@@ -156,6 +174,41 @@ export class AngelaPlayback {
       }
       if (current()) onState(false);
     } catch (error) {
+      if (!current()) return;
+      // A quota/HTTP failure must not silently disable speech when a
+      // matching native female voice is installed on the visitor's device.
+      const locale = /[\\u0980-\\u09FF]/.test(clean) ? 'bn' : 'en';
+      const female = /female|woman|zira|samantha|victoria|aria|jenny|sonia|ava|allison|karen|susan|hazel|libby|natasha|serena|moira|fiona|tessa|veena|heera|tania|priya|kalpana|nabanita|tanishaa|lekha|sangeeta/i;
+      const synth = window.speechSynthesis;
+      const fallback = synth?.getVoices().find(v => v.lang.toLowerCase().startsWith(locale) && female.test(v.name));
+      if (synth && fallback) {
+        try {
+          await new Promise<void>((resolve, reject) => {
+            const utterance = new SpeechSynthesisUtterance(clean);
+            this.utterance = utterance;
+            utterance.voice = fallback;
+            utterance.lang = fallback.lang;
+            utterance.rate = 1.03;
+            let finished = false;
+            const done = (failed: boolean) => {
+              if (finished) return;
+              finished = true;
+              clearTimeout(timer);
+              this.settle = null;
+              utterance.onend = utterance.onerror = null;
+              failed ? reject(new Error('device_speech_failed')) : resolve();
+            };
+            this.settle = () => done(false);
+            const timer = setTimeout(() => done(true), 45000);
+            utterance.onstart = () => { if (current()) onState(true); };
+            utterance.onend = () => done(false);
+            utterance.onerror = () => done(true);
+            synth.cancel(); synth.resume(); synth.speak(utterance);
+          });
+          if (current()) onState(false);
+          return;
+        } catch { /* Report the original cloud failure. */ }
+      }
       if (current()) { this.cancel(); onState(false); onError(error); }
     }
   }
