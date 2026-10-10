@@ -52,26 +52,7 @@ export class AngelaPlayback {
     const clean = text.replace(/[*#_`]/g, '').replace(/https?:\/\/\S+/g, '').trim();
     if (!clean) return;
     try {
-      // Device voice catalogs can load asynchronously. Never use an unknown
-      // default voice (which can be male); prefer an explicitly female voice.
-      const synth = window.speechSynthesis;
-      const bengali = /[\u0980-\u09FF]/.test(clean);
-      const wanted = bengali ? 'bn' : 'en';
-      if (synth && synth.getVoices().length === 0) {
-        await new Promise<void>(resolve => {
-          const done = () => { clearTimeout(timer); synth.removeEventListener('voiceschanged', done); resolve(); };
-          const timer = setTimeout(done, 650);
-          synth.addEventListener('voiceschanged', done);
-          synth.getVoices();
-        });
-      }
-      if (!current()) return;
-      const femaleNames = /female|zira|samantha|victoria|aria|jenny|heera|tania|priya|kalpana|nabanita|tanishaa|lekha|sangeeta|kore|aoede/i;
-      const voices = synth?.getVoices() || [];
-      const femaleVoice = voice && voice.lang.toLowerCase().startsWith(wanted) && femaleNames.test(voice.name)
-        ? voice
-        : voices.find(v => v.lang.toLowerCase().startsWith(wanted) && femaleNames.test(v.name)) || null;
-      if (femaleVoice && synth) {
+      if (voice && window.speechSynthesis) {
         const played = await new Promise<boolean>((resolve) => {
           const utterance = new SpeechSynthesisUtterance(clean);
           this.utterance = utterance;
@@ -84,8 +65,8 @@ export class AngelaPlayback {
             resolve(ok);
           };
           this.settle = () => finish(false);
-          utterance.voice = femaleVoice;
-          utterance.lang = femaleVoice.lang;
+          utterance.voice = voice;
+          utterance.lang = voice.lang;
           utterance.rate = 1.03;
           utterance.onstart = () => {
             if (!current()) return finish(false);
