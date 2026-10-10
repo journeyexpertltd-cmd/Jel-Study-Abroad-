@@ -48,50 +48,35 @@ function findAudio(value: any): { data: string; mimeType?: string } | null {
 // No paid provider: Workers AI Aura-1 uses the Cloudflare account's free
 // daily allocation. Bengali requires an approximate romanized-Banglish
 // pronunciation, never misrepresent this as a native Bengali voice.
+// Free Aura is an English female voice, not a Bengali model. Do not
+// romanize Bengali text into its English phonemes: this mispronounced words
+// and truncated responses after 300 characters.
 async function freeFemaleSpeech(text: string, env: Context['env']): Promise<Response | null> {
-  const AI = (env as unknown as { AI?: { run: (name: string, input: any, options?: any) => Promise<any> } }).AI;
-  if (!AI?.run) return null;
-  const bengali = /[\u0980-\u09FF]/.test(text);
-  let spoken = text.replace(/[\n\r*#`]/g, ' ').replace(/\s+/g,' ').trim().slice(0,300);
-  if (bengali) {
-    try {
-      const request = {
-        messages: [
-          {role:'system',content:'Romanize Bengali-script speech to plain Latin Banglish PRONUNCIATION for an English female text-to-speech voice. Do NOT translate into English. Preserve original word order. Output ONLY the spoken Banglish in ASCII letters/punctuation; no commentary or formatting, at most 290 characters.'},
-          {role:'user',content:spoken},
-        ],max_tokens:240
-      };
-      const result:any = await Promise.race([
-        AI.run('@cf/meta/llama-3.1-8b-instruct-fast',request),
-        new Promise<never>((_,reject)=>setTimeout(()=>reject(new Error('romanization_timeout')),4500))
-      ]);
-      const roman = String(result?.response || result?.choices?.[0]?.message?.content || '').trim().replace(/^["'`]+|["'`]+$/g,'').replace(/[\n\r]+/g,' ');
-      if (!roman || /[\u0980-\u09FF]/.test(roman)) return null;
-      spoken = roman.slice(0,300);
-    } catch (e) {
-      console.warn('Angela free Banglish preparation unavailable', e instanceof Error ? e.message : 'unknown');
-      return null;
-    }
-  }
+  const AI = (env as unknown as {AI?:{run:(name:string,input:any,options?:any)=>Promise<any>}}).AI;
+  if (!AI?.run || /[\u0980-\u09FF]/.test(text)) return null;
+  const spoken = text.replace(/https?:\/\/\S+/g,' ').replace(/[\n\r*#`_]+/g,' ')
+    .replace(/\s+/g,' ').trim().slice(0,1100);
+  if (!spoken) return null;
   try {
-    const result:any = await Promise.race([
-      AI.run('@cf/deepgram/aura-1',{text:spoken,speaker:'athena',encoding:'linear16',container:'wav'},{returnRawResponse:true}),
-      new Promise<never>((_,reject)=>setTimeout(()=>reject(new Error('free_tts_timeout')),12000)),
+    const result: any = await Promise.race([
+      AI.run('@cf/deepgram/aura-1',
+        {text:spoken,speaker:'athena',encoding:'linear16',container:'wav'},
+        {returnRawResponse:true}),
+      new Promise<never>((_,reject)=>setTimeout(()=>reject(new Error('aura_timeout')),16000))
     ]);
     if (!(result instanceof Response) || !result.ok) return null;
-    const bytes=new Uint8Array(await result.arrayBuffer());
-    if(bytes.length < 100 || String.fromCharCode(...bytes.slice(0,4)) !== 'RIFF'
-      || String.fromCharCode(...bytes.slice(8,12)) !== 'WAVE') return null;
+    const bytes = new Uint8Array(await result.arrayBuffer());
+    if (bytes.length < 100 || String.fromCharCode(...bytes.subarray(0,4)) !== 'RIFF'
+      || String.fromCharCode(...bytes.subarray(8,12)) !== 'WAVE') return null;
     return new Response(bytes,{headers:{
-      'Content-Type':'audio/wav',
-      'Cache-Control':'no-store',
+      'Content-Type':'audio/wav','Cache-Control':'no-store',
       'X-Content-Type-Options':'nosniff',
-      'X-Angela-Voice':'Athena',
-      'X-Angela-Voice-Model':'cloudflare-aura-1-free',
-      'X-Angela-Voice-Mode':bengali?'banglish-phonetic-female':'english-female',
+      'X-Angela-Voice':'Athena','X-Angela-Voice-Model':'cloudflare-aura-1-free',
+      'X-Angela-Voice-Mode':'english-female-full-reply',
+      'X-Angela-Spoken-Chars':String(spoken.length)
     }});
-  } catch (e) {
-    console.warn('Angela free female voice unavailable',e instanceof Error ? e.message : 'unknown');
+  } catch(e) {
+    console.warn('Angela English female voice unavailable',e instanceof Error?e.message:'unknown');
     return null;
   }
 }
@@ -121,7 +106,9 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   if (!keys.length) {
     const free = await freeFemaleSpeech(text,env);
     if (free) return free;
-    return json({error:'female_voice_unavailable',reason:'free_voice_or_banglish_fallback_unavailable'},503);
+    const bengali=/[\u0980-\u09FF]/.test(text);
+    return json({error:bengali?'native_bengali_voice_required':'female_voice_unavailable',
+      detail:bengali?'English-only phonetic Banglish synthesis is disabled. A genuine Bengali female voice is needed.':'English female TTS unavailable'},bengali?422:503);
   }
 
   const models = Array.from(new Set([
@@ -211,10 +198,11 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
 
   const free = await freeFemaleSpeech(text,env);
   if (free) return free;
+  const bengali=/[\u0980-\u09FF]/.test(text);
   return json({
-    error: 'voice_provider_unavailable',
+    error: bengali ? 'native_bengali_voice_required' : 'voice_provider_unavailable',
     providerStatus: lastProviderStatus || undefined,
-  }, 503);
+  }, bengali ? 422 : 503);
 }
 
 

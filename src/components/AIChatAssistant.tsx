@@ -344,7 +344,8 @@ export function AIChatAssistant() {
   const speakText = useCallback(async (text: string, messageId?: string) => {
     if (!enabledRef.current) { setVoiceState("READY"); return; }
     setVoiceState("READY"); // The answer is complete even while its audio is loading.
-    const voices = window.speechSynthesis?.getVoices() || voiceCatalogRef.current;
+    const currentVoices = window.speechSynthesis?.getVoices() || [];
+    const voices = currentVoices.length ? currentVoices : voiceCatalogRef.current;
     const voice = text === BANGLA_WELCOME ? null : pickAngelaDeviceVoice(voices, isBanglaText(text) ? "bn" : "en");
     await playbackRef.current!.play(text, voice, fetchAngelaSpeech,
       speaking => {
