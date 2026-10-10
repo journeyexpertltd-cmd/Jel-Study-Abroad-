@@ -29,7 +29,7 @@ test('Speech uses official Gemini Interactions WAV and maps quota errors without
  const body = JSON.parse(options.body);
  assert.equal(body.model, 'gemini-3.8-flash-lite-tts');
  assert.match(body.input, /আমি অ্যাঞ্জেলা/);
- assert.match(body.input, /professional.*female/i);
+ assert.match(body.input, /adult female voice/i);
  assert.equal(body.response_format.type, 'audio');
  assert.equal(body.generation_config.speech_config[0].voice, 'Aoede');
  return Response.json({ output_audio: { data: encoded, mimeType: 'audio/wav' } });
