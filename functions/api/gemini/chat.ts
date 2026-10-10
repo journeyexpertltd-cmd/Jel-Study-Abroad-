@@ -530,7 +530,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
 
   // Gemini 3.8 Flash is primary. Gemini 3.5 Flash is a bounded AI fallback
   // so a model-specific quota/outage does not collapse Angela into canned text.
-  const candidateModels = ['gemini-3.8-flash', 'gemini-3.5-flash', 'gemini-2.5-flash'];
+  const candidateModels = ['gemini-3.5-flash-lite', 'gemini-3.8-flash'];
   const makeRequest = async (model: string, apiKey: string, timeoutMs: number): Promise<Response | null> => {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -564,12 +564,12 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   // Keep the customer-facing endpoint bounded. Free Gemini credentials can
   // be rate-limited or temporarily slow; do not serially wait through every
   // model/key combination. The direct provider gets one short total budget.
-  const directDeadline = Date.now() + 6500;
+  const directDeadline = Date.now() + 11000;
   direct: for (const apiKey of apiKeys) {
     for (const model of candidateModels) {
       const remaining = directDeadline - Date.now();
       if (remaining < 900) break direct;
-      const response = await makeRequest(model, apiKey, Math.min(model === 'gemini-3.8-flash' ? 5000 : 1400, remaining));
+      const response = await makeRequest(model, apiKey, Math.min(model === 'gemini-3.5-flash-lite' ? 7000 : 3500, remaining));
       if (!response) continue;
 
       // A quota/auth response applies to the credential, so trying more models
