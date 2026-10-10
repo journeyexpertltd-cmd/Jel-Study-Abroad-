@@ -383,6 +383,18 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
     if (!audio) return json({ error: 'audio_required' }, 400);
     if (!/^audio\/(webm|wav|mpeg|mp3|ogg|opus|aac|flac|m4a|mp4)$/i.test(mimeType)) return json({ error: 'audio_type_not_supported' }, 415);
 
+    const speechAI = (env as unknown as { AI?: { run: (name:string, data:unknown)=>Promise<any> } }).AI;
+    if (speechAI?.run) {
+      try {
+        const result = await speechAI.run('@cf/openai/whisper-large-v3-turbo', {
+          audio, task: 'transcribe', language: selectedLanguage,
+        });
+        const transcript = String(result?.text || '').trim();
+        if (transcript.length > 2 && (selectedLanguage === 'en' || /[\u0980-\u09FF]/.test(transcript))) {
+          return json({transcript: transcript.slice(0,1200), language: selectedLanguage, mode:'ai', providerModel:'cloudflare-whisper'});
+        }
+      } catch (e) { console.warn('Whisper transcription unavailable'); }
+    }
     const keys = Array.from(new Set([
       env.GEMINI_API_KEY?.trim(),
       env.GEMINI_TTS_API_KEY?.trim(),
