@@ -131,6 +131,43 @@ export class AngelaPlayback {
       }
       if (current()) onState(false);
     } catch (error) {
+      if (!current()) return;
+      // Free device voice fallback when cloud TTS fails or reaches quota.
+      const synth = window.speechSynthesis;
+      const bangla = /[\u0980-\u09FF]/.test(clean);
+      const voiceName = /female|zira|samantha|victoria|aria|jenny|heera|tania|priya|kalpana/i;
+      const available = synth?.getVoices() || [];
+      const localVoice = available.find(v => v.lang.toLowerCase().startsWith(bangla ? 'bn' : 'en') && voiceName.test(v.name));
+      if (synth && localVoice) {
+        try {
+          await new Promise<void>((resolve, reject) => {
+            const utterance = new SpeechSynthesisUtterance(clean);
+            this.utterance = utterance;
+            utterance.voice = localVoice;
+            utterance.lang = localVoice.lang;
+            let done = false;
+            const finish = (failed: boolean) => {
+              if (done) return;
+              done = true;
+              clearTimeout(watchdog);
+              utterance.onstart = utterance.onend = utterance.onerror = null;
+              if (this.utterance === utterance) this.utterance = null;
+              this.settle = null;
+              failed ? reject(new Error('local_voice_failed')) : resolve();
+            };
+            const watchdog = setTimeout(() => finish(true), 45000);
+            this.settle = () => finish(false);
+            utterance.onstart = () => { if (current()) onState(true); };
+            utterance.onend = () => finish(false);
+            utterance.onerror = () => finish(true);
+            synth.cancel();
+            synth.resume();
+            synth.speak(utterance);
+          });
+          if (current()) onState(false);
+          return;
+        } catch { /* Report cloud voice failure below. */ }
+      }
       if (current()) { this.cancel(); onState(false); onError(error); }
     }
   }
