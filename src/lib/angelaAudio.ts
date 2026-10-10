@@ -250,7 +250,9 @@ export async function fetchAngelaSpeech(text: string, signal: AbortSignal): Prom
       // Do not retry with an English-only voice disguised as Bangla. The UI
       // explains how to enable a genuine Bengali female device voice.
       if (response.status === 422 && data?.error === 'native_bengali_voice_required') {
-        throw new Error('native_bengali_voice_required');
+        // A missing native Bengali voice on the direct endpoint must not
+        // prevent a separate Gemini Live voice fallback from being tried.
+        console.warn('Angela direct native Bengali TTS unavailable; trying Live fallback.');
       }
       if (response.status === 429) {
         const retryAfterSeconds = Number(response.headers.get('retry-after'));
@@ -264,7 +266,6 @@ export async function fetchAngelaSpeech(text: string, signal: AbortSignal): Prom
       }
     } catch (ttsError) {
       if (signal.aborted) throw ttsError;
-      if (ttsError instanceof Error && ttsError.message === 'native_bengali_voice_required') throw ttsError;
       console.warn('Angela TTS notice; using Live fallback:', ttsError);
     } finally {
       window.clearTimeout(ttsTimer);
