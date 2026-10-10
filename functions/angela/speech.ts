@@ -111,74 +111,71 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
       detail:bengali?'English-only phonetic Banglish synthesis is disabled. A genuine Bengali female voice is needed.':'English female TTS unavailable'},bengali?422:503);
   }
 
-  const models = Array.from(new Set([
-    env.GEMINI_TTS_MODEL,
-    'gemini-3.8-flash-lite-tts',
-    'gemini-3.8-flash-tts',
-  ].filter((model): model is string => Boolean(model))));
-
-  // Full Bangla/English answers need longer than the old greeting-sized timeout.
-  // Keep one bounded provider attempt; do not abort and restart valid generation.
+  // Try free-tier-compatible Gemini TTS with the provider's official payload.
+  // Interactions exposes output_audio.data; generateContent exposes inlineData.
+  // Reject English/Banglish phonetic audio as a replacement for native Bengali.
+  const models = ['gemini-3.8-flash-lite-tts', 'gemini-2.5-flash-preview-tts'];
   let sawQuota = false;
   let lastProviderStatus = 0;
-  const voiceDeadline = Date.now() + 11000;
+  const deadline = Date.now() + 14500;
 
-  outer: for (const key of keys) {
+  nativeTts: for (const key of keys) {
     for (const model of models) {
-      const remaining = voiceDeadline - Date.now();
-      if (remaining < 800) break outer;
+      const remaining = deadline - Date.now();
+      if (remaining < 1600) break nativeTts;
+      const legacy = model.startsWith('gemini-2.5-');
+      const prompt = /[\u0980-\u09FF]/.test(text)
+        ? 'Read the following Bengali text EXACTLY as written in natural Bangladeshi Bengali, with clear native pronunciation, warm adult female voice and conversational pace. Do not translate or add words.\n' + text
+        : 'Speak the following text verbatim with a clear warm adult female voice.\n' + text;
+      const payload = legacy ? {
+        contents: [{parts:[{text:prompt}]}],
+        generationConfig: {responseModalities:['AUDIO'],
+          speechConfig:{voiceConfig:{prebuiltVoiceConfig:{voiceName:'Aoede'}}}},
+      } : {
+        model, input:prompt, response_format:{type:'audio'},
+        generation_config:{speech_config:[{voice:'Aoede'}]},
+      };
+      const endpoint = legacy
+        ? 'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent'
+        : 'https://generativelanguage.googleapis.com/v1beta/interactions';
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), remaining);
-
+      const timer = setTimeout(() => controller.abort(), Math.min(12000, remaining));
       try {
-        const response = await fetch('https://generativelanguage.googleapis.com/v1beta/interactions', {
-          method: 'POST', signal: controller.signal,
-          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
-          body: JSON.stringify({
-            model,
-            input: [{ type: 'user_input', content: [{ type: 'text', text,
-              annotations: [{ type: 'speech_metadata', style: 'Warm, natural, professional adult female delivery. Speak the exact text in its original language.' }] }] }],
-            response_format: { type: 'audio' },
-            generation_config: { speech_config: [{ voice: 'Aoede' }] },
-          }),
+        const upstream = await fetch(endpoint, {
+          method:'POST', signal:controller.signal,
+          headers:{'Content-Type':'application/json','x-goog-api-key':key},
+          body:JSON.stringify(payload),
         });
-
-        lastProviderStatus = response.status;
-        if (!response.ok) {
-          if (response.status === 429) {
-            sawQuota = true;
-            break;
-          }
-          if (response.status === 401 || response.status === 403) break;
+        lastProviderStatus = upstream.status;
+        if (!upstream.ok) {
+          if (upstream.status === 429) { sawQuota = true; break; }
+          if (upstream.status === 401 || upstream.status === 403) break;
           continue;
         }
-
-        const data: any = await response.json();
-        const audio = findAudio(data);
-
-        if (!audio?.data) continue;
-        const rawAudio = Uint8Array.from(atob(audio.data), character => character.charCodeAt(0));
-        if (!rawAudio.length) continue;
-
-        const isWav = rawAudio.length >= 12
-          && String.fromCharCode(...rawAudio.slice(0, 4)) === 'RIFF'
-          && String.fromCharCode(...rawAudio.slice(8, 12)) === 'WAVE';
-        const outputBody = isWav ? rawAudio : new Uint8Array(pcmToWav(rawAudio));
-
-        return new Response(outputBody, {
-          headers: {
-            'Content-Type': 'audio/wav',
-            'Cache-Control': 'no-store',
-            'X-Content-Type-Options': 'nosniff',
-            'X-Angela-Voice': 'Aoede',
-            'X-Angela-Voice-Model': model,
-          },
-        });
+        const data:any = await upstream.json();
+        const outputAudio = data?.output_audio?.data;
+        const other = data?.steps?.flatMap((step:any)=>step.content||[])
+          .find((part:any)=>part.type === 'audio' && typeof part.data === 'string')?.data;
+        const candidate = data?.candidates?.[0]?.content?.parts
+          ?.find((part:any)=>part?.inlineData?.mimeType?.startsWith('audio/')
+            || part?.inline_data?.mime_type?.startsWith('audio/'));
+        const encoded = outputAudio || other || candidate?.inlineData?.data || candidate?.inline_data?.data;
+        if (typeof encoded !== 'string' || !encoded.length) continue;
+        const pcm = Uint8Array.from(atob(encoded),(letter:string)=>letter.charCodeAt(0));
+        if (pcm.length < 100) continue;
+        const isWav=pcm.length>12
+          && String.fromCharCode(...pcm.slice(0,4))==='RIFF'
+          && String.fromCharCode(...pcm.slice(8,12))==='WAVE';
+        const wav = isWav ? pcm : new Uint8Array(pcmToWav(pcm));
+        return new Response(wav,{headers:{
+          'Content-Type':'audio/wav', 'Cache-Control':'no-store',
+          'X-Content-Type-Options':'nosniff', 'X-Angela-Voice':'Aoede',
+          'X-Angela-Voice-Mode':/[\u0980-\u09FF]/.test(text) ? 'native-bengali-female' : 'english-female',
+          'X-Angela-Voice-Model':model,
+        }});
       } catch (error) {
-        console.warn('Angela TTS failed', model, controller.signal.aborted ? 'timeout' : (error instanceof Error ? error.message : 'unknown'));
-      } finally {
-        clearTimeout(timer);
-      }
+        console.warn('Angela native TTS request',model,controller.signal.aborted?'timeout':error instanceof Error?error.name:'unknown');
+      } finally { clearTimeout(timer); }
     }
   }
 
