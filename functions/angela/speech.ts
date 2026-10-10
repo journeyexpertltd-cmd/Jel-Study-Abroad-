@@ -86,14 +86,20 @@ async function freeFemaleSpeech(text: string, env: Context['env']): Promise<Resp
 // exposed to a browser and no paid third-party wallet is introduced.
 async function nativeFemaleGeminiSpeech(text: string): Promise<Response | null> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 17000);
+  const timer = setTimeout(() => controller.abort(), 21500);
   try {
     const response=await fetch('https://journey-expert-ltd-main.journeyexpertltd.workers.dev/api/angela/native-tts',{
       method:'POST',signal:controller.signal,
       headers:{'content-type':'application/json','origin':'https://journeyexpertbd.com'},
       body:JSON.stringify({text})
     });
-    if (!response.ok || !response.headers.get('content-type')?.includes('audio/wav')) return null;
+    if (!response.ok) {
+      console.warn('Native Gemini Aoede proxy HTTP',response.status);
+      if(response.status===429) return Response.json({error:'voice_quota_exceeded'},{status:429,
+        headers:{'cache-control':'no-store','retry-after':'60'}});
+      return null;
+    }
+    if(!response.headers.get('content-type')?.includes('audio/wav')) return null;
     const bytes=new Uint8Array(await response.arrayBuffer());
     if(bytes.length<1200 || String.fromCharCode(...bytes.subarray(0,4))!=='RIFF'
       || String.fromCharCode(...bytes.subarray(8,12))!=='WAVE') return null;
