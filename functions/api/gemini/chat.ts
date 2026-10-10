@@ -391,7 +391,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
           new Promise<never>((_,reject)=>setTimeout(()=>reject(new Error('voice_timeout')),14000)),
         ]);
         const transcript=String(result?.text||'').trim();
-        if(transcript.length>2 && (selectedLanguage==='en' || /[\u0980-\u09FF]/.test(transcript)))
+        if(transcript.length>2 && !/^\[?(?:music|silence|no speech|background noise)\]?$/i.test(transcript))
           return json({transcript:transcript.slice(0,1200),language:selectedLanguage,mode:'ai',providerModel:'cloudflare-whisper'});
       }catch(e){console.warn('Angela free transcription temporarily unavailable');}
     }
