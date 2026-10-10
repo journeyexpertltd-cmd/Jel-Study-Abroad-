@@ -622,7 +622,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
 
   // Gemini 3.8 Flash is primary. Gemini 3.5 Flash is a bounded AI fallback
   // so a model-specific quota/outage does not collapse Angela into canned text.
-  const candidateModels = ['gemini-3.5-flash-lite', 'gemini-3.8-flash'];
+  const candidateModels = ['gemini-3.8-flash', 'gemini-3.5-flash-lite'];
   const makeRequest = async (model: string, apiKey: string, timeoutMs: number): Promise<Response | null> => {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
