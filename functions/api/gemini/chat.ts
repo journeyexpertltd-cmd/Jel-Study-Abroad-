@@ -526,6 +526,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   ].filter((key): key is string => Boolean(key))));
   // Use the free Cloudflare Workers AI allowance, with a stronger multilingual
   // model first. Keep JEL-specific answers grounded in the verified catalogue.
+  let dailyFreeQuotaExhausted = false;
   const freeAI = (env as unknown as {AI?: {run: (model:string, input:unknown)=>Promise<any>}}).AI;
   if (freeAI?.run) {
     const languageRule = bn
@@ -566,9 +567,23 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
             primaryIntent:retrievedKnowledge.primary?.id||'general',groundingIds:retrievedKnowledge.ids});
         }
       } catch (error) {
-        console.warn('Angela stronger free AI temporarily unavailable',model,error instanceof Error ? error.name : 'unknown');
+        const msg=error instanceof Error ? error.message : String(error);
+        dailyFreeQuotaExhausted=/daily free|10,000 neurons|used up|quota|4006|3036/i.test(msg);
+        console.warn('Angela free AI failed',model,dailyFreeQuotaExhausted?'daily_neurons_exhausted':error instanceof Error?error.name:'unknown');
+        if(dailyFreeQuotaExhausted) break;
       }
     }
+  }
+  if(dailyFreeQuotaExhausted && !apiKeys.length) {
+    const entry=retrievedKnowledge.primary;
+    const reply=entry
+      ? (bn ? entry.fallbackBn : entry.fallbackEn)
+      : (bn
+          ? 'আজ ফ্রি AI সেবার দৈনিক বরাদ্দ পূর্ণ হয়েছে। যাচাই ছাড়া আপনার প্রশ্নের উত্তর অনুমান করে বলব না। পরবর্তী দৈনিক বরাদ্দ শুরু হলে আবার প্রশ্ন করুন, অথবা WhatsApp 01926400400-এ যোগাযোগ করুন।'
+          : 'The daily free AI quota has been exhausted. I cannot verify that answer right now, so I will not guess. Please retry after the daily reset or contact WhatsApp 01926400400.');
+    return json({reply,language:bn?'bn':'en',mode:entry?'verified':'quota_limited',
+      reason:'daily_free_quota_exceeded',primaryIntent:entry?.id||'unverified',
+      groundingIds:retrievedKnowledge.ids,freeQuotaReset:'00:00_UTC'});
   }
   if (!apiKeys.length) {
     const studyAiStudioOrigin = (env.STUDY_AI_STUDIO_ORIGIN || 'https://jel-study-abroad.ai.studio').replace(/\/$/, '');
