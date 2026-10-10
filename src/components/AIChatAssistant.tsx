@@ -557,12 +557,15 @@ export function AIChatAssistant() {
     };
     recognition.onresult = (event: SpeechRecognitionEventLike) => {
       let interim = "";
-      finalTranscript = "";
+      let completed = "";
       for (let i = 0; i < event.results.length; ++i) {
         const res = event.results[i];
-        if (res.isFinal) finalTranscript += res[0].transcript;
+        if (res.isFinal) completed += res[0].transcript;
         else interim += res[0].transcript;
       }
+      // Some browser engines clear the result list before onend; retain the
+      // last finalized utterance so Angela receives the spoken question.
+      if (completed.trim()) finalTranscript = completed;
       latestInterim = interim;
       setInterimTranscript(interim || finalTranscript);
     };
