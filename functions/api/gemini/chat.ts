@@ -490,7 +490,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   if (asksOutcomeGuarantee && hasStudyOutcomeContext) {
     const reply = body.language === 'bn' || /[\u0980-\u09FF]/.test(last)
       ? 'না। কোনো এজেন্সি বিশ্ববিদ্যালয়ে ভর্তি, স্কলারশিপ বা স্টুডেন্ট ভিসার অনুমোদন নিশ্চিত করতে পারে না। সংশ্লিষ্ট বিশ্ববিদ্যালয় ও ইমিগ্রেশন কর্তৃপক্ষই সিদ্ধান্ত দেয়। জার্নি এক্সপার্ট লিমিটেড আপনার প্রোফাইল যাচাই, কোর্স নির্বাচন, আবেদন ও প্রয়োজনীয় নথিপত্র প্রস্তুতিতে সহায়তা করতে পারে।'
-      : 'No. Neither JEL nor any agency can guarantee a university admission, scholarship or student visa approval; only the institution or immigration authority decides. JEL can help you assess eligibility, shortlist courses, prepare applications and organize supporting documents.';
+      : 'No, these outcomes are not guaranteed. Neither JEL nor any agency can guarantee a university admission, scholarship or student visa approval; only the institution or immigration authority decides. JEL can help you assess eligibility, shortlist courses, prepare applications and organize supporting documents.';
     return json({
       reply,
       mode: 'verified',
