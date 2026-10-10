@@ -383,6 +383,18 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
     if (!audio) return json({ error: 'audio_required' }, 400);
     if (!/^audio\/(webm|wav|mpeg|mp3|ogg|opus|aac|flac|m4a|mp4)$/i.test(mimeType)) return json({ error: 'audio_type_not_supported' }, 415);
 
+    const voiceAI=(env as unknown as {AI?:{run:(model:string,body:unknown)=>Promise<any>}}).AI;
+    if(voiceAI?.run){
+      try{
+        const result:any=await Promise.race([
+          voiceAI.run('@cf/openai/whisper-large-v3-turbo',{audio,task:'transcribe',language:selectedLanguage}),
+          new Promise<never>((_,reject)=>setTimeout(()=>reject(new Error('voice_timeout')),14000)),
+        ]);
+        const transcript=String(result?.text||'').trim();
+        if(transcript.length>2 && (selectedLanguage==='en' || /[\u0980-\u09FF]/.test(transcript)))
+          return json({transcript:transcript.slice(0,1200),language:selectedLanguage,mode:'ai',providerModel:'cloudflare-whisper'});
+      }catch(e){console.warn('Angela free transcription temporarily unavailable');}
+    }
     const keys = Array.from(new Set([
       env.GEMINI_API_KEY?.trim(),
       env.GEMINI_TTS_API_KEY?.trim(),
@@ -512,6 +524,37 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
     env.GEMINI_API_KEY?.trim(),
     env.GEMINI_TTS_API_KEY?.trim(),
   ].filter((key): key is string => Boolean(key))));
+  // Use the account's free Cloudflare Workers AI before Gemini to answer real
+  // Bangla and English questions even if the Gemini key or quota is missing.
+  const freeAI = (env as unknown as {AI?: {run: (model:string, input:unknown)=>Promise<any>}}).AI;
+  if (freeAI?.run) {
+    try {
+      const langRule = bn ? 'Answer in natural Bengali script.' : 'Answer in natural English.';
+      const prior = turns.slice(0,-1).slice(-5).map((t:any)=>({
+        role: t.role === 'model' ? 'assistant' : 'user',
+        content: String(t.parts?.[0]?.text || '').slice(0,900),
+      }));
+      const result:any = await Promise.race([
+        freeAI.run('@cf/meta/llama-3.1-8b-instruct-fast', {
+          messages: [
+            { role:'system', content:'You are Angela, assistant for Journey Expert Limited in Bangladesh. ' +
+              'Answer the exact question, not a generic company service paragraph. ' +
+              'The company provides flights, visas, tours, hotels, Hajj/Umrah, medical tourism, and Study Abroad. ' +
+              'Hotline/WhatsApp +8801926400400. Never guarantee a visa, price, booking, or admission. ' +
+              'For unknown JEL-specific facts, say they are unverified. ' + langRule +
+              '\nRelevant verified information: ' + retrievedKnowledge.text.slice(0,1800) },
+            ...prior, {role:'user',content:last.slice(0,1300)}
+          ],max_tokens:240,
+        }),
+        new Promise<never>((_,reject)=>setTimeout(()=>reject(new Error('cf_ai_timeout')),9000)),
+      ]);
+      const reply=String(result?.response || result?.choices?.[0]?.message?.content || '').trim();
+      if(reply.length>12 && (bn ? /[\u0980-\u09FF]/.test(reply): !/[\u0980-\u09FF]/.test(reply))) {
+        return json({reply:reply.slice(0,1800),language:bn?'bn':'en',mode:'ai',providerModel:'cloudflare-llama-3.1-8b-fast',
+          primaryIntent:retrievedKnowledge.primary?.id||'general',groundingIds:retrievedKnowledge.ids});
+      }
+    }catch(e){console.warn('Angela free AI temporarily unavailable');}
+  }
   if (!apiKeys.length) {
     const studyAiStudioOrigin = (env.STUDY_AI_STUDIO_ORIGIN || 'https://jel-study-abroad.ai.studio').replace(/\/$/, '');
     try {
