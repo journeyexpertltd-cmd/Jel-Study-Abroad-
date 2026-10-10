@@ -380,7 +380,7 @@ export function AIChatAssistant() {
     cancelPending();
     const controller = new AbortController();
     requestRef.current = controller;
-    const timer = setTimeout(() => controller.abort(), 15500);
+    const timer = setTimeout(() => controller.abort(), 9000);
 
     // Barge-in: interrupt any current speech synthesis immediately
     stopSpeaking();
