@@ -58,11 +58,11 @@ requireText(speech, "env.ANGELA_SERVER_VOICE === 'off'", 'Angela TTS endpoint');
 requireText(speech, "const deadline = Date.now() + 14500", 'Angela TTS endpoint');
 requireText(speech, "gemini-3.8-flash-lite-tts", 'Angela TTS endpoint');
 requireText(speech, "v1beta/interactions", 'Angela TTS endpoint');
-requireText(speech, "response_format: { type: 'audio' }", 'Angela TTS endpoint');
+requireText(speech, "response_format:{type:'audio'}", 'Angela TTS endpoint');
 forbidText(speech, "sample_rate", 'Angela TTS endpoint');
-requireText(speech, "voice: 'Aoede'", 'Angela TTS endpoint');
+requireText(speech, "voice:'Aoede'", 'Angela TTS endpoint');
 requireText(speech, "audio/wav", 'Angela TTS endpoint');
-requireText(speech, "gemini-3.8-flash-tts", 'Angela TTS endpoint');
+requireText(speech, "gemini-2.5-flash-preview-tts", 'Angela TTS endpoint');
 
 requireText(chat, "const candidateModels = ['gemini-3.8-flash', 'gemini-3.5-flash', 'gemini-2.5-flash']", 'Angela chat endpoint');
 requireText(chat, "for (const model of candidateModels)", 'Angela chat endpoint');
