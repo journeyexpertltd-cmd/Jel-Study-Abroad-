@@ -574,6 +574,25 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
       }
     }
   }
+  // Reuse the company's Gemini chat service when the free AI quota is empty.
+  try {
+    const ctrl=new AbortController();
+    const alarm=setTimeout(()=>ctrl.abort(),13000);
+    try{
+      const rsp=await fetch('https://journey-expert-ltd-main.journeyexpertltd.workers.dev/api/ai-assistant',{
+        method:'POST',signal:ctrl.signal,headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({message:last,language:bn?'bn':'en',
+          history:turns.slice(0,-1).slice(-8).map((t:any)=>({role:t.role==='model'?'assistant':'user',content:String(t.parts?.[0]?.text||'').slice(0,900)}))})
+      });
+      if(rsp.ok){
+        const d:any=await rsp.json();
+        const reply=typeof d?.reply==='string'?d.reply.trim().slice(0,1800):'';
+        if(d.mode==='ai'&&reply.length>12&&(bn?/[\u0980-\u09FF]/.test(reply):!/[\u0980-\u09FF]/.test(reply)))
+          return json({reply,language:bn?'bn':'en',mode:'ai',providerModel:d.providerModel||'gemini-3.5-flash-lite',primaryIntent:retrievedKnowledge.primary?.id||'general',groundingIds:retrievedKnowledge.ids});
+      }
+    }finally{clearTimeout(alarm)}
+  }catch(error){console.warn('Angela backup chat request unavailable',error instanceof Error?error.name:'unknown')}
+
   if(dailyFreeQuotaExhausted && !apiKeys.length) {
     const entry=retrievedKnowledge.primary;
     const reply=entry
