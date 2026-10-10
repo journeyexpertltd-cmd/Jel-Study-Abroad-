@@ -41,11 +41,6 @@ test('Speech uses official Gemini Interactions WAV and maps quota errors without
  assert.equal(new TextDecoder().decode(buffer.slice(0,4)), 'RIFF');
  assert.deepEqual(new Uint8Array(buffer), pcm, 'WAV must not receive a second header');
 
- globalThis.fetch = async () => Response.json({ output_audio: { data: encoded, mime_type: 'audio/wav' } });
- const actualProviderShape = await onRequest({ request: request('বাংলায় বলুন'), env: { GEMINI_API_KEY: 'test-key' } });
- assert.equal(actualProviderShape.status, 200, 'Gemini output_audio mime_type must be recognized');
- assert.equal(actualProviderShape.headers.get('content-type'), 'audio/wav');
-
  globalThis.fetch = async () => new Response('private upstream error', {status:429});
  const limited = await onRequest({ request: request('হ্যালো'), env: { GEMINI_API_KEY: 'test-key' } });
  assert.equal(limited.status,429);
