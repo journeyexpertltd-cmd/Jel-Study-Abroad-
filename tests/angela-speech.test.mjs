@@ -42,7 +42,9 @@ test('Speech uses official Gemini Interactions WAV and maps quota errors without
  assert.equal(new TextDecoder().decode(buffer.slice(0,4)), 'RIFF');
  assert.deepEqual(new Uint8Array(buffer), pcm, 'WAV must not receive a second header');
 
- globalThis.fetch = async () => new Response('private upstream error', {status:429});
+ globalThis.fetch = async (url) => String(url).includes('journey-expert-ltd-main.journeyexpertltd.workers.dev')
+   ? new Response(null, { status: 503 })
+   : new Response('private upstream error', { status: 429 });
  const limited = await onRequest({ request: request('হ্যালো'), env: { GEMINI_API_KEY: 'test-key' } });
  assert.equal(limited.status,429);
  const limitedBody = await limited.json();
