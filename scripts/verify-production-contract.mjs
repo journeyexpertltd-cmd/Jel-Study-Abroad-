@@ -64,7 +64,7 @@ requireText(speech, "voice:'Aoede'", 'Angela TTS endpoint');
 requireText(speech, "audio/wav", 'Angela TTS endpoint');
 requireText(speech, "gemini-2.5-flash-preview-tts", 'Angela TTS endpoint');
 
-requireText(chat, "const candidateModels = ['gemini-3.8-flash', 'gemini-3.5-flash', 'gemini-2.5-flash']", 'Angela chat endpoint');
+requireText(chat, "const candidateModels = ['gemini-3.8-flash', 'gemini-3.5-flash-lite']", 'Angela chat endpoint');
 requireText(chat, "for (const model of candidateModels)", 'Angela chat endpoint');
 requireText(chat, "generationConfig.thinkingConfig = { thinkingLevel: 'low' }", 'Angela chat endpoint');
 requireText(chat, "maxOutputTokens: fromVoice ? 768 : 1024", 'Angela chat endpoint');
