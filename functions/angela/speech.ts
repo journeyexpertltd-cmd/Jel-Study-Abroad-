@@ -25,7 +25,7 @@ function findAudio(value: any): { data: string; mimeType?: string } | null {
   if (!value || typeof value !== 'object') return null;
   if (typeof value.data === 'string' && (
     value.type === 'audio' ||
-    (typeof value.mimeType === 'string' && value.mimeType.startsWith('audio/'))
+    (typeof (value.mimeType || value.mime_type) === 'string' && String(value.mimeType || value.mime_type).startsWith('audio/'))
   )) return { data: value.data, mimeType: value.mime_type || value.mimeType };
   if (value.inlineData && typeof value.inlineData.data === 'string' &&
       String(value.inlineData.mimeType || '').startsWith('audio/')) {
