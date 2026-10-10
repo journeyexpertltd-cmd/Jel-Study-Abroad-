@@ -43,7 +43,7 @@ requireText(audio, "fetch('/api/gemini/live-token'", 'Angela browser audio');
 requireText(audio, "voiceName: 'Aoede'", 'Angela browser audio');
 requireText(audio, "gemini-3.8-live", 'Angela browser audio');
 requireText(audio, "fetch('/api/angela/speech'", 'Angela browser audio');
-requireText(audio, "window.setTimeout(() => ttsController.abort(), 12000)", 'Angela browser audio');
+requireText(audio, "window.setTimeout(() => ttsController.abort(), 26000)", 'Angela browser audio');
 requireText(audio, "const blob = await fetchAngelaLiveSpeech(speechText, signal)", 'Angela browser audio');
 requireText(audio, "live_voice_timeout')), 5000", 'Angela browser audio');
 requireText(audio, "CLOUD_FEMALE_PRIMARY_FAST", 'Angela cloud female primary contract');
