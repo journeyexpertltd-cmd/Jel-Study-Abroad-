@@ -76,7 +76,7 @@ export class AngelaPlayback {
     if (!clean) return;
     try {
       const synth = window.speechSynthesis;
-      const bengali = /[\\u0980-\\u09FF]/.test(clean);
+      const bengali = /[ঀ-৿]/.test(clean);
       const locale = bengali ? 'bn' : 'en';
       // getVoices() may initially be empty on mobile. Give voiceschanged a moment
       // before treating paid/quota-limited remote speech as the only option.
@@ -177,7 +177,7 @@ export class AngelaPlayback {
       if (!current()) return;
       // A quota/HTTP failure must not silently disable speech when a
       // matching native female voice is installed on the visitor's device.
-      const locale = /[\\u0980-\\u09FF]/.test(clean) ? 'bn' : 'en';
+      const locale = /[ঀ-৿]/.test(clean) ? 'bn' : 'en';
       const female = /female|woman|zira|samantha|victoria|aria|jenny|sonia|ava|allison|karen|susan|hazel|libby|natasha|serena|moira|fiona|tessa|veena|heera|tania|priya|kalpana|nabanita|tanishaa|lekha|sangeeta/i;
       const synth = window.speechSynthesis;
       const fallback = synth?.getVoices().find(v => v.lang.toLowerCase().startsWith(locale) && female.test(v.name));
