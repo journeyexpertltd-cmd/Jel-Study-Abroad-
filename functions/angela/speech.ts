@@ -45,6 +45,57 @@ function findAudio(value: any): { data: string; mimeType?: string } | null {
   return null;
 }
 
+// No paid provider: Workers AI Aura-1 uses the Cloudflare account's free
+// daily allocation. Bengali requires an approximate romanized-Banglish
+// pronunciation, never misrepresent this as a native Bengali voice.
+async function freeFemaleSpeech(text: string, env: Context['env']): Promise<Response | null> {
+  const AI = (env as unknown as { AI?: { run: (name: string, input: any, options?: any) => Promise<any> } }).AI;
+  if (!AI?.run) return null;
+  const bengali = /[\u0980-\u09FF]/.test(text);
+  let spoken = text.replace(/[\n\r*#`]/g, ' ').replace(/\s+/g,' ').trim().slice(0,300);
+  if (bengali) {
+    try {
+      const request = {
+        messages: [
+          {role:'system',content:'Romanize Bengali-script speech to plain Latin Banglish PRONUNCIATION for an English female text-to-speech voice. Do NOT translate into English. Preserve original word order. Output ONLY the spoken Banglish in ASCII letters/punctuation; no commentary or formatting, at most 290 characters.'},
+          {role:'user',content:spoken},
+        ],max_tokens:240
+      };
+      const result:any = await Promise.race([
+        AI.run('@cf/meta/llama-3.1-8b-instruct-fast',request),
+        new Promise<never>((_,reject)=>setTimeout(()=>reject(new Error('romanization_timeout')),4500))
+      ]);
+      const roman = String(result?.response || result?.choices?.[0]?.message?.content || '').trim().replace(/^["'`]+|["'`]+$/g,'').replace(/[\n\r]+/g,' ');
+      if (!roman || /[\u0980-\u09FF]/.test(roman)) return null;
+      spoken = roman.slice(0,300);
+    } catch (e) {
+      console.warn('Angela free Banglish preparation unavailable', e instanceof Error ? e.message : 'unknown');
+      return null;
+    }
+  }
+  try {
+    const result:any = await Promise.race([
+      AI.run('@cf/deepgram/aura-1',{text:spoken,speaker:'athena',encoding:'linear16',container:'wav'},{returnRawResponse:true}),
+      new Promise<never>((_,reject)=>setTimeout(()=>reject(new Error('free_tts_timeout')),12000)),
+    ]);
+    if (!(result instanceof Response) || !result.ok) return null;
+    const bytes=new Uint8Array(await result.arrayBuffer());
+    if(bytes.length < 100 || String.fromCharCode(...bytes.slice(0,4)) !== 'RIFF'
+      || String.fromCharCode(...bytes.slice(8,12)) !== 'WAVE') return null;
+    return new Response(bytes,{headers:{
+      'Content-Type':'audio/wav',
+      'Cache-Control':'no-store',
+      'X-Content-Type-Options':'nosniff',
+      'X-Angela-Voice':'Athena',
+      'X-Angela-Voice-Model':'cloudflare-aura-1-free',
+      'X-Angela-Voice-Mode':bengali?'banglish-phonetic-female':'english-female',
+    }});
+  } catch (e) {
+    console.warn('Angela free female voice unavailable',e instanceof Error ? e.message : 'unknown');
+    return null;
+  }
+}
+
 export async function onRequest({ request, env }: Context): Promise<Response> {
   if (request.method !== 'POST') return new Response(null, { status: 405, headers: { Allow: 'POST' } });
   const url = new URL(request.url);
@@ -66,7 +117,12 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
     env.GEMINI_TTS_API_KEY?.trim(),
     env.GEMINI_API_KEY?.trim(),
   ].filter((key): key is string => Boolean(key))));
-  if (!keys.length || env.ANGELA_SERVER_VOICE === 'off') return json({ error: 'voice_not_configured' }, 503);
+  if (env.ANGELA_SERVER_VOICE === 'off') return json({ error: 'voice_disabled_by_admin' }, 503);
+  if (!keys.length) {
+    const free = await freeFemaleSpeech(text,env);
+    if (free) return free;
+    return json({error:'female_voice_unavailable',reason:'free_voice_or_banglish_fallback_unavailable'},503);
+  }
 
   const models = Array.from(new Set([
     env.GEMINI_TTS_MODEL,
@@ -153,6 +209,8 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
     });
   }
 
+  const free = await freeFemaleSpeech(text,env);
+  if (free) return free;
   return json({
     error: 'voice_provider_unavailable',
     providerStatus: lastProviderStatus || undefined,
