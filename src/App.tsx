@@ -143,7 +143,7 @@ export default function App() {
   }, []);
 
   const metadata = useMemo<Record<string, { title: string; desc: string }>>(() => ({
-    home: { title: "Study Abroad Consultancy in Bangladesh | JEL Study Abroad", desc: "JEL Study Abroad helps Bangladeshi students with university admissions, scholarships, student visa preparation and study-abroad planning." },
+    home: { title: "Journey Expert Limited | AI Travel, Visa, Study Abroad & Global Mobility", desc: "Journey Expert Limited (JEL) supports air ticketing, visas, tours, hotels, Hajj & Umrah, Study Abroad, medical tourism and corporate travel from Bangladesh." },
     about: { title: "About JEL Study Abroad | Journey Expert Ltd.", desc: "Learn about JEL Study Abroad, a brand of Journey Expert Ltd., and its student counseling and international education services in Dhaka." },
     services: { title: "Study Abroad Services | JEL Study Abroad", desc: "Explore university application, scholarship guidance, SOP support, English test guidance and student visa preparation services." },
     countries: { title: "Study Destinations | JEL Study Abroad", desc: "Explore study options for the UK, Canada, Australia, USA, Ireland, Germany and other destinations." },
@@ -316,7 +316,7 @@ export default function App() {
 
       <AIChatAssistant />
 
-      <a href="https://wa.me/8801926400400?text=Assalamu%20Alaikum%20JEL%20Study%20Abroad.%20I%20visited%20journeyexpertbd.com%20and%20would%20like%20study%20abroad%20assistance." target="_blank" rel="noreferrer" className="fixed bottom-5 right-5 z-40 grid h-12 w-12 place-items-center rounded-full bg-[#25D366] text-white shadow-xl transition hover:-translate-y-1" aria-label="WhatsApp JEL"><Phone className="h-5 w-5" /></a>
+      <a href="https://wa.me/8801926400400?text=Assalamu%20Alaikum%20JEL%20Study%20Abroad.%20I%20visited%20journeyexpertbd.com%20and%20would%20like%20study%20abroad%20assistance." target="_blank" rel="noreferrer" className="fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] left-5 z-40 grid h-12 w-12 place-items-center rounded-full bg-[#25D366] text-white shadow-xl transition hover:-translate-y-1" aria-label="WhatsApp JEL"><Phone className="h-5 w-5" /></a>
 
       <footer className="border-t border-white/[0.08] bg-[#00150E] text-white">
         <div className="mx-auto grid max-w-[1480px] grid-cols-1 gap-9 px-5 py-10 sm:px-8 md:grid-cols-2 lg:grid-cols-[1.15fr_.7fr_1fr_1fr] lg:px-10 xl:px-14">
