@@ -131,6 +131,43 @@ export class AngelaPlayback {
       }
       if (current()) onState(false);
     } catch (error) {
+      if (!current()) return;
+      // Recover from an unavailable cloud voice using a locally installed female voice.
+      const synth = window.speechSynthesis;
+      const bn = /[\\u0980-\\u09FF]/.test(clean);
+      const femaleNames = /female|zira|samantha|victoria|aria|jenny|heera|tania|priya|kalpana/i;
+      const localVoice = synth?.getVoices().find(v =>
+        v.lang.toLowerCase().startsWith(bn ? 'bn' : 'en') && femaleNames.test(v.name));
+      if (synth && localVoice) {
+        try {
+          await new Promise<void>((resolve, reject) => {
+            const u = new SpeechSynthesisUtterance(clean);
+            this.utterance = u;
+            u.voice = localVoice;
+            u.lang = localVoice.lang;
+            let finished = false;
+            const finish = (failed: boolean) => {
+              if (finished) return;
+              finished = true;
+              clearTimeout(watchdog);
+              u.onend = u.onerror = u.onstart = null;
+              this.settle = null;
+              if (this.utterance === u) this.utterance = null;
+              failed ? reject(new Error('local_voice_failed')) : resolve();
+            };
+            const watchdog = setTimeout(() => finish(true), 45000);
+            this.settle = () => finish(false);
+            u.onstart = () => { if (current()) onState(true); };
+            u.onend = () => finish(false);
+            u.onerror = () => finish(true);
+            synth.cancel();
+            synth.resume();
+            synth.speak(u);
+          });
+          if (current()) onState(false);
+          return;
+        } catch { /* report the original upstream failure */ }
+      }
       if (current()) { this.cancel(); onState(false); onError(error); }
     }
   }
