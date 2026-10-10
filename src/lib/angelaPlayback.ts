@@ -52,19 +52,7 @@ export class AngelaPlayback {
     const clean = text.replace(/[*#_`]/g, '').replace(/https?:\/\/\S+/g, '').trim();
     if (!clean) return;
     try {
-      // Prefer a free local browser voice even when the caller has not supplied
-      // one yet (voice enumeration is asynchronous on several mobile browsers).
-      // Keep cloud audio as fallback if local speech fails to start.
-      const synth = window.speechSynthesis;
-      const isBangla = /[\u0980-\u09FF]/.test(clean);
-      const wanted = isBangla ? 'bn' : 'en';
-      const voices = synth?.getVoices() || [];
-      const feminine = /female|zira|samantha|victoria|aria|jenny|heera|tania|priya|kalpana/i;
-      const preferredVoice = voice && voice.lang.toLowerCase().startsWith(wanted) ? voice
-        : voices.find(v => v.lang.toLowerCase().startsWith(wanted) && feminine.test(v.name))
-        || voices.find(v => v.lang.toLowerCase().startsWith(wanted))
-        || null;
-      if (synth && (preferredVoice || voices.length === 0)) {
+      if (voice && window.speechSynthesis) {
         const played = await new Promise<boolean>((resolve) => {
           const utterance = new SpeechSynthesisUtterance(clean);
           this.utterance = utterance;
@@ -77,8 +65,8 @@ export class AngelaPlayback {
             resolve(ok);
           };
           this.settle = () => finish(false);
-          if (preferredVoice) utterance.voice = preferredVoice;
-          utterance.lang = preferredVoice?.lang || (isBangla ? 'bn-BD' : 'en-US');
+          utterance.voice = voice;
+          utterance.lang = voice.lang;
           utterance.rate = 1.03;
           utterance.onstart = () => {
             if (!current()) return finish(false);
