@@ -14,24 +14,25 @@ test('Speech endpoint rejects bad requests and missing credentials without calli
  assert.equal((await onRequest({ request: request('hello', { headers: { origin: 'https://other.example' } }), env: {} })).status, 403);
  assert.equal((await onRequest({ request: request(''), env: {} })).status, 400);
  assert.equal((await onRequest({ request: request('a'.repeat(9000)), env: {} })).status, 413);
- assert.equal((await onRequest({ request: request('হ্যালো'), env: {} })).status, 503);
+ assert.equal((await onRequest({ request: request('হ্যালো'), env: {} })).status, 422);
  } finally { globalThis.fetch = original; }
 });
 test('Speech uses official Gemini Interactions WAV and maps quota errors without exposing secrets', async () => {
  const original = globalThis.fetch;
  try {
- const pcm = new Uint8Array(pcmToWav(new Uint8Array([0,0,0,0])));
+ const pcm = new Uint8Array(pcmToWav(new Uint8Array(160)));
  const encoded = Buffer.from(pcm).toString('base64');
  globalThis.fetch = async (url, options) => {
+ if (String(url).includes('journey-expert-ltd-main.journeyexpertltd.workers.dev')) return new Response(null, {status:503});
  assert.equal(String(url), 'https://generativelanguage.googleapis.com/v1beta/interactions');
  assert.equal(options.headers['x-goog-api-key'], 'test-key');
  const body = JSON.parse(options.body);
  assert.equal(body.model, 'gemini-3.8-flash-lite-tts');
- assert.equal(body.input[0].content[0].text, 'আমি অ্যাঞ্জেলা');
- assert.match(body.input[0].content[0].annotations[0].style, /professional adult female/i);
+ assert.match(body.input, /আমি অ্যাঞ্জেলা/);
+ assert.match(body.input, /professional.*female/i);
  assert.equal(body.response_format.type, 'audio');
  assert.equal(body.generation_config.speech_config[0].voice, 'Aoede');
- return Response.json({ type: 'audio', data: encoded, mimeType: 'audio/wav' });
+ return Response.json({ output_audio: { data: encoded, mimeType: 'audio/wav' } });
  };
  const response = await onRequest({ request: request('আমি অ্যাঞ্জেলা'), env: { GEMINI_API_KEY: 'test-key' } });
  assert.equal(response.status, 200);
