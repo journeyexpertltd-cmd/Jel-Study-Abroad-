@@ -201,7 +201,7 @@ export async function fetchAngelaSpeech(text: string, signal: AbortSignal): Prom
   if (cached) return cached;
 
   // The opening greeting is a pre-rendered Aoede recording, independent of AI quota.
-  if (speechText === 'আসসালামু আলাইকুম। আমি অ্যাঞ্জেলা, Journey Expert Limited-এর AI সহকারী। ভ্রমণ, ভিসা, হজ ও উমরাহ, Study Abroad এবং JEL-এর অন্যান্য সেবা নিয়ে কীভাবে সাহায্য করতে পারি?') {
+  if (speechText === 'আসসালামু আলাইকুম। আমি অ্যাঞ্জেলা, জার্নি এক্সপার্ট লিমিটেড-এর AI সহকারী। ভ্রমণ, ভিসা, হজ ও উমরাহ, স্টাডি অ্যাব্রড এবং জার্নি এক্সপার্ট লিমিটেড-এর অন্যান্য সেবা নিয়ে কীভাবে সাহায্য করতে পারি?' || speechText === 'আসসালামু আলাইকুম। আমি অ্যাঞ্জেলা, Journey Expert Limited-এর AI সহকারী। ভ্রমণ, ভিসা, হজ ও উমরাহ, Study Abroad এবং JEL-এর অন্যান্য সেবা নিয়ে কীভাবে সাহায্য করতে পারি?') {
     const response = await fetch('/audio/angela-welcome-bn.mp3', { signal });
     if (response.ok && response.headers.get('content-type')?.includes('audio')) {
       const blob = await response.blob();
