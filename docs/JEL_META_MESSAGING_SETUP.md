@@ -56,3 +56,36 @@ The webhook can verify Meta's subscription with the first two secrets only. Ever
 - Cloudflare Functions return 200 to valid events rapidly and use background processing where supported. Transient delivery failure is not recovered automatically; production-grade queues/retry tracking should be added before high-volume usage.
 - WhatsApp Cloud API can have provider costs after free allowances. No paid provider is activated by this code change.
 - Data-deletion instructions: `https://journeyexpertbd.com/data-deletion/`. This is a human-request instruction page, NOT an automatic deletion callback.
+
+## Controlled Messenger reviewer demonstration (public replies stay OFF)
+
+The Pages webhook supports optional **Messenger-only** testing for specific authorized
+Facebook user IDs scoped to Journey Expert BD (PSIDs). This exists so that a real
+Messenger conversation can be recorded for Meta App Review without enabling automatic
+replies to all customers.
+
+1. Keep `META_AUTOREPLY_ENABLED=false` in Cloudflare Pages production.
+2. Verify the Meta Dashboard Messenger webhook **Callback URL** is
+   `https://journeyexpertbd.com/api/meta/webhook` and Journey Expert BD Page
+   `1183671364826520` subscribes to the **messages** field.
+3. Use a Facebook test participant with an eligible app role and obtain their
+   numeric Page-scoped Messenger sender ID from an authorized test event. Do not
+   put any PSID or access token in GitHub or public support messages.
+4. Set Cloudflare Pages production **secret** `META_MESSENGER_TEST_SENDER_IDS`
+   to that tester PSID (up to 20 comma-separated IDs). This is opt-in; if unset
+   and public auto-replies are off, no automatic replies are sent.
+5. Send a genuine incoming Messenger message as the test participant, such as
+   `What is your name?`. Confirm Angela answers in the **same** Messenger
+   thread. Repeat with a Bangla question, and verify the actual delivery.
+6. Record the genuine Page connection, user-to-Page message, and resulting
+   Angela answer for Meta reviewer evidence. Do **not** include App Secret,
+   verification tokens, user access tokens, unrelated customer data or PSIDs.
+7. Once recording and review testing are done, delete
+   `META_MESSENGER_TEST_SENDER_IDS` from Cloudflare and redeploy settings if
+   required. Keep `META_AUTOREPLY_ENABLED=false` until Meta permissions,
+   messaging policy, and production end-to-end verification are complete.
+
+The review allowlist only applies to **Messenger** while public auto-replies are
+off. It does not turn on Instagram or WhatsApp replies and is not an alternative
+to Meta's permission approval. A successful Cloudflare deployment does **not**
+prove the Page subscription or actual message delivery.
