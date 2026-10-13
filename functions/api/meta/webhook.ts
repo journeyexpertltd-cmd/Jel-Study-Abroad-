@@ -5,6 +5,8 @@ type Env = Record<string, string | KV | undefined> & {
   META_WEBHOOK_VERIFY_TOKEN?: string;
   META_APP_SECRET?: string;
   META_AUTOREPLY_ENABLED?: string;
+  /** Comma-separated Messenger sender PSIDs for controlled App Review testing, even when public auto-replies are disabled. */
+  META_MESSENGER_TEST_SENDER_IDS?: string;
   META_PAGE_ACCESS_TOKEN?: string;
   META_PAGE_ID?: string;
   META_IG_ACCESS_TOKEN?: string;
@@ -173,8 +175,14 @@ export async function onRequestPost({ request, env, waitUntil }: Context): Promi
   try { data = JSON.parse(new TextDecoder().decode(raw)); }
   catch { return response('Invalid JSON', 400); }
   // Webhook subscription can be verified safely before outbound messaging is enabled.
-  if (secret(env, 'META_AUTOREPLY_ENABLED') !== 'true') return response('EVENT_RECEIVED');
-  const messages = inbound(data, env);
+  const publicRepliesEnabled = secret(env, 'META_AUTOREPLY_ENABLED') === 'true';
+  // Safely permit reproducible reviewer tests without enabling replies to the public,
+  // Instagram, or WhatsApp. Exact Page-scoped sender IDs must be configured as a secret.
+  const testSenderIds = new Set(secret(env, 'META_MESSENGER_TEST_SENDER_IDS')
+    .split(',').map(id => id.trim()).filter(id => /^\d{1,30}$/.test(id)).slice(0, 20));
+  if (!publicRepliesEnabled && testSenderIds.size === 0) return response('EVENT_RECEIVED');
+  const messages = inbound(data, env).filter(message =>
+    publicRepliesEnabled || (message.channel === 'messenger' && testSenderIds.has(message.sender)));
   const delivery = Promise.allSettled(messages.map(m => processMessage(m, env)));
   if (waitUntil) { waitUntil(delivery); return response('EVENT_RECEIVED'); }
   await delivery;
