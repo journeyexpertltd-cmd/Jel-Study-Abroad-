@@ -75,6 +75,38 @@ test('signed Messenger text uses the existing Angela assistant and page send API
   assert.equal(sent[0].options.headers.Authorization, 'Bearer local-access-token');
 });
 
+test('controlled reviewer test replies only to explicitly allowlisted Messenger sender', async () => {
+  const sent = [];
+  globalThis.fetch = async (url, options) => {
+    sent.push({ url: String(url), options });
+    return Response.json({ recipient_id: '20', message_id: 'review-test-1' });
+  };
+  const request = await signedRequest({ object: 'page', entry: [{ id: '10', messaging: [
+    { sender: { id: '20' }, message: { mid: 't1', text: 'What is your name?' } },
+    { sender: { id: '21' }, message: { mid: 't2', text: 'What is your name?' } },
+  ] }] });
+  const res = await onRequestPost(context(request, {
+    META_APP_SECRET: 'local-app-secret', META_AUTOREPLY_ENABLED: 'false',
+    META_PAGE_ID: '10', META_PAGE_ACCESS_TOKEN: 'local-access-token',
+    META_MESSENGER_TEST_SENDER_IDS: '20',
+  }));
+  assert.equal(res.status, 200);
+  assert.equal(sent.length, 1);
+  assert.equal(JSON.parse(sent[0].options.body).recipient.id, '20');
+});
+
+test('Messenger reviewer allowlist does not enable WhatsApp or Instagram replies', async () => {
+  globalThis.fetch = async () => { throw new Error('review test must not send cross-channel messages'); };
+  const req = await signedRequest({ object: 'instagram', entry: [{
+    id: '190', messaging: [{ sender: { id: '20' }, message: { mid: 'ig-review', text: 'Hi' } }],
+  }] });
+  const res = await onRequestPost(context(req, {
+    META_APP_SECRET: 'local-app-secret', META_AUTOREPLY_ENABLED: 'false',
+    META_MESSENGER_TEST_SENDER_IDS: '20', META_IG_ACCESS_TOKEN: 'unused-token',
+  }));
+  assert.equal(res.status, 200);
+});
+
 test('valid WhatsApp text is delivered through phone-number messaging endpoint', async () => {
   const sent = [];
   globalThis.fetch = async (url, options) => {
