@@ -70,8 +70,8 @@ test('Client speech chain keeps Gemini Live fallback available during direct TTS
 
 test('BD Bengali TTS proxy uses the configured Journey Expert API Gateway route', async () => {
  const source = await readFile(new URL('../functions/angela/speech.ts', import.meta.url), 'utf8');
- assert.match(source, /journey-expert-ltd-main\\.journeyexpertltd\\.workers\\.dev\\/api\\/ai\\/voice-agent\\?action=speech/);
- assert.doesNotMatch(source, /journeyexpertltd\\.workers\\.dev\\/api\\/angela\\/native-tts/);
+ assert.ok(source.includes('https://journey-expert-ltd-main.journeyexpertltd.workers.dev/api/ai/voice-agent?action=speech'));
+ assert.ok(!source.includes('/api/angela/native-tts'));
 });
 
 test('BD Angela Live female renderer keeps a bounded 12s audio window', async () => {
