@@ -352,7 +352,11 @@ export function AIChatAssistant() {
         setVoiceState(speaking ? "SPEAKING" : "READY");
         setActiveSpeakingId(speaking ? messageId || null : null);
         if (speaking) setErrorMessage(null);
-      }, error => setErrorMessage(voiceErrorMessage(error)));
+      }, error => {
+      setVoiceState("ERROR");
+      setActiveSpeakingId(null);
+      setErrorMessage(voiceErrorMessage(error));
+    });
   }, []);
 
   // Clean speech synthesis on unmount
