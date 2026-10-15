@@ -23,7 +23,7 @@ test('Speech uses official Gemini Interactions WAV and maps quota errors without
  const pcm = new Uint8Array(pcmToWav(new Uint8Array(160)));
  const encoded = Buffer.from(pcm).toString('base64');
  globalThis.fetch = async (url, options) => {
- if (String(url).includes('journey-expert-ltd-main.journeyexpertltd.workers.dev')) return new Response(null, {status:503});
+ if (String(url).includes('journeyexpertltd.com')) return new Response(null, {status:503});
  assert.equal(String(url), 'https://generativelanguage.googleapis.com/v1beta/interactions');
  assert.equal(options.headers['x-goog-api-key'], 'test-key');
  const body = JSON.parse(options.body);
@@ -42,7 +42,7 @@ test('Speech uses official Gemini Interactions WAV and maps quota errors without
  assert.equal(new TextDecoder().decode(buffer.slice(0,4)), 'RIFF');
  assert.deepEqual(new Uint8Array(buffer), pcm, 'WAV must not receive a second header');
 
- globalThis.fetch = async (url) => String(url).includes('journey-expert-ltd-main.journeyexpertltd.workers.dev')
+ globalThis.fetch = async (url) => String(url).includes('journeyexpertltd.com')
    ? new Response(null, { status: 503 })
    : new Response('private upstream error', { status: 429 });
  const limited = await onRequest({ request: request('হ্যালো'), env: { GEMINI_API_KEY: 'test-key' } });
