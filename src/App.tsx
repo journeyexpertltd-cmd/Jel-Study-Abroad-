@@ -39,6 +39,7 @@ const StudentApplicationForm = lazy(() => import("./components/StudentApplicatio
 const jelLogo = "/assets/images/jel-study-abroad-official-v2.png";
 
 const verifiedSocialLinks = [
+  { label: "MS", name: "Messenger", href: "https://m.me/1183671364826520" },
   { label: "FB", name: "Facebook", href: "https://www.facebook.com/journeyexpertltd" },
   { label: "IG", name: "Instagram", href: "https://www.instagram.com/journeyexpertltd/" },
   { label: "YT", name: "YouTube", href: "https://www.youtube.com/@JELSTUDYABROAD" },
