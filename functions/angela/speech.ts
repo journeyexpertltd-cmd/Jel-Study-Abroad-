@@ -88,7 +88,7 @@ async function nativeFemaleGeminiSpeech(text: string): Promise<Response | null> 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 21500);
   try {
-    const response=await fetch('https://journey-expert-ltd-main.journeyexpertltd.workers.dev/api/ai/voice-agent?action=speech',{
+    const response=await fetch('https://journeyexpertltd.com/api/ai/voice-agent?action=speech',{
       method:'POST',signal:controller.signal,
       headers:{'content-type':'application/json','origin':'https://journeyexpertbd.com'},
       body:JSON.stringify({text})
