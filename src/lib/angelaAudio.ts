@@ -287,6 +287,7 @@ export function voiceErrorMessage(error: unknown): string {
   const code = error instanceof Error ? error.message : '';
   if (code === 'native_bengali_voice_required') return 'ভুল Banglish উচ্চারণ বন্ধ করা হয়েছে। সঠিক বাংলা female voice পেতে ডিভাইসে বাংলা TTS voice ইনস্টল/নির্বাচন করুন। উত্তরটি লেখা আছে।';
   if (code === 'voice_not_configured') return 'Angela-র বাংলা female voice এখনও চালু হয়নি। আপাতত লেখা পড়ে নিতে পারেন।';
+  if (code === 'live_voice_not_configured' || code === 'voice_disabled_by_admin') return 'Angela-র বাংলা অডিও সার্ভিস এই সাইটে এখন সংযুক্ত নেই। উত্তরটি লেখা হিসেবে পাওয়া যাবে; বাংলা অডিও চালু করতে সাইটের voice-provider সংযোগ দরকার।';
   if (code === 'voice_quota_exceeded' || code === 'live_voice_quota_exceeded') return 'Angela-র voice quota সাময়িকভাবে ব্যস্ত। একটু পরে Listen আবার চাপুন।';
   if (code === 'live_voice_timeout' || code === 'live_voice_unavailable') return 'Angela-র backup female voice সাময়িকভাবে পাওয়া যাচ্ছে না। একটু পরে Listen আবার চাপুন।';
   if (error instanceof Error && error.name === 'NotAllowedError') return 'শব্দ চালাতে উত্তরের Listen বোতামটি চাপুন।';
