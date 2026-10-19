@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { AlertCircle, Calendar, CheckCircle2, Globe, Mail, Phone, ShieldCheck, Sparkles, User } from "lucide-react";
+import { useToast } from "../context/ToastContext";
 
 interface ConsultationBookingProps {
   preSelectedUniversity: string;
@@ -21,6 +22,7 @@ export function ConsultationBooking({
   preSelectedCountry,
   onClearPreSelected,
 }: ConsultationBookingProps) {
+  const toast = useToast();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [mobileNumber, setMobileNumber] = useState("");
@@ -77,13 +79,19 @@ export function ConsultationBooking({
         phone: mobileNumber.trim(),
         country: preferredCountry,
       });
+      toast.success(
+        "Consultation Request Received",
+        `Your counselling request for ${preferredCountry} has been saved to the JEL CRM. A counselor will follow up with you.`
+      );
       setFullName("");
       setEmail("");
       setMobileNumber("");
       setMessage("");
       onClearPreSelected();
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "The CRM could not save your request right now.");
+      const msg = submitError instanceof Error ? submitError.message : "The CRM could not save your request right now.";
+      setError(msg);
+      toast.error("Booking Notice", msg);
     } finally {
       setSubmitting(false);
     }

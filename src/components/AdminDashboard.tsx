@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Lock, LogOut, RefreshCw, ShieldCheck, Users } from "lucide-react";
 import { supabase } from "../lib/supabase";
+import { useToast } from "../context/ToastContext";
 
 interface AdminDashboardProps {
   setActiveTab?: (tab: string) => void;
@@ -29,6 +30,7 @@ type LeadRow = {
 const CRM_ROLES = new Set(["super_admin", "admin", "counsellor", "counselor", "visa_officer"]);
 
 export function AdminDashboard({ setActiveTab }: AdminDashboardProps = {}) {
+  const toast = useToast();
   const [loading, setLoading] = useState(true);
   const [sessionReady, setSessionReady] = useState(false);
   const [profile, setProfile] = useState<StaffProfile | null>(null);
@@ -139,7 +141,9 @@ export function AdminDashboard({ setActiveTab }: AdminDashboardProps = {}) {
       redirectTo: `${window.location.origin}/admin`,
     });
     if (recoveryError) console.warn("CRM recovery request failed", recoveryError.message);
-    setNotice("If the email is registered, a secure password-recovery link has been sent.");
+    const noticeMsg = "If the email is registered, a secure password-recovery link has been sent.";
+    setNotice(noticeMsg);
+    toast.info("Password Recovery", noticeMsg);
     setShowForgot(false);
     setSubmitting(false);
   };
@@ -149,11 +153,15 @@ export function AdminDashboard({ setActiveTab }: AdminDashboardProps = {}) {
     setError("");
     setNotice("");
     if (newPassword.length < 8) {
-      setError("Use a password with at least 8 characters.");
+      const msg = "Use a password with at least 8 characters.";
+      setError(msg);
+      toast.error("Password Notice", msg);
       return;
     }
     if (newPassword !== confirmPassword) {
-      setError("The two passwords do not match.");
+      const msg = "The two passwords do not match.";
+      setError(msg);
+      toast.error("Password Notice", msg);
       return;
     }
     setSubmitting(true);
@@ -161,13 +169,17 @@ export function AdminDashboard({ setActiveTab }: AdminDashboardProps = {}) {
     setNewPassword("");
     setConfirmPassword("");
     if (updateError) {
-      setError(updateError.message || "Password update failed.");
+      const msg = updateError.message || "Password update failed.";
+      setError(msg);
+      toast.error("Update Failed", msg);
       setSubmitting(false);
       return;
     }
     window.history.replaceState(null, "", "/admin");
     setRecoveryMode(false);
-    setNotice("Password updated successfully. Your secure CRM session is ready.");
+    const successMsg = "Password updated successfully. Your secure CRM session is ready.";
+    setNotice(successMsg);
+    toast.success("Password Updated", successMsg);
     await loadAuthorizedWorkspace();
     setSubmitting(false);
   };

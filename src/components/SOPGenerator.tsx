@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Sparkles, FileText, Download, RotateCcw, Save, Check, AlertCircle, Edit3, Loader2 } from "lucide-react";
+import { useToast } from "../context/ToastContext";
 
 interface SOPGeneratorProps {
   currentUser: {
@@ -88,11 +89,14 @@ export function SOPGenerator({ currentUser }: SOPGeneratorProps) {
     }
   };
 
+  const toast = useToast();
+
   const handleSaveSOP = () => {
     setSaveStatus("saving");
     setTimeout(() => {
       localStorage.setItem(`jel_sop_${currentUser.email}`, sopContent);
       setSaveStatus("saved");
+      toast.success("Draft Saved", "Statement of Purpose draft saved to your student profile.");
       setTimeout(() => setSaveStatus("idle"), 2500);
     }, 600);
   };
@@ -101,7 +105,7 @@ export function SOPGenerator({ currentUser }: SOPGeneratorProps) {
     // Elegant system print layout or download action
     const printWindow = window.open("", "_blank");
     if (!printWindow) {
-      alert("Popup blocked! Please allow popups to export your Statement of Purpose.");
+      toast.warning("Popup Blocked", "Please allow popups to export your Statement of Purpose.");
       return;
     }
     printWindow.document.write(`

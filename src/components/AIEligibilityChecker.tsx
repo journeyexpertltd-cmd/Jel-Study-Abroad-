@@ -20,6 +20,7 @@ import {
   TrendingUp,
   FileText
 } from "lucide-react";
+import { useToast } from "../context/ToastContext";
 
 export interface EligibilityFormData {
   // Step 1: Academic Info
@@ -108,6 +109,7 @@ const INITIAL_FORM: EligibilityFormData = {
 };
 
 export function AIEligibilityChecker({ onBookCounselor }: { onBookCounselor?: () => void }) {
+  const toast = useToast();
   const [step, setStep] = useState<number>(1);
   const [formData, setFormData] = useState<EligibilityFormData>(INITIAL_FORM);
   const [isCalculating, setIsCalculating] = useState<boolean>(false);
@@ -455,6 +457,11 @@ Head Office: 189/A, Abdul Motin Complex, Tejgaon, Dhaka-1215
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+
+    toast.success(
+      "Report Downloaded",
+      `Your JEL GTE Eligibility Assessment for ${formData.targetCountry} has been downloaded.`
+    );
 
     setTimeout(() => setDownloadSuccess(false), 4000);
   };

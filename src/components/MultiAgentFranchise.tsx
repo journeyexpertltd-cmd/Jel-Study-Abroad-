@@ -3,6 +3,7 @@ import {
   Users, TrendingUp, Coins, Award, DollarSign, CheckCircle, 
   Clock, PlusCircle, UserCheck, MapPin, Activity, FileText, Globe, Search, RefreshCw
 } from "lucide-react";
+import { useToast } from "../context/ToastContext";
 
 interface Agent {
   id: string;
@@ -66,6 +67,8 @@ export function MultiAgentFranchise() {
   const [newLeadGpa, setNewLeadGpa] = useState("4.80");
   const [newLeadTest, setNewLeadTest] = useState("IELTS 6.5");
 
+  const toast = useToast();
+
   // Status updates & commission calculation
   const handleCreateLead = (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,8 +95,11 @@ export function MultiAgentFranchise() {
       return ag;
     }));
 
+    toast.success(
+      "Student Lead Registered",
+      `Lead "${newLeadName}" successfully registered and assigned to ${newLeadCountry} admissions.`
+    );
     setNewLeadName("");
-    alert(`Lead "${newLeadName}" successfully ingested! Assigned to agent country: ${newLeadCountry}`);
   };
 
   const handleUpdateStatus = (leadId: string, newStatus: FranchiseLead["status"]) => {

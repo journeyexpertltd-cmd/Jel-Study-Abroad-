@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { CreditCard, CheckCircle, AlertCircle, FileText, Download, Printer, ShieldCheck, Mail, Sparkles, Loader2, RefreshCw } from "lucide-react";
+import { useToast } from "../context/ToastContext";
 
 interface StudentInvoicesProps {
   currentUser: {
@@ -23,6 +24,7 @@ interface Invoice {
 }
 
 export function StudentInvoices({ currentUser }: StudentInvoicesProps) {
+  const toast = useToast();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loadingInvoiceId, setLoadingInvoiceId] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -150,7 +152,7 @@ export function StudentInvoices({ currentUser }: StudentInvoicesProps) {
   const handlePrintInvoice = (invoice: Invoice) => {
     const printWindow = window.open("", "_blank");
     if (!printWindow) {
-      alert("Please allow popups to generate printable invoice sheets.");
+      toast.warning("Popup Blocked", "Please allow popups to generate printable invoice sheets.");
       return;
     }
 
