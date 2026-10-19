@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { Compass, Shield, Award, Users, Search, GraduationCap, MapPin, CheckCircle, Mail, Phone, Clock, MessageSquare, ExternalLink, Calendar, Facebook, Send, Map, FileText, Globe } from "lucide-react";
 import { COUNTRIES, SCHOLARSHIPS, BLOGS, UNIVERSITY_PARTNERS, TEAM_MEMBERS } from "../data";
 import { BlogItem, PartnerUniversity } from "../types";
-import { useToast } from "../context/ToastContext";
 
 // ================= AboutView Component =================
 export function AboutView() {
@@ -665,17 +664,12 @@ export function BlogView({ initialSearchTerm = "", initialBlogId = null, onClear
 
 // ================= ContactView Component =================
 export function ContactView() {
-  const toast = useToast();
   const [formData, setFormData] = useState({ name: "", email: "", phone: "", message: "" });
   const [submitted, setSubmitted] = useState(false);
 
   const handleContactSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitted(true);
-    toast.success(
-      "Message Sent Successfully",
-      "Thank you for reaching out to JEL Dhaka office! A counselor will review your message and reply via WhatsApp or phone."
-    );
     setTimeout(() => {
       setSubmitted(false);
       setFormData({ name: "", email: "", phone: "", message: "" });

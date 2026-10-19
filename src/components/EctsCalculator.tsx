@@ -5,7 +5,6 @@ import {
   Award, FileText, ChevronDown, ChevronUp, AlertCircle, RefreshCw, 
   Layers, Check, Phone, MessageSquare, ExternalLink, User, Mail
 } from "lucide-react";
-import { useToast } from "../context/ToastContext";
 
 const jelLogo = new URL("../assets/images/jel-study-abroad-official.webp", import.meta.url).href;
 
@@ -114,7 +113,6 @@ export const EctsCalculator: React.FC<EctsCalculatorProps> = ({
   setActiveTab, 
   onPreSelectCountry 
 }) => {
-  const toast = useToast();
   // Input Form States
   const [selectedCountry, setSelectedCountry] = useState<string>("Bangladesh");
   const [selectedSystem, setSelectedSystem] = useState<string>("bd_ugc");
@@ -322,11 +320,6 @@ export const EctsCalculator: React.FC<EctsCalculatorProps> = ({
     } catch (err) {
       console.warn("Synced locally.");
     }
-
-    toast.success(
-      "Assessment Request Received",
-      `Thank you, ${leadForm.fullName}! Our counselor team at JEL Tejgaon has received your ECTS profile evaluation request.`
-    );
 
     setTimeout(() => {
       setLeadSubmitting(false);

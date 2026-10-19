@@ -19,7 +19,6 @@ import { SOPGenerator } from "./SOPGenerator";
 import { VisaChecklist } from "./VisaChecklist";
 import { StudentInvoices } from "./StudentInvoices";
 import { StudentApplicationTracker } from "./StudentApplicationTracker";
-import { useToast } from "../context/ToastContext";
 
 interface StudentPortalProps {
   setActiveTab: (tab: string) => void;
@@ -61,7 +60,6 @@ const profileFromUser = (user: SupabaseUser): UserProfile => {
 };
 
 export function StudentPortal({ setActiveTab }: StudentPortalProps) {
-  const toast = useToast();
   const [view, setView] = useState<View>("login");
   const [subTab, setSubTab] = useState<StudentTab>("tracker");
   const [loading, setLoading] = useState(true);
@@ -149,7 +147,6 @@ export function StudentPortal({ setActiveTab }: StudentPortalProps) {
     }
     loadUser(data.user);
     setSuccessMsg("Signed in securely with Supabase Authentication.");
-    toast.success("Welcome Back", "Signed in securely to your JEL student portal.");
     setLoading(false);
   };
 
@@ -187,9 +184,7 @@ export function StudentPortal({ setActiveTab }: StudentPortalProps) {
     setPassword("");
 
     if (error) {
-      const msg = error.message || "Account registration failed.";
-      setErrorMsg(msg);
-      toast.error("Registration Notice", msg);
+      setErrorMsg(error.message || "Account registration failed.");
       setLoading(false);
       return;
     }
@@ -197,11 +192,9 @@ export function StudentPortal({ setActiveTab }: StudentPortalProps) {
     if (data.session?.user) {
       loadUser(data.session.user);
       setSuccessMsg("Student account created and authenticated securely.");
-      toast.success("Account Created", "Your student account has been registered and signed in.");
     } else {
       setView("login");
       setSuccessMsg("Registration received. Check your email to confirm the account before signing in.");
-      toast.info("Registration Received", "Please check your email to confirm your account before signing in.");
     }
     setLoading(false);
   };
@@ -219,7 +212,6 @@ export function StudentPortal({ setActiveTab }: StudentPortalProps) {
     });
     if (error) console.warn("Student password recovery request failed", error.message);
     setSuccessMsg("If the email is registered, a secure password-reset link has been sent.");
-    toast.info("Password Reset Sent", "If the email is registered, password-reset instructions were sent.");
     setLoading(false);
   };
 
@@ -239,16 +231,13 @@ export function StudentPortal({ setActiveTab }: StudentPortalProps) {
     setNewPassword("");
     setConfirmPassword("");
     if (error) {
-      const msg = error.message || "Password update failed.";
-      setErrorMsg(msg);
-      toast.error("Password Update Notice", msg);
+      setErrorMsg(error.message || "Password update failed.");
       setLoading(false);
       return;
     }
     window.history.replaceState(null, "", "/student-portal");
     setRecoveryMode(false);
     setSuccessMsg("Password updated successfully.");
-    toast.success("Password Updated", "Your student password has been changed successfully.");
     const { data } = await supabase.auth.getUser();
     loadUser(data.user || null);
     setLoading(false);
@@ -270,13 +259,10 @@ export function StudentPortal({ setActiveTab }: StudentPortalProps) {
       },
     });
     if (error || !data.user) {
-      const msg = error?.message || "Profile update failed.";
-      setErrorMsg(msg);
-      toast.error("Profile Notice", msg);
+      setErrorMsg(error?.message || "Profile update failed.");
     } else {
       loadUser(data.user);
       setSuccessMsg("Profile updated securely.");
-      toast.success("Profile Updated", "Your student study abroad details have been updated.");
     }
     setLoading(false);
   };

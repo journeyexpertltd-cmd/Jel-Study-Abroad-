@@ -8,7 +8,6 @@ import {
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
-import { useToast } from "../context/ToastContext";
 
 type FormState = {
   fullName: string;
@@ -51,7 +50,6 @@ interface StudentApplicationFormProps {
 }
 
 export function StudentApplicationForm({ setActiveTab }: StudentApplicationFormProps) {
-  const toast = useToast();
   const [form, setForm] = useState<FormState>(initialForm);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -101,17 +99,10 @@ export function StudentApplicationForm({ setActiveTab }: StudentApplicationFormP
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok || !result.success) throw new Error("submission_failed");
-      const refId = result.id ?? "received";
-      setReference(refId);
-      toast.success(
-        "Application Enquiry Received",
-        `Your application details for ${form.preferredCountry} have been saved to the admissions queue.`
-      );
+      setReference(result.id ?? "received");
       setForm(initialForm);
     } catch {
-      const errorMsg = "Your application enquiry could not be submitted right now. Please try again or contact JEL on WhatsApp at +880 1926-400400.";
-      setError(errorMsg);
-      toast.error("Application Notice", errorMsg);
+      setError("Your application enquiry could not be submitted right now. Please try again or contact JEL on WhatsApp at +880 1926-400400.");
     } finally {
       setSubmitting(false);
     }

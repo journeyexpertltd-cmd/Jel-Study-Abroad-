@@ -9,32 +9,12 @@ dotenv.config();
 
 const app = express();
 
-function getCommandLinePort(): number | null {
-  const portIndex = process.argv.indexOf("--port");
-  if (portIndex !== -1 && process.argv[portIndex + 1]) {
-    const val = parseInt(process.argv[portIndex + 1], 10);
-    if (!isNaN(val) && val > 0) return val;
-  }
-  return null;
-}
-
-// Port resolution:
-// In AI Studio Dev environment, Nginx listens on 8080 and proxies traffic to DEFAULT_APP_PORT (3000).
-// In Cloud Run production deployment, there is no Nginx proxy; Cloud Run injects PORT (default 8080)
-// and expects the application to listen on that exact port for traffic and rollout health checks.
-const cliPort = getCommandLinePort();
-const isDevContainer = Boolean(process.env.NGINX_PORT);
-const PORT = cliPort || (isDevContainer
-  ? (Number(process.env.DEFAULT_APP_PORT) || 3000)
-  : (Number(process.env.PORT) || Number(process.env.DEFAULT_APP_PORT) || 3000));
+// The reverse proxy strictly routes traffic to port 3000.
+// Do NOT read process.env.PORT as the container's Nginx listens on 8080 and forwards to 3000.
+const PORT = 3000;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Immediate zero-latency health check routes
-app.get(["/health", "/api/health", "/healthz", "/_ah/health"], (req, res) => {
-  res.status(200).json({ status: "ok", service: "jel-server", timestamp: new Date().toISOString() });
-});
 
 // Lazy-initialized Gemini client safe engine
 let aiInstance: GoogleGenAI | null = null;
@@ -2171,70 +2151,29 @@ app.post("/api/admin/update-status", (req: express.Request, res: express.Respons
   }
 });
 
-// Helper to detect production mode safely across ESM (node server.ts) and CJS (esbuild dist/server.cjs)
-function isProductionMode(): boolean {
-  if (process.env.NODE_ENV === "production") return true;
-  if (process.env.NODE_ENV === "development") return false;
-  if (process.env.npm_lifecycle_event === "dev" || process.argv.includes("--dev")) return false;
-  if (process.env.npm_lifecycle_event === "start") return true;
-  // If running in Cloud Run production service (not dev container)
-  if (process.env.K_SERVICE && !process.env.NGINX_PORT) return true;
-  if (process.env.NGINX_PORT) return false;
-  const hasDist = fs.existsSync(path.join(process.cwd(), "dist", "index.html"));
-  return hasDist;
-}
-
-// Helper to resolve the directory containing compiled static assets without relying on __dirname
-function getStaticDistPath(): string {
-  const distInCwd = path.join(process.cwd(), "dist");
-  if (fs.existsSync(path.join(distInCwd, "index.html"))) {
-    return distInCwd;
-  }
-  const rootIndex = path.join(process.cwd(), "index.html");
-  if (fs.existsSync(rootIndex)) {
-    return process.cwd();
-  }
-  return distInCwd;
-}
+app.get(["/health", "/api/health", "/healthz", "/_ah/health"], (req, res) => {
+  res.status(200).json({ status: "ok", service: "jel-server", timestamp: new Date().toISOString() });
+});
 
 // Setup Vite Dev server integration / Static files build paths
 async function bootServer() {
-  const isProduction = isProductionMode();
-
-  let viteMiddlewareHandler: express.Handler | null = null;
-  let viteReadyPromise: Promise<void> | null = null;
+  const isProduction = process.env.NODE_ENV === "production" || (typeof __filename !== "undefined" && __filename.endsWith(".cjs"));
 
   if (!isProduction) {
-    viteReadyPromise = (async () => {
-      try {
-        console.log(`Loading Vite Dev Middlewares for server on Port ${PORT}...`);
-        const { createServer: createViteServer } = await import("vite");
-        const vite = await createViteServer({
-          server: { middlewareMode: true },
-          appType: "spa",
-        });
-        viteMiddlewareHandler = vite.middlewares;
-        console.log(`[JEL BACKEND SERVER] Vite dev middleware loaded successfully.`);
-      } catch (err) {
-        console.error(`[JEL BACKEND SERVER] Error initializing Vite dev middleware:`, err);
-      }
-    })();
-
-    app.use(async (req, res, next) => {
-      if (viteMiddlewareHandler) {
-        return viteMiddlewareHandler(req, res, next);
-      }
-      if (viteReadyPromise) {
-        await viteReadyPromise;
-        if (viteMiddlewareHandler) {
-          return viteMiddlewareHandler(req, res, next);
-        }
-      }
-      next();
+    console.log(`Loading Vite Dev Middlewares for server on Port ${PORT}...`);
+    const { createServer: createViteServer } = await import("vite");
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: "spa",
     });
+    app.use(vite.middlewares);
   } else {
     // Serve production static assets compiled inside /dist
-    const distPath = getStaticDistPath();
+    const distPath = fs.existsSync(path.join(__dirname, "index.html"))
+      ? __dirname
+      : (fs.existsSync(path.join(process.cwd(), "dist", "index.html"))
+          ? path.join(process.cwd(), "dist")
+          : path.resolve(__dirname, "..", "dist"));
     console.log(`Serving static production build from: ${distPath}`);
     app.use(express.static(distPath));
     app.get("*", (req, res) => {
@@ -2249,21 +2188,6 @@ async function bootServer() {
   server.on("error", (err: any) => {
     console.error(`[JEL BACKEND SERVER] Fatal server listen error on port ${PORT}:`, err);
   });
-
-  // If primary PORT is not 3000 (e.g. in Cloud Run where PORT is 8080), also try binding 3000
-  // as an auxiliary port so any internal services or local scripts can also connect
-  if (PORT !== 3000) {
-    try {
-      const auxServer = app.listen(3000, "0.0.0.0", () => {
-        console.log(`[JEL BACKEND SERVER] Auxiliary listener active on http://0.0.0.0:3000`);
-      });
-      auxServer.on("error", () => {
-        // Silently ignore if port 3000 is occupied or restricted
-      });
-    } catch {
-      // Silently ignore
-    }
-  }
 }
 
 // Graceful container termination for Cloud Run lifecycle

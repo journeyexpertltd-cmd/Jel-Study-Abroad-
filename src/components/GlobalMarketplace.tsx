@@ -3,7 +3,6 @@ import {
   Globe, Search, Filter, Compass, Send, CheckCircle, Clock, 
   MessageSquare, User, Building, ExternalLink, ArrowRight, BookOpen, AlertCircle
 } from "lucide-react";
-import { useToast } from "../context/ToastContext";
 
 interface Course {
   id: string;
@@ -64,8 +63,6 @@ export function GlobalMarketplace() {
   // Chat Input
   const [chatInput, setChatInput] = useState("");
 
-  const toast = useToast();
-
   const handlePostApplication = (e: React.FormEvent) => {
     e.preventDefault();
     if (!draftName.trim()) return;
@@ -84,11 +81,8 @@ export function GlobalMarketplace() {
     };
 
     setApplications(prev => [newApp, ...prev]);
-    toast.success(
-      "Application Dispatched",
-      `Application for ${draftName} successfully dispatched to ${matchedCourse.university} admissions registrar!`
-    );
     setDraftName("");
+    alert(`Application successfully dispatched to ${matchedCourse.university} Registrar desk! Queue is active.`);
   };
 
   const handleUpdateStatus = (appId: string, nextStatus: ApplicationRecord["status"]) => {
