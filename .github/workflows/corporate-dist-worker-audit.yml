@@ -15,7 +15,7 @@ jobs:
     timeout-minutes: 8
     steps:
       - name: Checkout exact corporate commit
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: ezyflyltd-wq/https-github.com-ezyflyltd-wq-Journey-Expert-Ltd
           ref: 3f0023bc5c8157f971bddad850aff65b635cf76d
